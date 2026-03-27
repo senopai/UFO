@@ -20,8 +20,10 @@
     <entry key="RESEPRAJALKEPLAN">yes</entry>
     <entry key="FORMALARMAPOTEK">ralan + ranap</entry>
     <entry key="STOKKOSONGRESEP">no</entry>
-    <entry key="TAMPILKANCOPYRESEPDOKTERLAIN">yes</entry>
-    <entry key="HPPFARMASI">dasar</entry>
+    <entry key="NOTIFMAKSIMALNOMINALRESEPRAJAL">yes</entry>
+    <entry key="MAKSIMALNOMINALRESEPRAJAL">100000</entry>
+    <entry key="TAMPILKANCOPYRESEPDOKTERLAIN">no</entry>
+   <entry key="HPPFARMASI">dasar</entry>
     <entry key="HPPTOKO">dasar</entry>
     <entry key="ALARMLAB">yes</entry>
     <entry key="FORMALARMLAB">ralan + ranap</entry>
@@ -54,11 +56,13 @@
     <entry key="CONSIDAPIAPOTEKBPJS">l4nh5eVYrLAER/I2A4b3Tw==</entry>
     <entry key="USERKEYAPIAPOTEKBPJS">l4nh5eVYrLAER/I2A4b3Tw==</entry>
     <entry key="JADIKANPIUTANGAPOTEKBPJS">yes</entry>
-    <entry key="URLAPIICARE">https://apijkn.bpjs-kesehatan.go.id/wsihs/api/rs</entry>
-    <entry key="SECRETKEYAPIICARE">gi1DxfYIHhMX7u5FQuYdNg==</entry>
-    <entry key="CONSIDAPIICARE">5WhoRLc8OnOYSx75m0oTWA==</entry>
-    <entry key="USERKEYAPIICARE">oSkAkv+Hab5mDtpC4Oy5j+8XVIME/qCZFA/gSMJB022F3VKC7rc0DMtaxzpQJxOK</entry>
-    <entry key="URLAPISMARTCLAIM">https://dvlp.bpjs-kesehatan.go.id/eRekamMedis</entry>
+    <entry key="AKTIFKANRESEPITERDOKTER">yes</entry>
+    <entry key="KODEPPKAPOTEKBPJS">HMQWHHDY8+HuACBMopEo0Q==</entry>
+    <entry key="URLAPIICARE">https://apijkn-dev.bpjs-kesehatan.go.id/ihs_dev/api/rs</entry>
+    <entry key="SECRETKEYAPIICARE">l4nh5eVYrLAER/I2A4b3Tw==</entry>
+    <entry key="CONSIDAPIICARE">l4nh5eVYrLAER/I2A4b3Tw==</entry>
+    <entry key="USERKEYAPIICARE">l4nh5eVYrLAER/I2A4b3Tw==</entry>
+   <entry key="URLAPISMARTCLAIM">https://dvlp.bpjs-kesehatan.go.id/eRekamMedis</entry>
     <entry key="SECRETKEYAPISMARTCLAIM">l4nh5eVYrLAER/I2A4b3Tw==</entry>
     <entry key="CONSIDAPISMARTCLAIM">l4nh5eVYrLAER/I2A4b3Tw==</entry>
     <entry key="USERKEYAPISMARTCLAIM">l4nh5eVYrLAER/I2A4b3Tw==</entry>
