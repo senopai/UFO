@@ -4341,12 +4341,12 @@ public class frmUtama extends javax.swing.JFrame {
                                             "\"resourceType\": \"MedicationDispense\"," +
                                             "\"identifier\": [" +
                                                 "{" +
-                                                    "\"system\": \"http://sys-ids.kemkes.go.id/medicationdispense/"+koneksiDB.IDSATUSEHAT()+"\"," +
+                                                    "\"system\": \"http://sys-ids.kemkes.go.id/prescription/"+koneksiDB.IDSATUSEHAT()+"\"," +
                                                     "\"use\": \"official\"," +
                                                     "\"value\": \""+rs.getString("no_resep")+"\"" +
                                                 "}," +
                                                 "{" +
-                                                    "\"system\": \"http://sys-ids.kemkes.go.id/medicationdispense-item/"+koneksiDB.IDSATUSEHAT()+"\"," +
+                                                    "\"system\": \"http://sys-ids.kemkes.go.id/prescription-item/"+koneksiDB.IDSATUSEHAT()+"\"," +
                                                     "\"use\": \"official\"," +
                                                     "\"value\": \""+rs.getString("kode_brng")+"\"" +
                                                 "}" +
@@ -4523,12 +4523,12 @@ public class frmUtama extends javax.swing.JFrame {
                                             "\"resourceType\": \"MedicationDispense\"," +
                                             "\"identifier\": [" +
                                                 "{" +
-                                                    "\"system\": \"http://sys-ids.kemkes.go.id/medicationdispense/"+koneksiDB.IDSATUSEHAT()+"\"," +
+                                                    "\"system\": \"http://sys-ids.kemkes.go.id/prescription/"+koneksiDB.IDSATUSEHAT()+"\"," +
                                                     "\"use\": \"official\"," +
                                                     "\"value\": \""+rs.getString("no_resep")+"\"" +
                                                 "}," +
                                                 "{" +
-                                                    "\"system\": \"http://sys-ids.kemkes.go.id/medicationdispense-item/"+koneksiDB.IDSATUSEHAT()+"\"," +
+                                                    "\"system\": \"http://sys-ids.kemkes.go.id/prescription-item/"+koneksiDB.IDSATUSEHAT()+"\"," +
                                                     "\"use\": \"official\"," +
                                                     "\"value\": \""+rs.getString("kode_brng")+"\"" +
                                                 "}" +
@@ -4679,7 +4679,7 @@ public class frmUtama extends javax.swing.JFrame {
                                             "\"identifier\": [" +
                                                 "{" +
                                                     "\"system\": \"http://sys-ids.kemkes.go.id/acsn/"+koneksiDB.IDSATUSEHAT()+"\"," +
-                                                    "\"value\": \""+rs.getString("noorder")+"."+rs.getString("kd_jenis_prw")+"\"" +
+                                                    "\"value\": \""+rs.getString("noorder").toString().replaceAll("PR","")+rs.getString("kd_jenis_prw")+"\"" +
                                                 "}" +
                                             "]," +
                                             "\"status\": \"active\"," +
