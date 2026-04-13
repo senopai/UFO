@@ -16464,7 +16464,6 @@ public class DlgKamarInap extends javax.swing.JDialog {
                                     form.setNoRm(rs2.getString("no_rawat2"),DTPCari4.getDate());
                                 }
                                 form.emptTeks();
-                                form.tampil();
                                 this.setCursor(Cursor.getDefaultCursor());
                             }else{
                                 JOptionPane.showMessageDialog(null,"Maaf, Silahkan anda pilih dulu pasien...!!!");
@@ -16498,7 +16497,6 @@ public class DlgKamarInap extends javax.swing.JDialog {
                         form.setNoRm(norawat.getText(),DTPCari4.getDate());
                     }  
                     form.emptTeks();
-                    form.tampil();
                     this.setCursor(Cursor.getDefaultCursor());
                 }
             }

@@ -2057,7 +2057,7 @@ public class frmUtama extends javax.swing.JFrame {
 
         tanggal.setEditable(false);
         tanggal.setForeground(new java.awt.Color(50, 70, 50));
-        tanggal.setModel(new javax.swing.DefaultComboBoxModel(new String[] { "01/04/2026" }));
+        tanggal.setModel(new javax.swing.DefaultComboBoxModel(new String[] { "04/04/2026" }));
         tanggal.setDisplayFormat("dd/MM/yyyy");
         tanggal.setName("tanggal"); // NOI18N
         tanggal.setOpaque(false);
@@ -7139,7 +7139,7 @@ public class frmUtama extends javax.swing.JFrame {
         internalFrame1.setPreferredSize(new java.awt.Dimension(40, 42));
         internalFrame1.setVerifyInputWhenFocusTarget(false);
         internalFrame1.setWarnaAtas(new java.awt.Color(245, 255, 245));
-        internalFrame1.setWarnaBawah(new java.awt.Color(200, 235, 200));
+        internalFrame1.setWarnaBawah(new java.awt.Color(51, 204, 255));
         internalFrame1.setLayout(new java.awt.FlowLayout(java.awt.FlowLayout.LEFT, 0, 2));
 
         BtnMenu.setIcon(new javax.swing.ImageIcon(getClass().getResource("/picture/menu.png"))); // NOI18N
@@ -7359,7 +7359,7 @@ public class frmUtama extends javax.swing.JFrame {
         internalFrame4.setBorder(null);
         internalFrame4.setName("internalFrame4"); // NOI18N
         internalFrame4.setPreferredSize(new java.awt.Dimension(330, 25));
-        internalFrame4.setWarnaAtas(new java.awt.Color(205, 240, 205));
+        internalFrame4.setWarnaAtas(new java.awt.Color(51, 204, 255));
         internalFrame4.setWarnaBawah(new java.awt.Color(245, 255, 245));
         internalFrame4.setLayout(new java.awt.FlowLayout(java.awt.FlowLayout.LEFT, 4, 1));
 

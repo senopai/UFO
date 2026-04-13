@@ -67,7 +67,9 @@ public final class RMHasilUSGGynecolog extends javax.swing.JDialog {
         initComponents();
         
         tabMode=new DefaultTableModel(null,new Object[]{
-                "No.Rawat","No.RM","Nama Pasien","Tgl.Lahir","Kode Dokter","Nama Dokter","Tanggal","Kiriman Dari","Diagnosa Klinis","Uterus","Parametrium","Ovarium","Doppler","Kesimpulan"
+                "No.Rawat","No.RM","Nama Pasien","Tgl.Lahir","Kode Dokter","Nama Dokter","Tanggal","Kiriman Dari","Diagnosa Klinis","Uterus","Ukuran","Endometrium","Adnexa",
+                "Ukuran Kanan","Ukuran Kiri","Bentuk","Batas","Tepi","Kesimpulan"
+                //"No.Rawat","No.RM","Nama Pasien","Tgl.Lahir","Kode Dokter","Nama Dokter","Tanggal","Kiriman Dari","Diagnosa Klinis","Uterus","Parametrium","Ovarium","Doppler","Kesimpulan"
             }){
               @Override public boolean isCellEditable(int rowIndex, int colIndex){return false;}
         };
@@ -133,8 +135,8 @@ public final class RMHasilUSGGynecolog extends javax.swing.JDialog {
         TNoRw.setDocument(new batasInput((byte)17).getKata(TNoRw));
         KirimanDari.setDocument(new batasInput((int)50).getKata(KirimanDari));
         DiagnosaKlinis.setDocument(new batasInput((int)50).getKata(DiagnosaKlinis));
-        A.setDocument(new batasInput((int)200).getKata(A));
-        B.setDocument(new batasInput((int)200).getKata(B));
+        UkuranKanan.setDocument(new batasInput((int)200).getKata(UkuranKanan));
+        UkuranKiri.setDocument(new batasInput((int)200).getKata(UkuranKiri));
         Kesimpulan.setDocument(new batasInput((int)300).getKata(Kesimpulan));
         TCari.setDocument(new batasInput((int)100).getKata(TCari));
         
@@ -278,15 +280,19 @@ public final class RMHasilUSGGynecolog extends javax.swing.JDialog {
         Kesimpulan = new widget.TextArea();
         cmbUterus = new javax.swing.JComboBox<>();
         cmbUkuran = new javax.swing.JComboBox<>();
-        cmbEndometrium = new javax.swing.JComboBox<>();
         cmbMasa = new javax.swing.JComboBox<>();
         jLabel49 = new widget.Label();
-        B = new widget.TextBox();
-        jLabel50 = new widget.Label();
-        A = new widget.TextBox();
+        UkuranKiri = new widget.TextBox();
+        UkuranKanan = new widget.TextBox();
         jLabel51 = new widget.Label();
-        cmbCystic = new javax.swing.JComboBox<>();
+        cmbBentuk = new javax.swing.JComboBox<>();
         cmbBatas = new javax.swing.JComboBox<>();
+        jLabel52 = new widget.Label();
+        jLabel53 = new widget.Label();
+        jLabel54 = new widget.Label();
+        jLabel55 = new widget.Label();
+        cmbTepi = new javax.swing.JComboBox<>();
+        cmbEndometrium = new javax.swing.JComboBox<>();
         internalFrame3 = new widget.InternalFrame();
         Scroll = new widget.ScrollPane();
         tbObat = new widget.Table();
@@ -587,7 +593,7 @@ public final class RMHasilUSGGynecolog extends javax.swing.JDialog {
         label11.setBounds(538, 40, 52, 23);
 
         Tanggal.setForeground(new java.awt.Color(50, 70, 50));
-        Tanggal.setModel(new javax.swing.DefaultComboBoxModel(new String[] { "16-03-2026 10:07:39" }));
+        Tanggal.setModel(new javax.swing.DefaultComboBoxModel(new String[] { "08-04-2026 09:31:12" }));
         Tanggal.setDisplayFormat("dd-MM-yyyy HH:mm:ss");
         Tanggal.setName("Tanggal"); // NOI18N
         Tanggal.setOpaque(false);
@@ -633,7 +639,7 @@ public final class RMHasilUSGGynecolog extends javax.swing.JDialog {
         jLabel44.setText("Cm ");
         jLabel44.setName("jLabel44"); // NOI18N
         FormInput.add(jLabel44);
-        jLabel44.setBounds(300, 190, 20, 23);
+        jLabel44.setBounds(330, 180, 20, 23);
 
         jLabel45.setText("Uterus :");
         jLabel45.setName("jLabel45"); // NOI18N
@@ -643,17 +649,17 @@ public final class RMHasilUSGGynecolog extends javax.swing.JDialog {
         jLabel46.setText("Ukuran :");
         jLabel46.setName("jLabel46"); // NOI18N
         FormInput.add(jLabel46);
-        jLabel46.setBounds(230, 120, 85, 23);
+        jLabel46.setBounds(250, 120, 85, 23);
 
         jLabel47.setText("Endometrium :");
         jLabel47.setName("jLabel47"); // NOI18N
         FormInput.add(jLabel47);
-        jLabel47.setBounds(460, 120, 85, 23);
+        jLabel47.setBounds(250, 150, 85, 23);
 
         jLabel48.setText("Kesimpulan :");
         jLabel48.setName("jLabel48"); // NOI18N
         FormInput.add(jLabel48);
-        jLabel48.setBounds(0, 300, 85, 23);
+        jLabel48.setBounds(0, 310, 85, 23);
 
         scrollPane21.setBorder(javax.swing.BorderFactory.createLineBorder(new java.awt.Color(0, 0, 0)));
         scrollPane21.setName("scrollPane21"); // NOI18N
@@ -670,7 +676,7 @@ public final class RMHasilUSGGynecolog extends javax.swing.JDialog {
         scrollPane21.setViewportView(Kesimpulan);
 
         FormInput.add(scrollPane21);
-        scrollPane21.setBounds(95, 300, 630, 63);
+        scrollPane21.setBounds(100, 310, 630, 63);
 
         cmbUterus.setModel(new javax.swing.DefaultComboBoxModel<>(new String[] { "Antefleksi", "Retrofleksi" }));
         cmbUterus.setName("cmbUterus"); // NOI18N
@@ -685,61 +691,50 @@ public final class RMHasilUSGGynecolog extends javax.swing.JDialog {
         cmbUkuran.setModel(new javax.swing.DefaultComboBoxModel<>(new String[] { "Normal", "Membesar" }));
         cmbUkuran.setName("cmbUkuran"); // NOI18N
         FormInput.add(cmbUkuran);
-        cmbUkuran.setBounds(320, 120, 120, 22);
+        cmbUkuran.setBounds(340, 120, 120, 22);
 
-        cmbEndometrium.setModel(new javax.swing.DefaultComboBoxModel<>(new String[] { "Normal", "Menebal" }));
-        cmbEndometrium.setName("cmbEndometrium"); // NOI18N
-        FormInput.add(cmbEndometrium);
-        cmbEndometrium.setBounds(550, 120, 120, 22);
-
-        cmbMasa.setModel(new javax.swing.DefaultComboBoxModel<>(new String[] { "Masa +", "Masa -" }));
+        cmbMasa.setModel(new javax.swing.DefaultComboBoxModel<>(new String[] { "Tidak Ada", "Masa +", "Masa -" }));
         cmbMasa.setName("cmbMasa"); // NOI18N
         FormInput.add(cmbMasa);
-        cmbMasa.setBounds(100, 160, 120, 22);
+        cmbMasa.setBounds(100, 150, 120, 22);
 
-        jLabel49.setText("Adnexa D/S :");
+        jLabel49.setText("Tepi :");
         jLabel49.setName("jLabel49"); // NOI18N
         FormInput.add(jLabel49);
-        jLabel49.setBounds(0, 160, 85, 23);
+        jLabel49.setBounds(0, 270, 85, 23);
 
-        B.setFocusTraversalPolicyProvider(true);
-        B.setName("B"); // NOI18N
-        B.addKeyListener(new java.awt.event.KeyAdapter() {
+        UkuranKiri.setFocusTraversalPolicyProvider(true);
+        UkuranKiri.setName("UkuranKiri"); // NOI18N
+        UkuranKiri.addKeyListener(new java.awt.event.KeyAdapter() {
             public void keyPressed(java.awt.event.KeyEvent evt) {
-                BKeyPressed(evt);
+                UkuranKiriKeyPressed(evt);
             }
         });
-        FormInput.add(B);
-        B.setBounds(220, 190, 70, 20);
+        FormInput.add(UkuranKiri);
+        UkuranKiri.setBounds(230, 180, 90, 20);
 
-        jLabel50.setHorizontalAlignment(javax.swing.SwingConstants.LEFT);
-        jLabel50.setText("0");
-        jLabel50.setName("jLabel50"); // NOI18N
-        FormInput.add(jLabel50);
-        jLabel50.setBounds(100, 190, 20, 23);
-
-        A.setFocusTraversalPolicyProvider(true);
-        A.setName("A"); // NOI18N
-        A.addKeyListener(new java.awt.event.KeyAdapter() {
+        UkuranKanan.setFocusTraversalPolicyProvider(true);
+        UkuranKanan.setName("UkuranKanan"); // NOI18N
+        UkuranKanan.addKeyListener(new java.awt.event.KeyAdapter() {
             public void keyPressed(java.awt.event.KeyEvent evt) {
-                AKeyPressed(evt);
+                UkuranKananKeyPressed(evt);
             }
         });
-        FormInput.add(A);
-        A.setBounds(110, 190, 70, 20);
+        FormInput.add(UkuranKanan);
+        UkuranKanan.setBounds(100, 180, 90, 20);
 
         jLabel51.setHorizontalAlignment(javax.swing.SwingConstants.LEFT);
         jLabel51.setText("Cm x");
         jLabel51.setName("jLabel51"); // NOI18N
         FormInput.add(jLabel51);
-        jLabel51.setBounds(190, 190, 30, 23);
+        jLabel51.setBounds(200, 180, 30, 23);
 
-        cmbCystic.setModel(new javax.swing.DefaultComboBoxModel<>(new String[] { "Cystic", "Solid" }));
-        cmbCystic.setName("cmbCystic"); // NOI18N
-        FormInput.add(cmbCystic);
-        cmbCystic.setBounds(100, 220, 120, 22);
+        cmbBentuk.setModel(new javax.swing.DefaultComboBoxModel<>(new String[] { "Tidak Ada", "Cystic", "Solid" }));
+        cmbBentuk.setName("cmbBentuk"); // NOI18N
+        FormInput.add(cmbBentuk);
+        cmbBentuk.setBounds(100, 210, 120, 22);
 
-        cmbBatas.setModel(new javax.swing.DefaultComboBoxModel<>(new String[] { "Batas Tegak", "Tidak" }));
+        cmbBatas.setModel(new javax.swing.DefaultComboBoxModel<>(new String[] { "Tidak Ada", "Batas Tegak", "Tidak Tegas" }));
         cmbBatas.setName("cmbBatas"); // NOI18N
         cmbBatas.addActionListener(new java.awt.event.ActionListener() {
             public void actionPerformed(java.awt.event.ActionEvent evt) {
@@ -747,7 +742,42 @@ public final class RMHasilUSGGynecolog extends javax.swing.JDialog {
             }
         });
         FormInput.add(cmbBatas);
-        cmbBatas.setBounds(100, 250, 120, 22);
+        cmbBatas.setBounds(100, 240, 120, 22);
+
+        jLabel52.setText("Adnexa D/S :");
+        jLabel52.setName("jLabel52"); // NOI18N
+        FormInput.add(jLabel52);
+        jLabel52.setBounds(0, 150, 85, 23);
+
+        jLabel53.setText("Ukuran :");
+        jLabel53.setName("jLabel53"); // NOI18N
+        FormInput.add(jLabel53);
+        jLabel53.setBounds(0, 180, 85, 23);
+
+        jLabel54.setText("Bentuk :");
+        jLabel54.setName("jLabel54"); // NOI18N
+        FormInput.add(jLabel54);
+        jLabel54.setBounds(0, 210, 85, 23);
+
+        jLabel55.setText("Batas :");
+        jLabel55.setName("jLabel55"); // NOI18N
+        FormInput.add(jLabel55);
+        jLabel55.setBounds(0, 240, 85, 23);
+
+        cmbTepi.setModel(new javax.swing.DefaultComboBoxModel<>(new String[] { "Tidak Ada", "Reguler", "Irreguler" }));
+        cmbTepi.setName("cmbTepi"); // NOI18N
+        cmbTepi.addActionListener(new java.awt.event.ActionListener() {
+            public void actionPerformed(java.awt.event.ActionEvent evt) {
+                cmbTepiActionPerformed(evt);
+            }
+        });
+        FormInput.add(cmbTepi);
+        cmbTepi.setBounds(100, 270, 120, 22);
+
+        cmbEndometrium.setModel(new javax.swing.DefaultComboBoxModel<>(new String[] { "Normal", "Membesar" }));
+        cmbEndometrium.setName("cmbEndometrium"); // NOI18N
+        FormInput.add(cmbEndometrium);
+        cmbEndometrium.setBounds(340, 150, 120, 22);
 
         scrollInput.setViewportView(FormInput);
 
@@ -790,7 +820,7 @@ public final class RMHasilUSGGynecolog extends javax.swing.JDialog {
         panelGlass9.add(jLabel19);
 
         DTPCari1.setForeground(new java.awt.Color(50, 70, 50));
-        DTPCari1.setModel(new javax.swing.DefaultComboBoxModel(new String[] { "16-03-2026" }));
+        DTPCari1.setModel(new javax.swing.DefaultComboBoxModel(new String[] { "08-04-2026" }));
         DTPCari1.setDisplayFormat("dd-MM-yyyy");
         DTPCari1.setName("DTPCari1"); // NOI18N
         DTPCari1.setOpaque(false);
@@ -804,7 +834,7 @@ public final class RMHasilUSGGynecolog extends javax.swing.JDialog {
         panelGlass9.add(jLabel21);
 
         DTPCari2.setForeground(new java.awt.Color(50, 70, 50));
-        DTPCari2.setModel(new javax.swing.DefaultComboBoxModel(new String[] { "16-03-2026" }));
+        DTPCari2.setModel(new javax.swing.DefaultComboBoxModel(new String[] { "08-04-2026" }));
         DTPCari2.setDisplayFormat("dd-MM-yyyy");
         DTPCari2.setName("DTPCari2"); // NOI18N
         DTPCari2.setOpaque(false);
@@ -1004,7 +1034,7 @@ public final class RMHasilUSGGynecolog extends javax.swing.JDialog {
             Valid.textKosong(BtnDokter,"Dokter");
         }else if(DiagnosaKlinis.getText().trim().equals("")){
             Valid.textKosong(DiagnosaKlinis,"Diagnosa Klinis");
-        }else if(A.getText().trim().equals("")){
+        }else if(UkuranKanan.getText().trim().equals("")){
             Valid.textKosong(Kesimpulan,"Kesimpulan");
         }else{
             if(akses.getkode().equals("Admin Utama")){
@@ -1072,7 +1102,7 @@ public final class RMHasilUSGGynecolog extends javax.swing.JDialog {
             Valid.textKosong(BtnDokter,"Dokter");
         }else if(DiagnosaKlinis.getText().trim().equals("")){
             Valid.textKosong(DiagnosaKlinis,"Diagnosa Klinis");
-        }else if(A.getText().trim().equals("")){
+        }else if(UkuranKanan.getText().trim().equals("")){
             Valid.textKosong(Kesimpulan,"Kesimpulan");
         }else{
             if(tbObat.getSelectedRow()>-1){
@@ -1329,7 +1359,7 @@ public final class RMHasilUSGGynecolog extends javax.swing.JDialog {
     }//GEN-LAST:event_KirimanDariKeyPressed
 
     private void DiagnosaKlinisKeyPressed(java.awt.event.KeyEvent evt) {//GEN-FIRST:event_DiagnosaKlinisKeyPressed
-        Valid.pindah(evt,KirimanDari,A);
+        Valid.pindah(evt,KirimanDari,UkuranKanan);
     }//GEN-LAST:event_DiagnosaKlinisKeyPressed
 
     private void ChkAccorActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_ChkAccorActionPerformed
@@ -1373,7 +1403,7 @@ public final class RMHasilUSGGynecolog extends javax.swing.JDialog {
             if(tbListDicom.getSelectedRow()!= -1){
                 this.setCursor(Cursor.getPredefinedCursor(Cursor.WAIT_CURSOR));
                 OrthancDICOM orthan=new OrthancDICOM(null,false);
-                orthan.setJudul("::[ DICOM Orthanc Pasien "+tbObat.getValueAt(tbObat.getSelectedRow(),1).toString()+" "+tbObat.getValueAt(tbObat.getSelectedRow(),2).toString()+", Series "+tbListDicom.getValueAt(tbListDicom.getSelectedRow(),2).toString()+" ]::",tbObat.getValueAt(tbObat.getSelectedRow(),0).toString().replaceAll("/","")+"_"+tbObat.getValueAt(tbObat.getSelectedRow(),1).toString()+"_"+tbObat.getValueAt(tbObat.getSelectedRow(),2).toString().replaceAll(" ","_").replaceAll("/",""),tbListDicom.getValueAt(tbListDicom.getSelectedRow(),2).toString());
+                orthan.setJudul("::[ DICOM Orthanc Pasien "+tbObat.getValueAt(tbObat.getSelectedRow(),1).toString()+" "+tbObat.getValueAt(tbObat.getSelectedRow(),2).toString()+", Series "+tbListDicom.getValueAt(tbListDicom.getSelectedRow(),2).toString()+" ]::",tbObat.getValueAt(tbObat.getSelectedRow(),0).toString().replaceAll("/","")+"_"+tbObat.getValueAt(tbObat.getSelectedRow(),1).toString()+"_"+tbObat.getValueAt(tbObat.getSelectedRow(),2).toString().replaceAll(" ","_").replaceAll("/",""),tbListDicom.getValueAt(tbListDicom.getSelectedRow(),2).toString(),tbListDicom.getValueAt(tbListDicom.getSelectedRow(),1).toString(),tbObat.getValueAt(tbObat.getSelectedRow(),0).toString());
                 try {
                     orthan.loadURL(koneksiDB.URLORTHANC()+":"+koneksiDB.PORTORTHANC()+"/web-viewer/app/viewer.html?series="+tbListDicom.getValueAt(tbListDicom.getSelectedRow(),2).toString());
                 } catch (Exception ex) {
@@ -1394,24 +1424,28 @@ public final class RMHasilUSGGynecolog extends javax.swing.JDialog {
     }//GEN-LAST:event_TabDataMouseClicked
 
     private void KesimpulanKeyPressed(java.awt.event.KeyEvent evt) {//GEN-FIRST:event_KesimpulanKeyPressed
-        Valid.pindah2(evt,B,BtnSimpan);
+        Valid.pindah2(evt,UkuranKiri,BtnSimpan);
     }//GEN-LAST:event_KesimpulanKeyPressed
 
     private void cmbUterusActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_cmbUterusActionPerformed
         // TODO add your handling code here:
     }//GEN-LAST:event_cmbUterusActionPerformed
 
-    private void BKeyPressed(java.awt.event.KeyEvent evt) {//GEN-FIRST:event_BKeyPressed
+    private void UkuranKiriKeyPressed(java.awt.event.KeyEvent evt) {//GEN-FIRST:event_UkuranKiriKeyPressed
         // TODO add your handling code here:
-    }//GEN-LAST:event_BKeyPressed
+    }//GEN-LAST:event_UkuranKiriKeyPressed
 
-    private void AKeyPressed(java.awt.event.KeyEvent evt) {//GEN-FIRST:event_AKeyPressed
+    private void UkuranKananKeyPressed(java.awt.event.KeyEvent evt) {//GEN-FIRST:event_UkuranKananKeyPressed
         // TODO add your handling code here:
-    }//GEN-LAST:event_AKeyPressed
+    }//GEN-LAST:event_UkuranKananKeyPressed
 
     private void cmbBatasActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_cmbBatasActionPerformed
         // TODO add your handling code here:
     }//GEN-LAST:event_cmbBatasActionPerformed
+
+    private void cmbTepiActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_cmbTepiActionPerformed
+        // TODO add your handling code here:
+    }//GEN-LAST:event_cmbTepiActionPerformed
 
     /**
     * @param args the command line arguments
@@ -1430,8 +1464,6 @@ public final class RMHasilUSGGynecolog extends javax.swing.JDialog {
     }
 
     // Variables declaration - do not modify//GEN-BEGIN:variables
-    private widget.TextBox A;
-    private widget.TextBox B;
     private widget.Button BtnAll;
     private widget.Button BtnBatal;
     private widget.Button BtnCari;
@@ -1471,12 +1503,15 @@ public final class RMHasilUSGGynecolog extends javax.swing.JDialog {
     private widget.Tanggal Tanggal;
     private widget.TextBox TanggalRegistrasi;
     private widget.TextBox TglLahir;
+    private widget.TextBox UkuranKanan;
+    private widget.TextBox UkuranKiri;
     private widget.Button btnAmbil;
     private widget.Button btnDicom;
     private javax.swing.JComboBox<String> cmbBatas;
-    private javax.swing.JComboBox<String> cmbCystic;
+    private javax.swing.JComboBox<String> cmbBentuk;
     private javax.swing.JComboBox<String> cmbEndometrium;
     private javax.swing.JComboBox<String> cmbMasa;
+    private javax.swing.JComboBox<String> cmbTepi;
     private javax.swing.JComboBox<String> cmbUkuran;
     private javax.swing.JComboBox<String> cmbUterus;
     private widget.InternalFrame internalFrame1;
@@ -1493,8 +1528,11 @@ public final class RMHasilUSGGynecolog extends javax.swing.JDialog {
     private widget.Label jLabel47;
     private widget.Label jLabel48;
     private widget.Label jLabel49;
-    private widget.Label jLabel50;
     private widget.Label jLabel51;
+    private widget.Label jLabel52;
+    private widget.Label jLabel53;
+    private widget.Label jLabel54;
+    private widget.Label jLabel55;
     private widget.Label jLabel6;
     private widget.Label jLabel7;
     private widget.Label jLabel8;
@@ -1516,23 +1554,32 @@ public final class RMHasilUSGGynecolog extends javax.swing.JDialog {
         try{
             if(TCari.getText().trim().equals("")){
                 ps=koneksi.prepareStatement(
-                        "select reg_periksa.no_rawat,pasien.no_rkm_medis,pasien.nm_pasien,pasien.tgl_lahir,hasil_pemeriksaan_usg_gynecologi.tanggal,"+
-                        "hasil_pemeriksaan_usg_gynecologi.kd_dokter,dokter.nm_dokter,hasil_pemeriksaan_usg_gynecologi.diagnosa_klinis,hasil_pemeriksaan_usg_gynecologi.kiriman_dari,"+
-                        "hasil_pemeriksaan_usg_gynecologi.uterus,hasil_pemeriksaan_usg_gynecologi.parametrium,hasil_pemeriksaan_usg_gynecologi.ovarium,"+
-                        "hasil_pemeriksaan_usg_gynecologi.doppler,hasil_pemeriksaan_usg_gynecologi.kesimpulan from reg_periksa inner join pasien on reg_periksa.no_rkm_medis=pasien.no_rkm_medis "+
-                        "inner join hasil_pemeriksaan_usg_gynecologi on reg_periksa.no_rawat=hasil_pemeriksaan_usg_gynecologi.no_rawat "+
-                        "inner join dokter on hasil_pemeriksaan_usg_gynecologi.kd_dokter=dokter.kd_dokter where "+
-                        "hasil_pemeriksaan_usg_gynecologi.tanggal between ? and ? order by hasil_pemeriksaan_usg_gynecologi.tanggal");
+                        "select reg_periksa.no_rawat,pasien.no_rkm_medis,pasien.nm_pasien,pasien.tgl_lahir,usg_gynecologi.tanggal,"+
+                        "usg_gynecologi.kd_dokter,dokter.nm_dokter,usg_gynecologi.diagnosa_klinis,usg_gynecologi.kiriman_dari,"+
+                        "usg_gynecologi.uterus,usg_gynecologi.ukuran,usg_gynecologi.endometrium,usg_gynecologi.adnexa,"+
+                        "usg_gynecologi.ukuran_kanan,usg_gynecologi.ukuran_kiri,usg_gynecologi.bentuk,usg_gynecologi.batas,"+
+                        "usg_gynecologi.tepi,usg_gynecologi.kesimpulan from reg_periksa inner join pasien on reg_periksa.no_rkm_medis=pasien.no_rkm_medis "+
+                        "inner join usg_gynecologi on reg_periksa.no_rawat=usg_gynecologi.no_rawat "+
+                        "inner join dokter on usg_gynecologi.kd_dokter=dokter.kd_dokter where "+
+                        "usg_gynecologi.tanggal between ? and ? "+
+                        "and (reg_periksa.no_rawat like ? or pasien.no_rkm_medis like ? or pasien.nm_pasien like ? or "+
+                        "usg_gynecologi.kd_dokter like ? or dokter.nm_dokter like ?) "+
+                        "order by usg_gynecologi.tanggal"
+                );
             }else{
                 ps=koneksi.prepareStatement(
-                        "select reg_periksa.no_rawat,pasien.no_rkm_medis,pasien.nm_pasien,pasien.tgl_lahir,hasil_pemeriksaan_usg_gynecologi.tanggal,"+
-                        "hasil_pemeriksaan_usg_gynecologi.kd_dokter,dokter.nm_dokter,hasil_pemeriksaan_usg_gynecologi.diagnosa_klinis,hasil_pemeriksaan_usg_gynecologi.kiriman_dari,"+
-                        "hasil_pemeriksaan_usg_gynecologi.uterus,hasil_pemeriksaan_usg_gynecologi.parametrium,hasil_pemeriksaan_usg_gynecologi.ovarium,"+
-                        "hasil_pemeriksaan_usg_gynecologi.doppler,hasil_pemeriksaan_usg_gynecologi.kesimpulan from reg_periksa inner join pasien on reg_periksa.no_rkm_medis=pasien.no_rkm_medis "+
-                        "inner join hasil_pemeriksaan_usg_gynecologi on reg_periksa.no_rawat=hasil_pemeriksaan_usg_gynecologi.no_rawat "+
-                        "inner join dokter on hasil_pemeriksaan_usg_gynecologi.kd_dokter=dokter.kd_dokter where "+
-                        "hasil_pemeriksaan_usg_gynecologi.tanggal between ? and ? and (reg_periksa.no_rawat like ? or pasien.no_rkm_medis like ? or pasien.nm_pasien like ? or "+
-                        "hasil_pemeriksaan_usg_gynecologi.kd_dokter like ? or dokter.nm_dokter like ?) order by hasil_pemeriksaan_usg_gynecologi.tanggal");
+                        "select reg_periksa.no_rawat,pasien.no_rkm_medis,pasien.nm_pasien,pasien.tgl_lahir,usg_gynecologi.tanggal,"+
+                        "usg_gynecologi.kd_dokter,dokter.nm_dokter,usg_gynecologi.diagnosa_klinis,usg_gynecologi.kiriman_dari,"+
+                        "usg_gynecologi.uterus,usg_gynecologi.ukuran,usg_gynecologi.endometrium,usg_gynecologi.adnexa,"+
+                        "usg_gynecologi.ukuran_kanan,usg_gynecologi.ukuran_kiri,usg_gynecologi.bentuk,usg_gynecologi.batas,"+
+                        "usg_gynecologi.tepi,usg_gynecologi.kesimpulan from reg_periksa inner join pasien on reg_periksa.no_rkm_medis=pasien.no_rkm_medis "+
+                        "inner join usg_gynecologi on reg_periksa.no_rawat=usg_gynecologi.no_rawat "+
+                        "inner join dokter on usg_gynecologi.kd_dokter=dokter.kd_dokter where "+
+                        "usg_gynecologi.tanggal between ? and ? "+
+                        "and (reg_periksa.no_rawat like ? or pasien.no_rkm_medis like ? or pasien.nm_pasien like ? or "+
+                        "usg_gynecologi.kd_dokter like ? or dokter.nm_dokter like ?) "+
+                        "order by usg_gynecologi.tanggal"
+                );
             }
                 
             try {
@@ -1551,8 +1598,11 @@ public final class RMHasilUSGGynecolog extends javax.swing.JDialog {
                 rs=ps.executeQuery();
                 while(rs.next()){
                     tabMode.addRow(new Object[]{
-                        rs.getString("no_rawat"),rs.getString("no_rkm_medis"),rs.getString("nm_pasien"),rs.getDate("tgl_lahir"),rs.getString("kd_dokter"),rs.getString("nm_dokter"),rs.getString("tanggal"),
-                        rs.getString("kiriman_dari"),rs.getString("diagnosa_klinis"),rs.getString("uterus"),rs.getString("parametrium"),rs.getString("ovarium"),rs.getString("doppler"),rs.getString("kesimpulan")
+                        /*rs.getString("no_rawat"),rs.getString("no_rkm_medis"),rs.getString("nm_pasien"),rs.getDate("tgl_lahir"),rs.getString("kd_dokter"),rs.getString("nm_dokter"),rs.getString("tanggal"),
+                        rs.getString("kiriman_dari"),rs.getString("diagnosa_klinis"),rs.getString("uterus"),rs.getString("parametrium"),rs.getString("ovarium"),rs.getString("doppler"),rs.getString("kesimpulan")*/
+                        rs.getString("no_rawat"),rs.getString("no_rkm_medis"),rs.getString("nm_pasien"),rs.getDate("tgl_lahir"),rs.getString("kd_dokter"),rs.getString("nm_dokter"),rs.getString("tanggal"),rs.getString("kiriman_dari"),
+                        rs.getString("diagnosa_klinis"),rs.getString("uterus"),rs.getString("ukuran"),rs.getString("endometrium"),rs.getString("adnexa"),rs.getString("ukuran_kanan"),rs.getString("ukuran_kiri"),rs.getString("bentuk"),
+                        rs.getString("batas"),rs.getString("tepi"),rs.getString("kesimpulan")
                     });
                 }
             } catch (Exception e) {
@@ -1575,8 +1625,8 @@ public final class RMHasilUSGGynecolog extends javax.swing.JDialog {
     public void emptTeks() {
         KirimanDari.setText("");
         DiagnosaKlinis.setText("");
-        A.setText("");
-        B.setText("");
+        UkuranKanan.setText("");
+        UkuranKiri.setText("");
         Kesimpulan.setText("");
         Tanggal.setDate(new Date());
         TabRawat.setSelectedIndex(0);
@@ -1591,8 +1641,8 @@ public final class RMHasilUSGGynecolog extends javax.swing.JDialog {
             TglLahir.setText(tbObat.getValueAt(tbObat.getSelectedRow(),3).toString());
             KirimanDari.setText(tbObat.getValueAt(tbObat.getSelectedRow(),7).toString());
             DiagnosaKlinis.setText(tbObat.getValueAt(tbObat.getSelectedRow(),8).toString());
-            A.setText(tbObat.getValueAt(tbObat.getSelectedRow(),9).toString());
-            B.setText(tbObat.getValueAt(tbObat.getSelectedRow(),10).toString());
+            UkuranKanan.setText(tbObat.getValueAt(tbObat.getSelectedRow(),9).toString());
+            UkuranKiri.setText(tbObat.getValueAt(tbObat.getSelectedRow(),10).toString());
             Kesimpulan.setText(tbObat.getValueAt(tbObat.getSelectedRow(),11).toString());
             Valid.SetTgl2(Tanggal,tbObat.getValueAt(tbObat.getSelectedRow(),6).toString());
         }
@@ -1665,7 +1715,7 @@ public final class RMHasilUSGGynecolog extends javax.swing.JDialog {
     }
 
     private void hapus() {
-        if(Sequel.queryu2tf("delete from hasil_pemeriksaan_usg_gynecologi where no_rawat=?",1,new String[]{
+        if(Sequel.queryu2tf("delete from usg_gynecologi where no_rawat=?",1,new String[]{
             tbObat.getValueAt(tbObat.getSelectedRow(),0).toString()
         })==true){
             tabMode.removeRow(tbObat.getSelectedRow());
@@ -1679,7 +1729,7 @@ public final class RMHasilUSGGynecolog extends javax.swing.JDialog {
     private void ganti() {
         if(Sequel.mengedittf("hasil_pemeriksaan_usg_gynecologi","no_rawat=?","no_rawat=?,tanggal=?,kd_dokter=?,diagnosa_klinis=?,kiriman_dari=?,uterus=?,parametrium=?,ovarium=?,doppler=?,kesimpulan=?",11,new String[]{
                 TNoRw.getText(),TNoRM.getText(),TPasien.getText(),TglLahir.getText(),KdDokter.getText(),NmDokter.getText(),Valid.SetTgl(Tanggal.getSelectedItem()+"")+" "+Tanggal.getSelectedItem().toString().substring(11,19),
-                KirimanDari.getText(),DiagnosaKlinis.getText(),A.getText(),B.getText(),Kesimpulan.getText(),tbObat.getValueAt(tbObat.getSelectedRow(),0).toString()
+                KirimanDari.getText(),DiagnosaKlinis.getText(),UkuranKanan.getText(),UkuranKiri.getText(),Kesimpulan.getText(),tbObat.getValueAt(tbObat.getSelectedRow(),0).toString()
             })==true){
                 tbObat.setValueAt(TNoRw.getText(),tbObat.getSelectedRow(),0);
                 tbObat.setValueAt(TNoRM.getText(),tbObat.getSelectedRow(),1);
@@ -1690,8 +1740,8 @@ public final class RMHasilUSGGynecolog extends javax.swing.JDialog {
                 tbObat.setValueAt(Valid.SetTgl(Tanggal.getSelectedItem()+"")+" "+Tanggal.getSelectedItem().toString().substring(11,19),tbObat.getSelectedRow(),6);
                 tbObat.setValueAt(KirimanDari.getText(),tbObat.getSelectedRow(),7);
                 tbObat.setValueAt(DiagnosaKlinis.getText(),tbObat.getSelectedRow(),8);
-                tbObat.setValueAt(A.getText(),tbObat.getSelectedRow(),9);
-                tbObat.setValueAt(B.getText(),tbObat.getSelectedRow(),10);
+                tbObat.setValueAt(UkuranKanan.getText(),tbObat.getSelectedRow(),9);
+                tbObat.setValueAt(UkuranKiri.getText(),tbObat.getSelectedRow(),10);
                 tbObat.setValueAt(Kesimpulan.getText(),tbObat.getSelectedRow(),13);
                 emptTeks();
                 TabRawat.setSelectedIndex(1);
@@ -1768,13 +1818,17 @@ public final class RMHasilUSGGynecolog extends javax.swing.JDialog {
     }
 
     private void simpan() {
-        if(Sequel.menyimpantf("hasil_pemeriksaan_usg_gynecologi","?,?,?,?,?,?,?,?,?,?","No.Rawat",10,new String[]{
+        if(Sequel.menyimpantf("usg_gynecologi","?,?,?,?,?,?,?,?,?,?,?,?,?,?,?","No.Rawat",15,new String[]{
                 TNoRw.getText(),Valid.SetTgl(Tanggal.getSelectedItem()+"")+" "+Tanggal.getSelectedItem().toString().substring(11,19),KdDokter.getText(),
-                DiagnosaKlinis.getText(),KirimanDari.getText(),A.getText(),B.getText(),Kesimpulan.getText()
+                DiagnosaKlinis.getText(),KirimanDari.getText(),cmbUterus.getSelectedItem().toString(),cmbUkuran.getSelectedItem().toString(),cmbEndometrium.getSelectedItem().toString(),
+                cmbMasa.getSelectedItem().toString(),UkuranKanan.getText(),UkuranKiri.getText(),cmbBentuk.getSelectedItem().toString(),cmbBatas.getSelectedItem().toString(),
+                cmbTepi.getSelectedItem().toString(),Kesimpulan.getText()
             })==true){
                 tabMode.addRow(new Object[]{
-                    TNoRw.getText(),TNoRM.getText(),TPasien.getText(),TglLahir.getText(),KdDokter.getText(),NmDokter.getText(),Valid.SetTgl(Tanggal.getSelectedItem()+"")+" "+Tanggal.getSelectedItem().toString().substring(11,19),
-                    KirimanDari.getText(),DiagnosaKlinis.getText(),A.getText(),B.getText(),Kesimpulan.getText()
+                TNoRw.getText(),TNoRM.getText(),TPasien.getText(),TglLahir.getText(),KdDokter.getText(),NmDokter.getText(),Valid.SetTgl(Tanggal.getSelectedItem()+"")+" "+Tanggal.getSelectedItem().toString().substring(11,19),
+                KirimanDari.getText(),DiagnosaKlinis.getText(),KirimanDari.getText(),cmbUterus.getSelectedItem().toString(),cmbUkuran.getSelectedItem().toString(),cmbEndometrium.getSelectedItem().toString(),
+                cmbMasa.getSelectedItem().toString(),UkuranKanan.getText(),UkuranKiri.getText(),cmbBentuk.getSelectedItem().toString(),cmbBatas.getSelectedItem().toString(),
+                cmbTepi.getSelectedItem().toString(),Kesimpulan.getText()
                 });
                 emptTeks();
                 LCount.setText(""+tabMode.getRowCount());

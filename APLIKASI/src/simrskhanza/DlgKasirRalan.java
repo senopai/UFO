@@ -66,7 +66,6 @@ import javax.swing.JTextField;
 import javax.swing.event.DocumentEvent;
 import javax.swing.table.DefaultTableModel;
 import javax.swing.table.TableColumn;
-import javax.swing.SwingUtilities;
 import javax.swing.SwingWorker;
 import keuangan.DlgBilingParsialRalan;
 import keuangan.DlgCariPerawatanRalan;
@@ -123,10 +122,10 @@ import rekammedis.RMHasilPemeriksaanOCT;
 import rekammedis.RMHasilPemeriksaanSlitLamp;
 import rekammedis.RMHasilPemeriksaanTreadmill;
 import rekammedis.RMHasilPemeriksaanUSG;
-import rekammedis.RMHasilPemeriksaanUSGGynecologi;
 import rekammedis.RMHasilPemeriksaanUSGNeonatus;
 import rekammedis.RMHasilPemeriksaanUSGUrologi;
 import rekammedis.RMHasilTindakanESWL;
+import rekammedis.RMHasilUSGGynecolog;
 import rekammedis.RMKonselingFarmasi;
 import rekammedis.RMLaporanTindakan;
 import rekammedis.RMLayananKedokteranFisikRehabilitasi;
@@ -13941,7 +13940,7 @@ private void MnDataPemberianObatActionPerformed(java.awt.event.ActionEvent evt) 
         }else{
             if(tbKasirRalan.getSelectedRow()!= -1){
                 this.setCursor(Cursor.getPredefinedCursor(Cursor.WAIT_CURSOR));
-                RMHasilPemeriksaanUSGGynecologi form=new RMHasilPemeriksaanUSGGynecologi(null,false);
+                RMHasilUSGGynecolog form=new RMHasilUSGGynecolog(null,false);
                 form.isCek();
                 form.setSize(internalFrame1.getWidth()-20,internalFrame1.getHeight()-20);
                 form.setLocationRelativeTo(internalFrame1);
@@ -14068,7 +14067,6 @@ private void MnDataPemberianObatActionPerformed(java.awt.event.ActionEvent evt) 
                 form.setVisible(true);
                 form.emptTeks();
                 form.setNoRm(TNoRw.getText(),DTPCari2.getDate());
-                form.tampil();
                 this.setCursor(Cursor.getDefaultCursor());
             }
         }
