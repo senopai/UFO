@@ -1345,12 +1345,15 @@ public final class RMHasilUSGGynecolog extends javax.swing.JDialog {
             param.put("finger","Dikeluarkan di "+akses.getnamars()+", Kabupaten/Kota "+akses.getkabupatenrs()+"\nDitandatangani secara elektronik oleh "+tbObat.getValueAt(tbObat.getSelectedRow(),5).toString()+"\nID "+(finger.equals("")?tbObat.getValueAt(tbObat.getSelectedRow(),4).toString():finger)+"\n"+Valid.SetTgl3(tbObat.getValueAt(tbObat.getSelectedRow(),6).toString())); 
             
             Valid.MyReportqry("rptCetakHasilPemeriksaanUSGGynecologi.jasper","report","::[ Formulir Hasil Pemeriksaan USG ]::",
-                "select reg_periksa.no_rawat,pasien.no_rkm_medis,pasien.nm_pasien,pasien.tgl_lahir,hasil_pemeriksaan_usg_gynecologi.tanggal,"+
-                "hasil_pemeriksaan_usg_gynecologi.kd_dokter,dokter.nm_dokter,hasil_pemeriksaan_usg_gynecologi.diagnosa_klinis,hasil_pemeriksaan_usg_gynecologi.kiriman_dari,"+
-                "hasil_pemeriksaan_usg_gynecologi.uterus,hasil_pemeriksaan_usg_gynecologi.parametrium,hasil_pemeriksaan_usg_gynecologi.ovarium,"+
-                "hasil_pemeriksaan_usg_gynecologi.doppler,hasil_pemeriksaan_usg_gynecologi.kesimpulan from reg_periksa inner join pasien on reg_periksa.no_rkm_medis=pasien.no_rkm_medis "+
-                "inner join hasil_pemeriksaan_usg_gynecologi on reg_periksa.no_rawat=hasil_pemeriksaan_usg_gynecologi.no_rawat "+
-                "inner join dokter on hasil_pemeriksaan_usg_gynecologi.kd_dokter=dokter.kd_dokter where hasil_pemeriksaan_usg_gynecologi.no_rawat='"+tbObat.getValueAt(tbObat.getSelectedRow(),0).toString()+"'",param);
+                "select reg_periksa.no_rawat, pasien.no_rkm_medis, pasien.nm_pasien, pasien.tgl_lahir, usg_gynecologi.tanggal, "+
+                "usg_gynecologi.kd_dokter, dokter.nm_dokter, usg_gynecologi.diagnosa_klinis, usg_gynecologi.kiriman_dari, "+
+                "usg_gynecologi.uterus, usg_gynecologi.ukuran, usg_gynecologi.endometrium, usg_gynecologi.adnexa, "+
+                "usg_gynecologi.ukuran_kanan, usg_gynecologi.ukuran_kiri, usg_gynecologi.bentuk, usg_gynecologi.batas, "+
+                "usg_gynecologi.tepi, usg_gynecologi.kesimpulan " +
+                "from reg_periksa inner join pasien on reg_periksa.no_rkm_medis=pasien.no_rkm_medis "+
+                "inner join usg_gynecologi on reg_periksa.no_rawat=usg_gynecologi.no_rawat "+
+                "inner join dokter on usg_gynecologi.kd_dokter=dokter.kd_dokter " +
+                "where usg_gynecologi.no_rawat='"+tbObat.getValueAt(tbObat.getSelectedRow(),0).toString()+"'",param);
         }
     }//GEN-LAST:event_MnPenilaianMedisActionPerformed
 
@@ -1727,22 +1730,12 @@ public final class RMHasilUSGGynecolog extends javax.swing.JDialog {
     }
 
     private void ganti() {
-        if(Sequel.mengedittf("hasil_pemeriksaan_usg_gynecologi","no_rawat=?","no_rawat=?,tanggal=?,kd_dokter=?,diagnosa_klinis=?,kiriman_dari=?,uterus=?,parametrium=?,ovarium=?,doppler=?,kesimpulan=?",11,new String[]{
-                TNoRw.getText(),TNoRM.getText(),TPasien.getText(),TglLahir.getText(),KdDokter.getText(),NmDokter.getText(),Valid.SetTgl(Tanggal.getSelectedItem()+"")+" "+Tanggal.getSelectedItem().toString().substring(11,19),
-                KirimanDari.getText(),DiagnosaKlinis.getText(),UkuranKanan.getText(),UkuranKiri.getText(),Kesimpulan.getText(),tbObat.getValueAt(tbObat.getSelectedRow(),0).toString()
+        if(Sequel.mengedittf("usg_gynecologi","no_rawat=?","no_rawat=?,tanggal=?,kd_dokter=?,diagnosa_klinis=?,kiriman_dari=?,uterus=?,ukuran=?,endometrium=?,adnexa=?,ukuran_kanan=?,ukuran_kiri=?,bentuk=?,batas=?,tepi=?,kesimpulan=?",16,new String[]{
+                TNoRw.getText(),Valid.SetTgl(Tanggal.getSelectedItem()+"")+" "+Tanggal.getSelectedItem().toString().substring(11,19),KdDokter.getText(),DiagnosaKlinis.getText(),KirimanDari.getText(),cmbUterus.getSelectedItem().toString(),
+                cmbUkuran.getSelectedItem().toString(),cmbEndometrium.getSelectedItem().toString(),cmbMasa.getSelectedItem().toString(),UkuranKanan.getText(),UkuranKiri.getText(),cmbBentuk.getSelectedItem().toString(),cmbBatas.getSelectedItem().toString(),
+                cmbTepi.getSelectedItem().toString(),Kesimpulan.getText(),tbObat.getValueAt(tbObat.getSelectedRow(),0).toString()
             })==true){
-                tbObat.setValueAt(TNoRw.getText(),tbObat.getSelectedRow(),0);
-                tbObat.setValueAt(TNoRM.getText(),tbObat.getSelectedRow(),1);
-                tbObat.setValueAt(TPasien.getText(),tbObat.getSelectedRow(),2);
-                tbObat.setValueAt(TglLahir.getText(),tbObat.getSelectedRow(),3);
-                tbObat.setValueAt(KdDokter.getText(),tbObat.getSelectedRow(),4);
-                tbObat.setValueAt(NmDokter.getText(),tbObat.getSelectedRow(),5);
-                tbObat.setValueAt(Valid.SetTgl(Tanggal.getSelectedItem()+"")+" "+Tanggal.getSelectedItem().toString().substring(11,19),tbObat.getSelectedRow(),6);
-                tbObat.setValueAt(KirimanDari.getText(),tbObat.getSelectedRow(),7);
-                tbObat.setValueAt(DiagnosaKlinis.getText(),tbObat.getSelectedRow(),8);
-                tbObat.setValueAt(UkuranKanan.getText(),tbObat.getSelectedRow(),9);
-                tbObat.setValueAt(UkuranKiri.getText(),tbObat.getSelectedRow(),10);
-                tbObat.setValueAt(Kesimpulan.getText(),tbObat.getSelectedRow(),13);
+                tampil();
                 emptTeks();
                 TabRawat.setSelectedIndex(1);
         }

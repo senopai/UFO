@@ -10514,16 +10514,25 @@ private void BtnEditKeyPressed(java.awt.event.KeyEvent evt) {//GEN-FIRST:event_B
 
     private void tampilPemeriksaan() {
         Valid.tabelKosong(tabModePemeriksaan);
-        try{  
+        try{ 
+            //BAWAAN 
             ps4=koneksi.prepareStatement("select pemeriksaan_ranap.no_rawat,reg_periksa.no_rkm_medis,pasien.nm_pasien,"+
                 "pemeriksaan_ranap.tgl_perawatan,pemeriksaan_ranap.jam_rawat,pemeriksaan_ranap.suhu_tubuh,pemeriksaan_ranap.tensi, " +
                 "pemeriksaan_ranap.nadi,pemeriksaan_ranap.respirasi,pemeriksaan_ranap.tinggi, " +
                 "pemeriksaan_ranap.berat,pemeriksaan_ranap.spo2,pemeriksaan_ranap.gcs,pemeriksaan_ranap.kesadaran,pemeriksaan_ranap.keluhan, " +
                 "pemeriksaan_ranap.pemeriksaan,pemeriksaan_ranap.alergi,pemeriksaan_ranap.penilaian,pemeriksaan_ranap.rtl,"+
                 "pemeriksaan_ranap.instruksi,pemeriksaan_ranap.evaluasi,pemeriksaan_ranap.nip,pegawai.nama,pegawai.jbtn "+
+                    //TAMBAHAN
+                    //"konsultasi_perawat.no_permintaan,konsultasi_perawat.situation, "+
+                    //"jawaban_konsultasi_perawat.tanggal as tanggaljawaban,jawaban_konsultasi_perawat.respon, "+
+                    //"jawaban_konsultasi_perawat.instruksi as instruksi_perawat, jawaban_konsultasi_perawat.rencana "+
                 "from pasien inner join reg_periksa on reg_periksa.no_rkm_medis=pasien.no_rkm_medis "+
                 "inner join pemeriksaan_ranap on pemeriksaan_ranap.no_rawat=reg_periksa.no_rawat "+
-                "inner join pegawai on pemeriksaan_ranap.nip=pegawai.nik where "+
+                "inner join pegawai on pemeriksaan_ranap.nip=pegawai.nik "+
+                    //TAMBAHAN JOIN
+                    //"left join konsultasi_perawat on konsultasi_perawat.no_rawat = reg_periksa.no_rawat "+
+                    //"left join jawaban_konsultasi_perawat on jawaban_konsultasi_perawat.no_permintaan = konsultasi_perawat.no_permintaan "+
+                    "where "+
                 "pemeriksaan_ranap.tgl_perawatan between ? and ? and reg_periksa.no_rkm_medis like ? "+
                 (TCari.getText().trim().equals("")?"":"and (pemeriksaan_ranap.no_rawat like ? or reg_periksa.no_rkm_medis like ? or pasien.nm_pasien like ? or "+
                 "pemeriksaan_ranap.alergi like ? or pemeriksaan_ranap.keluhan like ? or pemeriksaan_ranap.penilaian like ? or "+
@@ -10555,6 +10564,53 @@ private void BtnEditKeyPressed(java.awt.event.KeyEvent evt) {//GEN-FIRST:event_B
                         rs.getString(16),rs.getString(17),rs.getString(18),rs.getString(19),
                         rs.getString(20),rs.getString(21),rs.getString(22),rs.getString(23),
                         rs.getString(24)
+                            
+        //BARIS 1
+        /*tabModePemeriksaan.addRow(new Object[]{
+        false,
+        rs.getString("no_rawat"),
+        rs.getString("no_rkm_medis"),
+        rs.getString("nm_pasien"),
+        rs.getString("tgl_perawatan"),
+        rs.getString("jam_rawat"),
+        rs.getString("suhu_tubuh"),
+        rs.getString("tensi"),
+        rs.getString("nadi"),
+        rs.getString("respirasi"),
+        rs.getString("tinggi"),
+        rs.getString("berat"),
+        rs.getString("spo2"),
+        rs.getString("gcs"),
+        rs.getString("kesadaran"),
+        rs.getString("keluhan"),
+        rs.getString("pemeriksaan"),
+        rs.getString("alergi"),
+        rs.getString("penilaian"),
+        rs.getString("rtl"),
+        rs.getString("instruksi"),
+        rs.getString("evaluasi"),
+        rs.getString("nip"),
+        rs.getString("nama"),
+        rs.getString("jbtn")
+    });
+        //BARIS 2
+        if (rs.getString("respon") != null) {
+
+        tabModePemeriksaan.addRow(new Object[]{
+            false,rs.getString("no_rawat"),rs.getString("no_rkm_medis"),rs.getString("nm_pasien"),
+            "-", "-", "-", "-", "-", "-", "-", "-", "-", "-", "-", "-", // 4–14
+                // 🔥 FIX POSISI
+            "KONSULTASI KE DOKTER",       // 15 Subjek
+            "-",                          // 16 Objek
+            rs.getString("situation"),    // 17 Alergi
+            rs.getString("respon"),       // 18 Asesmen
+            rs.getString("rencana"),      // 19 Plan
+            rs.getString("instruksi_perawat"), // 20 Instruksi
+            "-",                          // 21 Evaluasi
+            "-",                          // 22 NIP
+            "-",                          // 23 Dokter
+            "-",                          // 24 Profesi
+    });*/
                     });
                 }
             } catch (Exception e) {
