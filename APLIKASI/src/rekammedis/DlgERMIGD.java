@@ -1,41 +1,21 @@
 package rekammedis;
-import bridging.BPJSDataSEP;
-import bridging.BPJSSuratKontrol;
 import fungsi.koneksiDB;
 import fungsi.sekuel;
 import fungsi.validasi;
 import fungsi.akses;
 import java.awt.Cursor;
-import java.awt.Desktop;
 import java.awt.Dimension;
 import java.awt.Toolkit;
-import java.awt.event.KeyEvent;
 import java.awt.event.WindowEvent;
 import java.awt.event.WindowListener;
-import java.io.BufferedWriter;
-import java.io.File;
-import java.io.FileWriter;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import javax.swing.JOptionPane;
-import javax.swing.text.Document;
-import javax.swing.text.html.HTMLEditorKit;
-import javax.swing.text.html.StyleSheet;
 import kepegawaian.DlgCariDokter;
 import kepegawaian.DlgCariPetugas;
 import laporan.DlgDiagnosaPenyakit;
-import rekammedis.RMDataResumePasien;
-import rekammedis.RMPenilaianAwalKeperawatanBayiAnak;
-import rekammedis.RMPenilaianAwalKeperawatanKebidanan;
-import rekammedis.RMPenilaianAwalKeperawatanRalan;
-import rekammedis.RMPenilaianAwalKeperawatanRalanGeriatri;
-import rekammedis.RMPenilaianLanjutanRisikoJatuhAnak;
-import rekammedis.RMPenilaianLanjutanRisikoJatuhDewasa;
-import rekammedis.RMPenilaianLanjutanRisikoJatuhGeriatri;
-import rekammedis.RMPenilaianLanjutanRisikoJatuhLansia;
-import rekammedis.RMSkriningTBC;
-import rekammedis.RMTransferPasienAntarRuang;
+import permintaan.DlgPermintaanKonsultasiPerawat;
 
 public class DlgERMIGD extends javax.swing.JDialog {
     private sekuel Sequel=new sekuel();
@@ -153,6 +133,7 @@ public class DlgERMIGD extends javax.swing.JDialog {
         BtnPemantauanPEWSDewasa = new widget.ButtonBig();
         BtnTransferRuang = new widget.ButtonBig();
         BtnDiagnosa = new widget.ButtonBig();
+        BtnSBAR = new widget.ButtonBig();
         scrollInput1 = new widget.ScrollPane();
         FormInput1 = new widget.PanelBiasa();
         panelisi1 = new widget.panelisi();
@@ -469,6 +450,19 @@ public class DlgERMIGD extends javax.swing.JDialog {
         });
         FormInput.add(BtnDiagnosa);
 
+        BtnSBAR.setForeground(new java.awt.Color(0, 0, 0));
+        BtnSBAR.setIcon(new javax.swing.ImageIcon(getClass().getResource("/48x48/6071860_freelance_freelancer_job_occupation_worker_icon.png"))); // NOI18N
+        BtnSBAR.setText("Konsul SBAR");
+        BtnSBAR.setIconTextGap(0);
+        BtnSBAR.setName("BtnSBAR"); // NOI18N
+        BtnSBAR.setPreferredSize(new java.awt.Dimension(200, 90));
+        BtnSBAR.addActionListener(new java.awt.event.ActionListener() {
+            public void actionPerformed(java.awt.event.ActionEvent evt) {
+                BtnSBARActionPerformed(evt);
+            }
+        });
+        FormInput.add(BtnSBAR);
+
         scrollInput.setViewportView(FormInput);
 
         TabRekamMedis.addTab("ERM IGD", scrollInput);
@@ -755,6 +749,22 @@ private void KdKeyPressed(java.awt.event.KeyEvent evt) {//GEN-FIRST:event_TKdKey
         }// TODO add your handling code here:
     }//GEN-LAST:event_BtnTransferRuangActionPerformed
 
+    private void BtnSBARActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_BtnSBARActionPerformed
+        if (TNoRW.getText().equals("")) {
+            JOptionPane.showMessageDialog(null, "Maaf, Silahkan anda pilih dulu salah satu datanya pada tabel...!!!");
+        } else {
+            this.setCursor(Cursor.getPredefinedCursor(Cursor.WAIT_CURSOR));
+            DlgPermintaanKonsultasiPerawat form= new DlgPermintaanKonsultasiPerawat(null,false);
+            form.emptTeks();
+            form.isCek();
+            form.setSize(internalFrame1.getWidth()-20,internalFrame1.getHeight()-20);
+            form.setLocationRelativeTo(internalFrame1);
+            form.setVisible(true);
+            form.setNoRm(TNoRW.getText(),TNoRM.getText(),TNmPasien.getText());
+            this.setCursor(Cursor.getDefaultCursor());
+        }
+    }//GEN-LAST:event_BtnSBARActionPerformed
+
     /**
     * @param args the command line arguments
     */
@@ -783,6 +793,7 @@ private void KdKeyPressed(java.awt.event.KeyEvent evt) {//GEN-FIRST:event_TKdKey
     private widget.ButtonBig BtnPengkajianKeracunan;
     private widget.ButtonBig BtnPengkajianRestrain;
     private widget.Button BtnRefres;
+    private widget.ButtonBig BtnSBAR;
     private widget.ButtonBig BtnTransferRuang;
     private widget.ButtonBig BtnTriaseIGD;
     private widget.PanelBiasa FormInput;

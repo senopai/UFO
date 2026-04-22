@@ -6,25 +6,18 @@ import fungsi.sekuel;
 import fungsi.validasi;
 import fungsi.akses;
 import java.awt.Cursor;
-import java.awt.Desktop;
 import java.awt.Dimension;
 import java.awt.Toolkit;
-import java.awt.event.KeyEvent;
 import java.awt.event.WindowEvent;
 import java.awt.event.WindowListener;
-import java.io.BufferedWriter;
-import java.io.File;
-import java.io.FileWriter;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import javax.swing.JOptionPane;
-import javax.swing.text.Document;
-import javax.swing.text.html.HTMLEditorKit;
-import javax.swing.text.html.StyleSheet;
 import kepegawaian.DlgCariDokter;
 import kepegawaian.DlgCariPetugas;
 import laporan.DlgDiagnosaPenyakit;
+import permintaan.DlgPermintaanKonsultasiPerawat;
 
 public class DlgERMRalan extends javax.swing.JDialog {
     private sekuel Sequel=new sekuel();
@@ -144,6 +137,7 @@ public class DlgERMRalan extends javax.swing.JDialog {
         BtnSkriningTB = new widget.ButtonBig();
         BtnUSGKandungan = new widget.ButtonBig();
         BtnUSGGynekologi = new widget.ButtonBig();
+        BtnSBAR = new widget.ButtonBig();
         scrollInput1 = new widget.ScrollPane();
         FormInput1 = new widget.PanelBiasa();
         BtnDataSep = new widget.ButtonBig();
@@ -488,6 +482,19 @@ public class DlgERMRalan extends javax.swing.JDialog {
             }
         });
         FormInput.add(BtnUSGGynekologi);
+
+        BtnSBAR.setForeground(new java.awt.Color(0, 0, 0));
+        BtnSBAR.setIcon(new javax.swing.ImageIcon(getClass().getResource("/48x48/6071860_freelance_freelancer_job_occupation_worker_icon.png"))); // NOI18N
+        BtnSBAR.setText("Konsul SBAR");
+        BtnSBAR.setIconTextGap(0);
+        BtnSBAR.setName("BtnSBAR"); // NOI18N
+        BtnSBAR.setPreferredSize(new java.awt.Dimension(200, 90));
+        BtnSBAR.addActionListener(new java.awt.event.ActionListener() {
+            public void actionPerformed(java.awt.event.ActionEvent evt) {
+                BtnSBARActionPerformed(evt);
+            }
+        });
+        FormInput.add(BtnSBAR);
 
         scrollInput.setViewportView(FormInput);
 
@@ -897,6 +904,22 @@ private void KdKeyPressed(java.awt.event.KeyEvent evt) {//GEN-FIRST:event_TKdKey
         }
     }//GEN-LAST:event_BtnUSGGynekologiActionPerformed
 
+    private void BtnSBARActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_BtnSBARActionPerformed
+        if (TNoRW.getText().equals("")) {
+            JOptionPane.showMessageDialog(null, "Maaf, Silahkan anda pilih dulu salah satu datanya pada tabel...!!!");
+        } else {
+            this.setCursor(Cursor.getPredefinedCursor(Cursor.WAIT_CURSOR));
+            DlgPermintaanKonsultasiPerawat form= new DlgPermintaanKonsultasiPerawat(null,false);
+            form.emptTeks();
+            form.isCek();
+            form.setSize(internalFrame1.getWidth()-20,internalFrame1.getHeight()-20);
+            form.setLocationRelativeTo(internalFrame1);
+            form.setVisible(true);
+            form.setNoRm(TNoRW.getText(),TNoRM.getText(),TNmPasien.getText());
+            this.setCursor(Cursor.getDefaultCursor());
+        }
+    }//GEN-LAST:event_BtnSBARActionPerformed
+
     /**
     * @param args the command line arguments
     */
@@ -927,6 +950,7 @@ private void KdKeyPressed(java.awt.event.KeyEvent evt) {//GEN-FIRST:event_TKdKey
     private widget.ButtonBig BtnRisikoJatuhAnak;
     private widget.ButtonBig BtnRisikoJatuhGeriatri;
     private widget.ButtonBig BtnRisikoJatuhLansia;
+    private widget.ButtonBig BtnSBAR;
     private widget.ButtonBig BtnSkriningTB;
     private widget.ButtonBig BtnSurkon;
     private widget.ButtonBig BtnTransferRuang;
