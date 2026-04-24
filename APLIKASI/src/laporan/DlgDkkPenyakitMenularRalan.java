@@ -275,7 +275,7 @@ public final class DlgDkkPenyakitMenularRalan extends javax.swing.JDialog {
                     Sequel.menyimpan("temporary","'"+r+"','"+
                                     tabMode.getValueAt(r,0).toString().replaceAll("'","`") +"','"+
                                     tabMode.getValueAt(r,1).toString().replaceAll("'","`") +"','"+
-                                    tabMode.getValueAt(r,2).toString().replaceAll("RUMAH SAKIT","                              RUMAH SAKIT")+"','"+
+                                    tabMode.getValueAt(r,2).toString().replaceAll("RUMAH SAKIT","RUMAH SAKIT")+"','"+
                                     tabMode.getValueAt(r,3).toString().replaceAll("'","`")+"','"+
                                     tabMode.getValueAt(r,4).toString().replaceAll("'","`")+"','"+
                                     tabMode.getValueAt(r,5).toString().replaceAll("'","`")+"','"+
@@ -339,7 +339,6 @@ public final class DlgDkkPenyakitMenularRalan extends javax.swing.JDialog {
 }//GEN-LAST:event_tbBangsalKeyPressed
 
 private void BtnCari1ActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_BtnCari1ActionPerformed
-        
         tampil();
 }//GEN-LAST:event_BtnCari1ActionPerformed
 
@@ -516,5 +515,4 @@ private void BtnCari1KeyPressed(java.awt.event.KeyEvent evt) {//GEN-FIRST:event_
             TKd.setText(tabMode.getValueAt(row,0).toString());
         }
     }
-
 }

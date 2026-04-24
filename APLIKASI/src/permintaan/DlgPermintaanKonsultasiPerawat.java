@@ -1411,7 +1411,8 @@ private void ChkInputActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRS
                     WindowInput.setVisible(true);
                     Respon.requestFocus();
                 }else{
-                    if(KdDokterDikonsuli.getText().equals(akses.getkode())){
+                    if(KdDokterDikonsuli.getText().equals(akses.getkode()) 
+                        || KdPerawat.getText().equals(akses.getkode())){
                         NoPermintaanJawaban.setText(NoPermintaan.getText());
                         WindowInput.setAlwaysOnTop(false);
                         WindowInput.setVisible(true);

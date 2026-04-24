@@ -841,6 +841,7 @@ private void KdKeyPressed(java.awt.event.KeyEvent evt) {//GEN-FIRST:event_TKdKey
         BtnPemantauanPEWSAnak.setEnabled(akses.getpemantauan_pews_anak());
         BtnPemantauanPEWSDewasa.setEnabled(akses.getpemantauan_pews_dewasa());
         BtnTransferRuang.setEnabled(akses.gettransfer_pasien_antar_ruang());
+        BtnSBAR.setEnabled(akses.getkonsultasi_perawat());
     }
     
     public void setData(String norw, String norm, String nmpasien, 
@@ -929,6 +930,13 @@ private void KdKeyPressed(java.awt.event.KeyEvent evt) {//GEN-FIRST:event_TKdKey
         } else {
             BtnDiagnosa.setIcon(new javax.swing.ImageIcon(getClass().getResource("/48x48/verif.png")));
             BtnDiagnosa.setToolTipText("Diagnosa Pasien SUDAH diisi..!!!");
+        }
+        if (Sequel.cariInteger("select count(-1) from diagnosa_pasien where no_rawat='" + norawat + "'") == 0) {
+            BtnSBAR.setIcon(new javax.swing.ImageIcon(getClass().getResource("/picture/6071860_freelance_freelancer_job_occupation_worker_icon.png")));
+            BtnSBAR.setToolTipText("SBAR Pasien BELUM diisi..!!!");
+        } else {
+            BtnSBAR.setIcon(new javax.swing.ImageIcon(getClass().getResource("/48x48/verif.png")));
+            BtnSBAR.setToolTipText("SBAR Pasien SUDAH diisi..!!!");
         }
     }
 }
