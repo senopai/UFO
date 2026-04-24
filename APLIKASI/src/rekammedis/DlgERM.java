@@ -1698,7 +1698,7 @@ private void KdKeyPressed(java.awt.event.KeyEvent evt) {//GEN-FIRST:event_TKdKey
             BtnReakasiTranfusi.setIcon(new javax.swing.ImageIcon(getClass().getResource("/48x48/verif.png")));
             BtnReakasiTranfusi.setToolTipText("Reaksi Tranfusi Pasien Rawat Inap SUDAH diisi..!!!");
         }
-        if (Sequel.cariInteger("select count(-1) from monitoring_reaksi_tranfusi where no_rawat='" + norawat + "'") == 0) {
+        if (Sequel.cariInteger("select count(-1) from konsultasi_perawat where no_rawat='" + norawat + "'") == 0) {
             BtnSBAR.setIcon(new javax.swing.ImageIcon(getClass().getResource("/48x48/6071860_freelance_freelancer_job_occupation_worker_icon.png")));
             BtnSBAR.setToolTipText("SBAR Pasien Rawat Inap BELUM diisi..!!!");
         } else {

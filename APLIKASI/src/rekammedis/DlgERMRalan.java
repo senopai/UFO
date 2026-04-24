@@ -1110,21 +1110,21 @@ private void KdKeyPressed(java.awt.event.KeyEvent evt) {//GEN-FIRST:event_TKdKey
             BtnDiagnosa.setIcon(new javax.swing.ImageIcon(getClass().getResource("/48x48/verif.png")));
             BtnDiagnosa.setToolTipText("Diagnosa Pasien SUDAH diisi..!!!");
         }
-        if (Sequel.cariInteger("select count(-1) from diagnosa_pasien where no_rawat='" + norawat + "'") == 0) {
+        if (Sequel.cariInteger("select count(-1) from hasil_pemeriksaan_usg where no_rawat='" + norawat + "'") == 0) {
             BtnUSGKandungan.setIcon(new javax.swing.ImageIcon(getClass().getResource("/picture/375263_scan_scans_ultra sound_ultrasound_icon.png")));
             BtnUSGKandungan.setToolTipText("USG Kandungan Pasien BELUM diisi..!!!");
         } else {
             BtnUSGKandungan.setIcon(new javax.swing.ImageIcon(getClass().getResource("/48x48/verif.png")));
             BtnUSGKandungan.setToolTipText("USG Kandungan Pasien SUDAH diisi..!!!");
         }
-        if (Sequel.cariInteger("select count(-1) from diagnosa_pasien where no_rawat='" + norawat + "'") == 0) {
+        if (Sequel.cariInteger("select count(-1) from usg_gynecologi where no_rawat='" + norawat + "'") == 0) {
             BtnUSGGynekologi.setIcon(new javax.swing.ImageIcon(getClass().getResource("/picture/375257_uterus_icon.png")));
             BtnUSGGynekologi.setToolTipText("USG Gynekologi Pasien BELUM diisi..!!!");
         } else {
             BtnUSGGynekologi.setIcon(new javax.swing.ImageIcon(getClass().getResource("/48x48/verif.png")));
             BtnUSGGynekologi.setToolTipText("USG Gynekologi Pasien SUDAH diisi..!!!");
         }
-        if (Sequel.cariInteger("select count(-1) from diagnosa_pasien where no_rawat='" + norawat + "'") == 0) {
+        if (Sequel.cariInteger("select count(-1) from konsultasi_perawat where no_rawat='" + norawat + "'") == 0) {
             BtnSBAR.setIcon(new javax.swing.ImageIcon(getClass().getResource("/picture/6071860_freelance_freelancer_job_occupation_worker_icon.png")));
             BtnSBAR.setToolTipText("SBAR Pasien BELUM diisi..!!!");
         } else {
