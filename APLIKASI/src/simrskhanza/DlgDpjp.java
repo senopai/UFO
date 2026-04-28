@@ -38,6 +38,7 @@ import javax.swing.SwingUtilities;
 import javax.swing.event.DocumentEvent;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
+import java.util.concurrent.RejectedExecutionException;
 
 /**
  *
@@ -146,50 +147,6 @@ public class DlgDpjp extends javax.swing.JDialog {
         TNoRw.setDocument(new batasInput((byte)17).getKata(TNoRw));
         TCari.setDocument(new batasInput((byte)100).getKata(TCari));
         TCariPasien.setDocument(new batasInput((byte)20).getKata(TCariPasien));     
-        if(koneksiDB.CARICEPAT().equals("aktif")){
-            TCari.getDocument().addDocumentListener(new javax.swing.event.DocumentListener(){
-                @Override
-                public void insertUpdate(DocumentEvent e) {
-                    if(TCari.getText().length()>2){
-                        runBackground(() ->tampil());
-                    }
-                }
-                @Override
-                public void removeUpdate(DocumentEvent e) {
-                    if(TCari.getText().length()>2){
-                        runBackground(() ->tampil());
-                    }
-                }
-                @Override
-                public void changedUpdate(DocumentEvent e) {
-                    if(TCari.getText().length()>2){
-                        runBackground(() ->tampil());
-                    }
-                }
-            });
-        } 
-        if(koneksiDB.CARICEPAT().equals("aktif")){
-            Dokter.getDocument().addDocumentListener(new javax.swing.event.DocumentListener(){
-                @Override
-                public void insertUpdate(DocumentEvent e) {
-                    if(Dokter.getText().length()>2){
-                        runBackground(() ->tampildiagnosa());
-                    }
-                }
-                @Override
-                public void removeUpdate(DocumentEvent e) {
-                    if(Dokter.getText().length()>2){
-                        runBackground(() ->tampildiagnosa());
-                    }
-                }
-                @Override
-                public void changedUpdate(DocumentEvent e) {
-                    if(Dokter.getText().length()>2){
-                        runBackground(() ->tampildiagnosa());
-                    }
-                }
-            });
-        } 
         ChkInput.setSelected(false);
         isForm();
     }
@@ -966,6 +923,49 @@ private void ChkInputActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRS
 
     private void formWindowOpened(java.awt.event.WindowEvent evt) {//GEN-FIRST:event_formWindowOpened
         runBackground(() ->tampildiagnosa());
+        if(koneksiDB.CARICEPAT().equals("aktif")){
+            TCari.getDocument().addDocumentListener(new javax.swing.event.DocumentListener(){
+                @Override
+                public void insertUpdate(DocumentEvent e) {
+                    if(TCari.getText().length()>2){
+                        runBackground(() ->tampil());
+                    }
+                }
+                @Override
+                public void removeUpdate(DocumentEvent e) {
+                    if(TCari.getText().length()>2){
+                        runBackground(() ->tampil());
+                    }
+                }
+                @Override
+                public void changedUpdate(DocumentEvent e) {
+                    if(TCari.getText().length()>2){
+                        runBackground(() ->tampil());
+                    }
+                }
+            });
+        
+            Dokter.getDocument().addDocumentListener(new javax.swing.event.DocumentListener(){
+                @Override
+                public void insertUpdate(DocumentEvent e) {
+                    if(Dokter.getText().length()>2){
+                        runBackground(() ->tampildiagnosa());
+                    }
+                }
+                @Override
+                public void removeUpdate(DocumentEvent e) {
+                    if(Dokter.getText().length()>2){
+                        runBackground(() ->tampildiagnosa());
+                    }
+                }
+                @Override
+                public void changedUpdate(DocumentEvent e) {
+                    if(Dokter.getText().length()>2){
+                        runBackground(() ->tampildiagnosa());
+                    }
+                }
+            });
+        }
     }//GEN-LAST:event_formWindowOpened
 
     /**
@@ -1057,18 +1057,13 @@ private void ChkInputActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRS
                     ps2.setString(i,"%"+TCari.getText().trim()+"%");    
                     i++;
                     ps2.setString(i,"%"+TCari.getText().trim()+"%");   
-                    i++;
-                    ps2.setString(i,"%"+TCari.getText().trim()+"%"); 
                 }            
                      
                 rs=ps2.executeQuery();
                 while(rs.next()){
-                    TabModePasien.addRow(new Object[]{false,rs.getString(1),
-                                   rs.getString(2),
-                                   rs.getString(3),
-                                   rs.getString(4),
-                                   rs.getString(5),
-                                   rs.getString(6)});
+                    TabModePasien.addRow(new Object[]{
+                        false,rs.getString(1),rs.getString(2),rs.getString(3),rs.getString(4),rs.getString(5),rs.getString(6)
+                    });
                 }
             } catch (Exception e) {
                 System.out.println("Notifikasi : "+e);
@@ -1200,19 +1195,33 @@ private void ChkInputActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRS
     
     private void runBackground(Runnable task) {
         if (ceksukses) return;
+        if (executor.isShutdown() || executor.isTerminated()) return;
+        if (!isDisplayable()) return;
+
         ceksukses = true;
+        setCursor(Cursor.getPredefinedCursor(Cursor.WAIT_CURSOR));
 
-        this.setCursor(Cursor.getPredefinedCursor(Cursor.WAIT_CURSOR));
-
+        try {
         executor.submit(() -> {
             try {
                 task.run();
             } finally {
                 ceksukses = false;
                 SwingUtilities.invokeLater(() -> {
-                    this.setCursor(Cursor.getDefaultCursor());
+                        if (isDisplayable()) {
+                            setCursor(Cursor.getDefaultCursor());
+                        }
                 });
             }
         });
+        } catch (RejectedExecutionException ex) {
+            ceksukses = false;
+    }
+}
+    
+    @Override
+    public void dispose() {
+        executor.shutdownNow();
+        super.dispose();
     }
 }
