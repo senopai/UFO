@@ -287,6 +287,7 @@ public final class DlgKasirRalan extends javax.swing.JDialog {
     private boolean sukses=false,ceksukses=false;
     private Jurnal jur=new Jurnal();
     private double ttljmdokter=0,ttljmperawat=0,ttlkso=0,ttljasasarana=0,ttlbhp=0,ttlmenejemen=0,ttlpendapatan=0;
+    private java.util.HashSet<String> pasienTernotifikasi = new java.util.HashSet<>();
 
     /** Creates new form DlgReg
      * @param parent
@@ -6598,6 +6599,24 @@ public final class DlgKasirRalan extends javax.swing.JDialog {
             }
             if(evt.getClickCount()==1){
                 if(norawatdipilih.equals("")){
+                     
+                        // ✅ TAMBAHKAN DI SINI
+                    if(tbKasirRalan.getSelectedRow() != -1){
+                        String noRawatTabel = tbKasirRalan.getValueAt(tbKasirRalan.getSelectedRow(), 11).toString();
+                        String norm = tbKasirRalan.getValueAt(tbKasirRalan.getSelectedRow(), 2).toString();
+                            if (!pasienTernotifikasi.contains(noRawatTabel)) {
+                                javax.swing.SwingUtilities.invokeLater(new Runnable() {
+                                    @Override
+                                    public void run() {
+                                        int jumlah = Sequel.cariInteger("SELECT COUNT(*) FROM reg_periksa WHERE no_rkm_medis=? AND MONTH(tgl_registrasi)=MONTH(CURDATE()) AND YEAR(tgl_registrasi)=YEAR(CURDATE())", norm);
+                                        JOptionPane.showMessageDialog(null, "Pasien ini sudah berkunjung " + jumlah + "x di bulan ini.", "Notifikasi Kunjungan", JOptionPane.INFORMATION_MESSAGE);
+                                    }
+                                });
+                                pasienTernotifikasi.add(noRawatTabel);
+                                }
+                            }
+                    // ✅ END TAMBAHAN
+                    
                     i=tbKasirRalan.getSelectedColumn();
                     if(i==3){
                         if(catatanpasien.getTampilkanCatatan().equals("Yes")){
