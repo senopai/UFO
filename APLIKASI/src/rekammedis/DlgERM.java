@@ -135,6 +135,7 @@ public class DlgERM extends javax.swing.JDialog {
         BtnResumeInap = new widget.ButtonBig();
         BtnRencanaPemulangan = new widget.ButtonBig();
         BtnSBAR = new widget.ButtonBig();
+        BtnRekon = new widget.ButtonBig();
         scrollInput1 = new widget.ScrollPane();
         FormInput1 = new widget.PanelBiasa();
         BtnPreOperasi = new widget.ButtonBig();
@@ -539,6 +540,19 @@ public class DlgERM extends javax.swing.JDialog {
             }
         });
         FormInput.add(BtnSBAR);
+
+        BtnRekon.setForeground(new java.awt.Color(0, 0, 0));
+        BtnRekon.setIcon(new javax.swing.ImageIcon(getClass().getResource("/48x48/iconfinder_St_Patricks_Day_letter_Clover_Irish_Ireland_5830881.png"))); // NOI18N
+        BtnRekon.setText("Rekonsiliasi Obat");
+        BtnRekon.setIconTextGap(0);
+        BtnRekon.setName("BtnRekon"); // NOI18N
+        BtnRekon.setPreferredSize(new java.awt.Dimension(200, 90));
+        BtnRekon.addActionListener(new java.awt.event.ActionListener() {
+            public void actionPerformed(java.awt.event.ActionEvent evt) {
+                BtnRekonActionPerformed(evt);
+            }
+        });
+        FormInput.add(BtnRekon);
 
         scrollInput.setViewportView(FormInput);
 
@@ -1386,6 +1400,23 @@ private void KdKeyPressed(java.awt.event.KeyEvent evt) {//GEN-FIRST:event_TKdKey
         }
     }//GEN-LAST:event_BtnSBARActionPerformed
 
+    private void BtnRekonActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_BtnRekonActionPerformed
+        if (TNoRW.getText().equals("")) {
+            JOptionPane.showMessageDialog(null, "Maaf, Silahkan anda pilih dulu salah satu datanya pada tabel...!!!");
+        } else {
+            this.setCursor(Cursor.getPredefinedCursor(Cursor.WAIT_CURSOR));
+            akses.setform("DlgERM");
+            RMRekonsiliasiObat form = new RMRekonsiliasiObat (null, false);
+            form.emptTeks();
+            form.isCek();
+            form.setNoRm(TNoRW.getText(),TNoRM.getText(),TNmPasien.getText());
+            form.setSize(internalFrame1.getWidth(), internalFrame1.getHeight());
+            form.setLocationRelativeTo(internalFrame1);
+            form.setVisible(true);
+            this.setCursor(Cursor.getDefaultCursor());
+        }
+    }//GEN-LAST:event_BtnRekonActionPerformed
+
     /**
     * @param args the command line arguments
     */
@@ -1426,6 +1457,7 @@ private void KdKeyPressed(java.awt.event.KeyEvent evt) {//GEN-FIRST:event_TKdKey
     private widget.ButtonBig BtnPreOperasi;
     private widget.ButtonBig BtnReakasiTranfusi;
     private widget.Button BtnRefres;
+    private widget.ButtonBig BtnRekon;
     private widget.ButtonBig BtnRencanaPemulangan;
     private widget.ButtonBig BtnResumeInap;
     private widget.ButtonBig BtnRisikoJatuh;
@@ -1500,6 +1532,7 @@ private void KdKeyPressed(java.awt.event.KeyEvent evt) {//GEN-FIRST:event_TKdKey
         BtnGDS.setEnabled(akses.getcatatan_cek_gds());
         BtnReakasiTranfusi.setEnabled(akses.getmonitoring_reaksi_tranfusi());
         BtnSBAR.setEnabled(akses.getkonsultasi_perawat());
+        BtnRekon.setEnabled(akses.getrekonsiliasi_obat());
     }
     
     public void setData(String norw, String norm, String nmpasien,
@@ -1704,6 +1737,13 @@ private void KdKeyPressed(java.awt.event.KeyEvent evt) {//GEN-FIRST:event_TKdKey
         } else {
             BtnSBAR.setIcon(new javax.swing.ImageIcon(getClass().getResource("/48x48/verif.png")));
             BtnSBAR.setToolTipText("SBAR Pasien Rawat Inap SUDAH diisi..!!!");
+        }
+        if (Sequel.cariInteger("select count(-1) from rekonsiliasi_obat where no_rawat='" + norawat + "'") == 0) {
+            BtnRekon.setIcon(new javax.swing.ImageIcon(getClass().getResource("/48x48/iconfinder_St_Patricks_Day_letter_Clover_Irish_Ireland_5830881.png")));
+            BtnRekon.setToolTipText("Rekonsiliasi Obat Pasien Rawat Inap BELUM diisi..!!!");
+        } else {
+            BtnRekon.setIcon(new javax.swing.ImageIcon(getClass().getResource("/48x48/verif.png")));
+            BtnRekon.setToolTipText("Rekonsiliasi Obat Pasien Rawat Inap SUDAH diisi..!!!");
         }
     }
 }

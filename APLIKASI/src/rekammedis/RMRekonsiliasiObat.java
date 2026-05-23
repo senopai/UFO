@@ -515,6 +515,11 @@ public final class RMRekonsiliasiObat extends javax.swing.JDialog {
         TNoRw.setEditable(false);
         TNoRw.setHighlighter(null);
         TNoRw.setName("TNoRw"); // NOI18N
+        TNoRw.addActionListener(new java.awt.event.ActionListener() {
+            public void actionPerformed(java.awt.event.ActionEvent evt) {
+                TNoRwActionPerformed(evt);
+            }
+        });
         PanelInput.add(TNoRw);
         TNoRw.setBounds(98, 12, 128, 23);
 
@@ -535,7 +540,7 @@ public final class RMRekonsiliasiObat extends javax.swing.JDialog {
         PanelInput.add(jLabel9);
         jLabel9.setBounds(197, 40, 69, 23);
 
-        Tanggal.setModel(new javax.swing.DefaultComboBoxModel(new String[] { "13-07-2023" }));
+        Tanggal.setModel(new javax.swing.DefaultComboBoxModel(new String[] { "15-05-2026" }));
         Tanggal.setDisplayFormat("dd-MM-yyyy");
         Tanggal.setName("Tanggal"); // NOI18N
         Tanggal.setOpaque(false);
@@ -929,6 +934,10 @@ public final class RMRekonsiliasiObat extends javax.swing.JDialog {
         }
     }//GEN-LAST:event_BtnSimpanRekonKeyPressed
 
+    private void TNoRwActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_TNoRwActionPerformed
+        // TODO add your handling code here:
+    }//GEN-LAST:event_TNoRwActionPerformed
+
     /**
     * @param args the command line arguments
     */
@@ -1133,6 +1142,40 @@ public final class RMRekonsiliasiObat extends javax.swing.JDialog {
         PerubahanAturanPakai.setText("");
         TindakLanjut.setSelectedIndex(0);
         NamaObat.requestFocus();
+    }
+    
+    public void setNoRm(String norwt,String norm,String nama) {
+        TNoRw.setText(norwt);
+        TNoRM.setText(norm);
+        TPasien.setText(nama);
+        emptTeks();
+        isCek();
+        try {
+            ps=koneksi.prepareStatement(
+                    "select reg_periksa.no_rkm_medis,pasien.nm_pasien, if(pasien.jk='L','Laki-Laki','Perempuan') as jk,pasien.tgl_lahir,reg_periksa.tgl_registrasi "+
+                    "from reg_periksa inner join pasien on reg_periksa.no_rkm_medis=pasien.no_rkm_medis where reg_periksa.no_rawat=?");
+            try {
+                ps.setString(1,TNoRw.getText());
+                rs=ps.executeQuery();
+                if(rs.next()){
+                    TNoRM.setText(rs.getString("no_rkm_medis"));
+                    TPasien.setText(rs.getString("nm_pasien"));
+                    Jk.setText(rs.getString("jk"));
+                    TglLahir.setText(rs.getString("tgl_lahir"));
+                }
+            } catch (Exception e) {
+                System.out.println("Notif : "+e);
+            } finally{
+                if(rs!=null){
+                    rs.close();
+                }
+                if(ps!=null){
+                    ps.close();
+                }
+            }
+        } catch (Exception e) {
+            System.out.println("Notif : "+e);
+        }
     }
 
 }

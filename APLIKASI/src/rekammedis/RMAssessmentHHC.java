@@ -56,13 +56,14 @@ public final class RMAssessmentHHC extends javax.swing.JDialog {
         super(parent, modal);
         initComponents();
         this.setLocation(8,1);
-        setSize(800,674);
+        setSize(800,1200);
         Psikospiritual.setEditable(false);
         Implementasi.setEditable(false);
         Evaluasi.setEditable(false);
 
         tabMode = new DefaultTableModel(null, new Object[]{
-            "Tanggal", "No.Rawat", "No.R.M.", "Nama Pasien", "Total Skor", "Deskripsi", "Intervensi", "Implementasi", "Evaluasi", 
+            "Tanggal", "No.Rawat", "No.R.M.", "Nama Pasien", "Total Skor", "Diagnosa", // Tambahkan ini
+            "Deskripsi", "Intervensi", "Implementasi", "Evaluasi", 
             "Tgl.Lahir", "JK", "1. Ketaatan", "N. 1", "2. Penerimaan", "N. 2", 
             "3. Perasaan", "N. 3", "4. Masa Depan", "N. 4", "5. Ibadah", "N. 5", 
             "6. Kesembuhan", "N. 6", "7. Makna Agama", "N. 7", "NIP", "Nama Petugas"
@@ -71,21 +72,28 @@ public final class RMAssessmentHHC extends javax.swing.JDialog {
         };
         tbObat.setModel(tabMode);
 
-        tbObat.setPreferredScrollableViewportSize(new Dimension(500,500));
+        tbObat.setPreferredScrollableViewportSize(new Dimension(500,250));
         tbObat.setAutoResizeMode(JTable.AUTO_RESIZE_OFF);
 
-        for (i = 0; i < 27; i++) {
+        // Ubah batas looping menjadi 28 karena ada tambahan kolom Diagnosa
+        for (i = 0; i < 28; i++) { 
             TableColumn column = tbObat.getColumnModel().getColumn(i);
             if (i == 0) { column.setPreferredWidth(115); }       // Tanggal
             else if (i == 1) { column.setPreferredWidth(105); }  // No.Rawat
             else if (i == 2) { column.setPreferredWidth(70); }   // No.R.M.
             else if (i == 3) { column.setPreferredWidth(160); }  // Nama Pasien
             else if (i == 4) { column.setPreferredWidth(70); }   // Total Skor
-            else if (i == 5) { column.setPreferredWidth(250); }  // Deskripsi
-            else if (i == 6) { column.setPreferredWidth(150); }  // Intervensi
-            else if (i == 7) { column.setPreferredWidth(250); }  // Implementasi
-            else if (i == 8) { column.setPreferredWidth(250); }  // Evaluasi
+            
+            // --- INI ADALAH KOLOM BARU ---
+            else if (i == 5) { column.setPreferredWidth(250); }   // Diagnosa
+            // -----------------------------
+            
+            else if (i == 6) { column.setPreferredWidth(250); }  // Deskripsi (Keterangan)
+            else if (i == 7) { column.setPreferredWidth(150); }  // Intervensi
+            else if (i == 8) { column.setPreferredWidth(250); }  // Implementasi
+            else if (i == 9) { column.setPreferredWidth(250); }  // Evaluasi
             else { 
+                // Menyembunyikan kolom ke-10 sampai 27 (Skor mentah & NIP)
                 column.setMinWidth(0);
                 column.setMaxWidth(0);
                 column.setWidth(0);
@@ -262,6 +270,10 @@ public final class RMAssessmentHHC extends javax.swing.JDialog {
         TotalSkor = new widget.TextBox();
         jLabel232 = new widget.Label();
         cmbIntervensi = new widget.ComboBox();
+        jLabel33 = new widget.Label();
+        scrollPane4 = new widget.ScrollPane();
+        DiagnosaHHC = new widget.TextArea();
+        jSeparator6 = new javax.swing.JSeparator();
 
         jPopupMenu1.setName("jPopupMenu1"); // NOI18N
 
@@ -289,14 +301,14 @@ public final class RMAssessmentHHC extends javax.swing.JDialog {
         setUndecorated(true);
         setResizable(false);
 
-        internalFrame1.setBorder(javax.swing.BorderFactory.createTitledBorder(javax.swing.BorderFactory.createLineBorder(new java.awt.Color(240, 245, 235)), "::[ Skor Aldrette Pasca Anestesi (General Anastesi) ]::", javax.swing.border.TitledBorder.DEFAULT_JUSTIFICATION, javax.swing.border.TitledBorder.DEFAULT_POSITION, new java.awt.Font("Tahoma", 0, 11), new java.awt.Color(50, 50, 50))); // NOI18N
+        internalFrame1.setBorder(javax.swing.BorderFactory.createTitledBorder(javax.swing.BorderFactory.createLineBorder(new java.awt.Color(240, 245, 235)), "::[ Assessment HHC ]::", javax.swing.border.TitledBorder.DEFAULT_JUSTIFICATION, javax.swing.border.TitledBorder.DEFAULT_POSITION, new java.awt.Font("Tahoma", 0, 11), new java.awt.Color(50, 50, 50))); // NOI18N
         internalFrame1.setFont(new java.awt.Font("Tahoma", 2, 12)); // NOI18N
         internalFrame1.setName("internalFrame1"); // NOI18N
         internalFrame1.setLayout(new java.awt.BorderLayout(1, 1));
 
         Scroll.setName("Scroll"); // NOI18N
         Scroll.setOpaque(true);
-        Scroll.setPreferredSize(new java.awt.Dimension(452, 50));
+        Scroll.setPreferredSize(new java.awt.Dimension(452, 15));
 
         tbObat.setToolTipText("Silahkan klik untuk memilih data yang mau diedit ataupun dihapus");
         tbObat.setComponentPopupMenu(jPopupMenu1);
@@ -455,7 +467,7 @@ public final class RMAssessmentHHC extends javax.swing.JDialog {
         panelGlass9.add(jLabel19);
 
         DTPCari1.setForeground(new java.awt.Color(50, 70, 50));
-        DTPCari1.setModel(new javax.swing.DefaultComboBoxModel(new String[] { "02-03-2026" }));
+        DTPCari1.setModel(new javax.swing.DefaultComboBoxModel(new String[] { "19-05-2026" }));
         DTPCari1.setDisplayFormat("dd-MM-yyyy");
         DTPCari1.setName("DTPCari1"); // NOI18N
         DTPCari1.setOpaque(false);
@@ -469,7 +481,7 @@ public final class RMAssessmentHHC extends javax.swing.JDialog {
         panelGlass9.add(jLabel21);
 
         DTPCari2.setForeground(new java.awt.Color(50, 70, 50));
-        DTPCari2.setModel(new javax.swing.DefaultComboBoxModel(new String[] { "02-03-2026" }));
+        DTPCari2.setModel(new javax.swing.DefaultComboBoxModel(new String[] { "19-05-2026" }));
         DTPCari2.setDisplayFormat("dd-MM-yyyy");
         DTPCari2.setName("DTPCari2"); // NOI18N
         DTPCari2.setOpaque(false);
@@ -555,7 +567,7 @@ public final class RMAssessmentHHC extends javax.swing.JDialog {
         PanelInput.add(ChkInput, java.awt.BorderLayout.PAGE_END);
 
         scrollInput.setName("scrollInput"); // NOI18N
-        scrollInput.setPreferredSize(new java.awt.Dimension(102, 570));
+        scrollInput.setPreferredSize(new java.awt.Dimension(102, 700));
 
         FormInput.setBackground(new java.awt.Color(250, 255, 245));
         FormInput.setBorder(null);
@@ -590,7 +602,7 @@ public final class RMAssessmentHHC extends javax.swing.JDialog {
         TPasien.setBounds(326, 10, 285, 23);
 
         Tanggal.setForeground(new java.awt.Color(50, 70, 50));
-        Tanggal.setModel(new javax.swing.DefaultComboBoxModel(new String[] { "02-03-2026" }));
+        Tanggal.setModel(new javax.swing.DefaultComboBoxModel(new String[] { "19-05-2026" }));
         Tanggal.setDisplayFormat("dd-MM-yyyy");
         Tanggal.setName("Tanggal"); // NOI18N
         Tanggal.setOpaque(false);
@@ -897,6 +909,11 @@ public final class RMAssessmentHHC extends javax.swing.JDialog {
                 cmbSkor4ItemStateChanged(evt);
             }
         });
+        cmbSkor4.addActionListener(new java.awt.event.ActionListener() {
+            public void actionPerformed(java.awt.event.ActionEvent evt) {
+                cmbSkor4ActionPerformed(evt);
+            }
+        });
         cmbSkor4.addKeyListener(new java.awt.event.KeyAdapter() {
             public void keyPressed(java.awt.event.KeyEvent evt) {
                 cmbSkor4KeyPressed(evt);
@@ -1073,6 +1090,36 @@ public final class RMAssessmentHHC extends javax.swing.JDialog {
         FormInput.add(cmbIntervensi);
         cmbIntervensi.setBounds(340, 120, 330, 23);
 
+        jLabel33.setHorizontalAlignment(javax.swing.SwingConstants.LEFT);
+        jLabel33.setText("Diagnosa HHC");
+        jLabel33.setName("jLabel33"); // NOI18N
+        FormInput.add(jLabel33);
+        jLabel33.setBounds(820, 310, 280, 23);
+
+        scrollPane4.setBorder(javax.swing.BorderFactory.createLineBorder(new java.awt.Color(0, 0, 0)));
+        scrollPane4.setName("scrollPane4"); // NOI18N
+
+        DiagnosaHHC.setBorder(javax.swing.BorderFactory.createEmptyBorder(1, 1, 1, 1));
+        DiagnosaHHC.setColumns(20);
+        DiagnosaHHC.setRows(5);
+        DiagnosaHHC.setName("DiagnosaHHC"); // NOI18N
+        DiagnosaHHC.addKeyListener(new java.awt.event.KeyAdapter() {
+            public void keyPressed(java.awt.event.KeyEvent evt) {
+                DiagnosaHHCKeyPressed(evt);
+            }
+        });
+        scrollPane4.setViewportView(DiagnosaHHC);
+
+        FormInput.add(scrollPane4);
+        scrollPane4.setBounds(840, 330, 420, 43);
+
+        jSeparator6.setBackground(new java.awt.Color(239, 244, 234));
+        jSeparator6.setForeground(new java.awt.Color(239, 244, 234));
+        jSeparator6.setBorder(javax.swing.BorderFactory.createLineBorder(new java.awt.Color(239, 244, 234)));
+        jSeparator6.setName("jSeparator6"); // NOI18N
+        FormInput.add(jSeparator6);
+        jSeparator6.setBounds(810, 310, 810, 1);
+
         scrollInput.setViewportView(FormInput);
 
         PanelInput.add(scrollInput, java.awt.BorderLayout.CENTER);
@@ -1080,7 +1127,6 @@ public final class RMAssessmentHHC extends javax.swing.JDialog {
         internalFrame1.add(PanelInput, java.awt.BorderLayout.PAGE_START);
 
         getContentPane().add(internalFrame1, java.awt.BorderLayout.CENTER);
-        internalFrame1.getAccessibleContext().setAccessibleName("::[ Assessment HHC ]::");
 
         pack();
     }// </editor-fold>//GEN-END:initComponents
@@ -1234,7 +1280,7 @@ public final class RMAssessmentHHC extends javax.swing.JDialog {
                 Valid.MyReportqry("rptAssessmentHHC.jasper","report","::[ Data Assessment Psikospiritual HHC ]::",
                     "select reg_periksa.no_rawat, pasien.no_rkm_medis, pasien.nm_pasien, pasien.jk, pasien.tgl_lahir, p.tanggal, "+
                     "p.skor1, p.nilai1, p.skor2, p.nilai2, p.skor3, p.nilai3, p.skor4, p.nilai4, p.skor5, p.nilai5, p.skor6, p.nilai6, p.skor7, p.nilai7, "+
-                    "p.total_skor, p.keterangan_psikospiritual, p.intervensi, p.implementasi, p.evaluasi, p.nip, petugas.nama "+
+                    "p.total_skor, p.diagnosa_hhc as diagnosa, p.keterangan_psikospiritual, p.intervensi, p.implementasi, p.evaluasi, p.nip, petugas.nama "+
                     "from penilaian_psikospiritual_hhc p inner join reg_periksa on p.no_rawat=reg_periksa.no_rawat "+
                     "inner join pasien on reg_periksa.no_rkm_medis=pasien.no_rkm_medis "+
                     "inner join petugas on p.nip=petugas.nip where "+
@@ -1244,7 +1290,7 @@ public final class RMAssessmentHHC extends javax.swing.JDialog {
                 Valid.MyReportqry("rptAssessmentHHC.jasper","report","::[ Data Assessment Psikospiritual HHC ]::",
                     "select reg_periksa.no_rawat, pasien.no_rkm_medis, pasien.nm_pasien, pasien.jk, pasien.tgl_lahir, p.tanggal, "+
                     "p.skor1, p.nilai1, p.skor2, p.nilai2, p.skor3, p.nilai3, p.skor4, p.nilai4, p.skor5, p.nilai5, p.skor6, p.nilai6, p.skor7, p.nilai7, "+
-                    "p.total_skor, p.keterangan_psikospiritual, p.intervensi, p.implementasi, p.evaluasi, p.nip, petugas.nama "+
+                    "p.total_skor, p.diagnosa_hhc as diagnosa, p.keterangan_psikospiritual, p.intervensi, p.implementasi, p.evaluasi, p.nip, petugas.nama "+
                     "from penilaian_psikospiritual_hhc p inner join reg_periksa on p.no_rawat=reg_periksa.no_rawat "+
                     "inner join pasien on reg_periksa.no_rkm_medis=pasien.no_rkm_medis "+
                     "inner join petugas on p.nip=petugas.nip where "+
@@ -1354,7 +1400,7 @@ public final class RMAssessmentHHC extends javax.swing.JDialog {
             Valid.MyReportqry("rptAssessmentHHC.jasper", "report", "::[ Laporan Assessment HHC ]::",
                     "select reg_periksa.no_rawat, pasien.no_rkm_medis, pasien.nm_pasien, pasien.jk, pasien.tgl_lahir, p.tanggal, "+
                     "p.skor1, p.nilai1, p.skor2, p.nilai2, p.skor3, p.nilai3, p.skor4, p.nilai4, p.skor5, p.nilai5, p.skor6, p.nilai6, p.skor7, p.nilai7, "+
-                    "p.total_skor, p.keterangan_psikospiritual, p.intervensi, p.implementasi, p.evaluasi, p.nip, petugas.nama "+
+                    "p.total_skor, p.diagnosa_hhc as diagnosa, p.keterangan_psikospiritual, p.intervensi, p.implementasi, p.evaluasi, p.nip, petugas.nama "+
                     "from penilaian_psikospiritual_hhc p inner join reg_periksa on p.no_rawat=reg_periksa.no_rawat "+
                     "inner join pasien on reg_periksa.no_rkm_medis=pasien.no_rkm_medis "+
                     "inner join petugas on p.nip=petugas.nip where p.no_rawat='" + tbObat.getValueAt(tbObat.getSelectedRow(),1).toString() + "' " +
@@ -1471,6 +1517,14 @@ public final class RMAssessmentHHC extends javax.swing.JDialog {
         Valid.pindah2(evt,Psikospiritual,Implementasi);
     }//GEN-LAST:event_PsikospiritualKeyPressed
 
+    private void DiagnosaHHCKeyPressed(java.awt.event.KeyEvent evt) {//GEN-FIRST:event_DiagnosaHHCKeyPressed
+        // TODO add your handling code here:
+    }//GEN-LAST:event_DiagnosaHHCKeyPressed
+
+    private void cmbSkor4ActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_cmbSkor4ActionPerformed
+        // TODO add your handling code here:
+    }//GEN-LAST:event_cmbSkor4ActionPerformed
+
     /**
     * @param args the command line arguments
     */
@@ -1501,6 +1555,7 @@ public final class RMAssessmentHHC extends javax.swing.JDialog {
     private widget.Tanggal DTPCari1;
     private widget.Tanggal DTPCari2;
     private widget.ComboBox Detik;
+    private widget.TextArea DiagnosaHHC;
     private widget.TextArea Evaluasi;
     private widget.PanelBiasa FormInput;
     private widget.TextArea Implementasi;
@@ -1562,6 +1617,7 @@ public final class RMAssessmentHHC extends javax.swing.JDialog {
     private widget.Label jLabel30;
     private widget.Label jLabel31;
     private widget.Label jLabel32;
+    private widget.Label jLabel33;
     private widget.Label jLabel4;
     private widget.Label jLabel57;
     private widget.Label jLabel58;
@@ -1575,12 +1631,14 @@ public final class RMAssessmentHHC extends javax.swing.JDialog {
     private javax.swing.JSeparator jSeparator3;
     private javax.swing.JSeparator jSeparator4;
     private javax.swing.JSeparator jSeparator5;
+    private javax.swing.JSeparator jSeparator6;
     private widget.panelisi panelGlass8;
     private widget.panelisi panelGlass9;
     private widget.ScrollPane scrollInput;
     private widget.ScrollPane scrollPane1;
     private widget.ScrollPane scrollPane2;
     private widget.ScrollPane scrollPane3;
+    private widget.ScrollPane scrollPane4;
     private widget.Table tbObat;
     // End of variables declaration//GEN-END:variables
     
@@ -1591,7 +1649,7 @@ public final class RMAssessmentHHC extends javax.swing.JDialog {
                 ps=koneksi.prepareStatement(
                     "select reg_periksa.no_rawat, pasien.no_rkm_medis, pasien.nm_pasien, pasien.jk, pasien.tgl_lahir, p.tanggal, "+
                     "p.skor1, p.nilai1, p.skor2, p.nilai2, p.skor3, p.nilai3, p.skor4, p.nilai4, p.skor5, p.nilai5, p.skor6, p.nilai6, p.skor7, p.nilai7, "+
-                    "p.total_skor, p.keterangan_psikospiritual, p.intervensi, p.implementasi, p.evaluasi, p.nip, petugas.nama "+
+                    "p.total_skor, p.diagnosa_hhc, p.keterangan_psikospiritual, p.intervensi, p.implementasi, p.evaluasi, p.nip, petugas.nama "+
                     "from penilaian_psikospiritual_hhc p inner join reg_periksa on p.no_rawat=reg_periksa.no_rawat "+
                     "inner join pasien on reg_periksa.no_rkm_medis=pasien.no_rkm_medis "+
                     "inner join petugas on p.nip=petugas.nip where "+
@@ -1600,7 +1658,7 @@ public final class RMAssessmentHHC extends javax.swing.JDialog {
                 ps=koneksi.prepareStatement(
                     "select reg_periksa.no_rawat, pasien.no_rkm_medis, pasien.nm_pasien, pasien.jk, pasien.tgl_lahir, p.tanggal, "+
                     "p.skor1, p.nilai1, p.skor2, p.nilai2, p.skor3, p.nilai3, p.skor4, p.nilai4, p.skor5, p.nilai5, p.skor6, p.nilai6, p.skor7, p.nilai7, "+
-                    "p.total_skor, p.keterangan_psikospiritual, p.intervensi, p.implementasi, p.evaluasi, p.nip, petugas.nama "+
+                    "p.total_skor, p.diagnosa_hhc, p.keterangan_psikospiritual, p.intervensi, p.implementasi, p.evaluasi, p.nip, petugas.nama "+
                     "from penilaian_psikospiritual_hhc p inner join reg_periksa on p.no_rawat=reg_periksa.no_rawat "+
                     "inner join pasien on reg_periksa.no_rkm_medis=pasien.no_rkm_medis "+
                     "inner join petugas on p.nip=petugas.nip where "+
@@ -1627,7 +1685,7 @@ public final class RMAssessmentHHC extends javax.swing.JDialog {
                 while(rs.next()){
                     tabMode.addRow(new Object[]{
                         rs.getString("tanggal"), rs.getString("no_rawat"), rs.getString("no_rkm_medis"), rs.getString("nm_pasien"), 
-                        rs.getString("total_skor"), rs.getString("keterangan_psikospiritual"), rs.getString("intervensi"), rs.getString("implementasi"), rs.getString("evaluasi"), 
+                        rs.getString("total_skor"), rs.getString("diagnosa_hhc"), rs.getString("keterangan_psikospiritual"), rs.getString("intervensi"), rs.getString("implementasi"), rs.getString("evaluasi"), 
                         rs.getDate("tgl_lahir"), rs.getString("jk"), 
                         rs.getString("skor1"), rs.getString("nilai1"), rs.getString("skor2"), rs.getString("nilai2"), 
                         rs.getString("skor3"), rs.getString("nilai3"), rs.getString("skor4"), rs.getString("nilai4"), 
@@ -1645,7 +1703,7 @@ public final class RMAssessmentHHC extends javax.swing.JDialog {
                     ps.close();
                 }
             }
-        }catch(SQLException e){
+        }catch(Exception e){
             System.out.println("Notifikasi : "+e);
         }
         LCount.setText(""+tabMode.getRowCount());
@@ -1747,6 +1805,8 @@ public final class RMAssessmentHHC extends javax.swing.JDialog {
                     Double.parseDouble(Skor7.getText().trim())
             ));
         }
+        isHitung();
+        isDiagnosa();
     }
     
     private void isHitung(){
@@ -1782,6 +1842,48 @@ public final class RMAssessmentHHC extends javax.swing.JDialog {
         }
     }
     
+    private void isDiagnosa() {
+        try {
+            // Memastikan skor tidak kosong, jika kosong dianggap 0
+            int s2 = Skor2.getText().trim().isEmpty() ? 0 : Integer.parseInt(Skor2.getText().trim());
+            int s3 = Skor3.getText().trim().isEmpty() ? 0 : Integer.parseInt(Skor3.getText().trim());
+            int s4 = Skor4.getText().trim().isEmpty() ? 0 : Integer.parseInt(Skor4.getText().trim());
+
+            int s5 = Skor5.getText().trim().isEmpty() ? 0 : Integer.parseInt(Skor5.getText().trim());
+            int s6 = Skor6.getText().trim().isEmpty() ? 0 : Integer.parseInt(Skor6.getText().trim());
+            int s7 = Skor7.getText().trim().isEmpty() ? 0 : Integer.parseInt(Skor7.getText().trim());
+
+            // Menghitung total masing-masing kriteria
+            int totalAcceptance = s2 + s3 + s4;
+            int totalObedient = s5 + s6 + s7;
+
+            // Menentukan Status Kriteria Pertama
+            // Asumsi: jika total < 3 (misal 0 karena belum diisi), kita anggap kosong/belum dihitung
+            if (totalAcceptance == 0 || totalObedient == 0) {
+                DiagnosaHHC.setText("");
+                return;
+            }
+
+            String statusAcceptance = (totalAcceptance > 8) ? "POSITIF" : "NEGATIF";
+            String statusObedient = (totalObedient > 8) ? "POSITIF" : "NEGATIF";
+
+            String hasilDiagnosa = "";
+            if (statusAcceptance.equals("NEGATIF") && statusObedient.equals("NEGATIF")) {
+                hasilDiagnosa = "SORROW => Acceptance (-) , Obedient (-)";
+            } else if (statusAcceptance.equals("POSITIF") && statusObedient.equals("NEGATIF")) {
+                hasilDiagnosa = "GUIDE => Obedient (-) , Acceptance (+)";
+            } else if (statusAcceptance.equals("NEGATIF") && statusObedient.equals("POSITIF")) {
+                hasilDiagnosa = "REVIVE => Acceptance (-) , Obedient (+)";
+            } else if (statusAcceptance.equals("POSITIF") && statusObedient.equals("POSITIF")) {
+                hasilDiagnosa = "NIRVANA => Obedient (+) , Acceptance (+)";
+            }
+
+            DiagnosaHHC.setText(hasilDiagnosa);
+        } catch (Exception e) {
+            DiagnosaHHC.setText("");
+        }
+    }
+    
     public void emptTeks() {
         Tanggal.setDate(new Date());
         
@@ -1814,7 +1916,7 @@ public final class RMAssessmentHHC extends javax.swing.JDialog {
         Skor7.setForeground(new Color(50,50,50));
         
         cmbIntervensi.setSelectedIndex(0);
-        
+        DiagnosaHHC.setText("");
         isCombo1();
         isCombo2();
         isCombo3();
@@ -1829,37 +1931,53 @@ public final class RMAssessmentHHC extends javax.swing.JDialog {
 
     private void getData() {
         if(tbObat.getSelectedRow()!= -1){
+            // 0: Tanggal & Waktu
             Valid.SetTgl(Tanggal,tbObat.getValueAt(tbObat.getSelectedRow(),0).toString());
             Jam.setSelectedItem(tbObat.getValueAt(tbObat.getSelectedRow(),0).toString().substring(11,13));
             Menit.setSelectedItem(tbObat.getValueAt(tbObat.getSelectedRow(),0).toString().substring(14,16));
             Detik.setSelectedItem(tbObat.getValueAt(tbObat.getSelectedRow(),0).toString().substring(17,19));
             
+            // 1 - 4: Data Pasien & Skor
             TNoRw.setText(tbObat.getValueAt(tbObat.getSelectedRow(),1).toString()); 
             TNoRM.setText(tbObat.getValueAt(tbObat.getSelectedRow(),2).toString());
             TPasien.setText(tbObat.getValueAt(tbObat.getSelectedRow(),3).toString());
             TotalSkor.setText(tbObat.getValueAt(tbObat.getSelectedRow(),4).toString());
-            Psikospiritual.setText(tbObat.getValueAt(tbObat.getSelectedRow(),5).toString());
-            cmbIntervensi.setSelectedItem(tbObat.getValueAt(tbObat.getSelectedRow(),6).toString());
-            Implementasi.setText(tbObat.getValueAt(tbObat.getSelectedRow(),7).toString());
-            Evaluasi.setText(tbObat.getValueAt(tbObat.getSelectedRow(),8).toString());
-
-            TglLahir.setText(tbObat.getValueAt(tbObat.getSelectedRow(),9).toString());
-            JK.setText(tbObat.getValueAt(tbObat.getSelectedRow(),10).toString());
             
-            cmbSkor1.setSelectedItem(tbObat.getValueAt(tbObat.getSelectedRow(),11).toString());
-            Skor1.setText(tbObat.getValueAt(tbObat.getSelectedRow(),12).toString());
-            cmbSkor2.setSelectedItem(tbObat.getValueAt(tbObat.getSelectedRow(),13).toString());
-            Skor2.setText(tbObat.getValueAt(tbObat.getSelectedRow(),14).toString());
-            cmbSkor3.setSelectedItem(tbObat.getValueAt(tbObat.getSelectedRow(),15).toString());
-            Skor3.setText(tbObat.getValueAt(tbObat.getSelectedRow(),16).toString());
-            cmbSkor4.setSelectedItem(tbObat.getValueAt(tbObat.getSelectedRow(),17).toString());
-            Skor4.setText(tbObat.getValueAt(tbObat.getSelectedRow(),18).toString());
-            cmbSkor5.setSelectedItem(tbObat.getValueAt(tbObat.getSelectedRow(),19).toString());
-            Skor5.setText(tbObat.getValueAt(tbObat.getSelectedRow(),20).toString());
-            cmbSkor6.setSelectedItem(tbObat.getValueAt(tbObat.getSelectedRow(),21).toString());
-            Skor6.setText(tbObat.getValueAt(tbObat.getSelectedRow(),22).toString());
-            cmbSkor7.setSelectedItem(tbObat.getValueAt(tbObat.getSelectedRow(),23).toString());
-            Skor7.setText(tbObat.getValueAt(tbObat.getSelectedRow(),24).toString());
+            // 5 - 9: Diagnosa, Keterangan, Intervensi, Implementasi, Evaluasi
+            DiagnosaHHC.setText(tbObat.getValueAt(tbObat.getSelectedRow(),5).toString()); 
+            Psikospiritual.setText(tbObat.getValueAt(tbObat.getSelectedRow(),6).toString());
+            cmbIntervensi.setSelectedItem(tbObat.getValueAt(tbObat.getSelectedRow(),7).toString());
+            Implementasi.setText(tbObat.getValueAt(tbObat.getSelectedRow(),8).toString());
+            Evaluasi.setText(tbObat.getValueAt(tbObat.getSelectedRow(),9).toString());
+
+            // 10 - 11: Info Tambahan
+            TglLahir.setText(tbObat.getValueAt(tbObat.getSelectedRow(),10).toString());
+            JK.setText(tbObat.getValueAt(tbObat.getSelectedRow(),11).toString());
+            
+            // 12 - 25: Rincian Skor
+            cmbSkor1.setSelectedItem(tbObat.getValueAt(tbObat.getSelectedRow(),12).toString());
+            Skor1.setText(tbObat.getValueAt(tbObat.getSelectedRow(),13).toString());
+            
+            cmbSkor2.setSelectedItem(tbObat.getValueAt(tbObat.getSelectedRow(),14).toString());
+            Skor2.setText(tbObat.getValueAt(tbObat.getSelectedRow(),15).toString());
+            
+            cmbSkor3.setSelectedItem(tbObat.getValueAt(tbObat.getSelectedRow(),16).toString());
+            Skor3.setText(tbObat.getValueAt(tbObat.getSelectedRow(),17).toString());
+            
+            cmbSkor4.setSelectedItem(tbObat.getValueAt(tbObat.getSelectedRow(),18).toString());
+            Skor4.setText(tbObat.getValueAt(tbObat.getSelectedRow(),19).toString());
+            
+            cmbSkor5.setSelectedItem(tbObat.getValueAt(tbObat.getSelectedRow(),20).toString());
+            Skor5.setText(tbObat.getValueAt(tbObat.getSelectedRow(),21).toString());
+            
+            cmbSkor6.setSelectedItem(tbObat.getValueAt(tbObat.getSelectedRow(),22).toString());
+            Skor6.setText(tbObat.getValueAt(tbObat.getSelectedRow(),23).toString());
+            
+            cmbSkor7.setSelectedItem(tbObat.getValueAt(tbObat.getSelectedRow(),24).toString());
+            Skor7.setText(tbObat.getValueAt(tbObat.getSelectedRow(),25).toString());
+            
+            // Memastikan diagnosa ikut dihitung/ditampilkan
+            isDiagnosa();
         }
     }
     
@@ -1907,18 +2025,20 @@ public final class RMAssessmentHHC extends javax.swing.JDialog {
         if(ChkInput.isSelected()==true){
             if(internalFrame1.getHeight()>648){
                 ChkInput.setVisible(false);
-                PanelInput.setPreferredSize(new Dimension(WIDTH,476));
+                // TINGGI PANEL DIUBAH DARI 476 MENJADI 560
+                PanelInput.setPreferredSize(new Dimension(WIDTH, 560)); 
                 FormInput.setVisible(true);      
                 ChkInput.setVisible(true);
             }else{
                 ChkInput.setVisible(false);
-                PanelInput.setPreferredSize(new Dimension(WIDTH,internalFrame1.getHeight()-175));
+                // PENGURANGAN DIUBAH AGAR PORSI FORM LEBIH BESAR SAAT LAYAR KECIL
+                PanelInput.setPreferredSize(new Dimension(WIDTH, internalFrame1.getHeight() - 100)); 
                 FormInput.setVisible(true);      
                 ChkInput.setVisible(true);
             }
         }else if(ChkInput.isSelected()==false){           
             ChkInput.setVisible(false);            
-            PanelInput.setPreferredSize(new Dimension(WIDTH,20));
+            PanelInput.setPreferredSize(new Dimension(WIDTH, 20));
             FormInput.setVisible(false);      
             ChkInput.setVisible(true);
         }
@@ -2007,17 +2127,22 @@ public final class RMAssessmentHHC extends javax.swing.JDialog {
 
     private void simpan() {
         isHitung();
-        if(Sequel.menyimpantf("penilaian_psikospiritual_hhc","?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?","Data",22,new String[]{
+        isDiagnosa(); 
+        
+        // Perhatikan DiagnosaHHC.getText() sekarang ada di baris paling bawah array
+        if(Sequel.menyimpantf("penilaian_psikospiritual_hhc","?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?","Data",23,new String[]{
             TNoRw.getText(), Valid.SetTgl(Tanggal.getSelectedItem()+"")+" "+Jam.getSelectedItem()+":"+Menit.getSelectedItem()+":"+Detik.getSelectedItem(),
             cmbSkor1.getSelectedItem().toString(), Skor1.getText(), cmbSkor2.getSelectedItem().toString(), Skor2.getText(),
             cmbSkor3.getSelectedItem().toString(), Skor3.getText(), cmbSkor4.getSelectedItem().toString(), Skor4.getText(),
             cmbSkor5.getSelectedItem().toString(), Skor5.getText(), cmbSkor6.getSelectedItem().toString(), Skor6.getText(),
-            cmbSkor7.getSelectedItem().toString(), Skor7.getText(), TotalSkor.getText(), Psikospiritual.getText(), 
-            cmbIntervensi.getSelectedItem().toString(), Implementasi.getText(), Evaluasi.getText(), NIP.getText()
+            cmbSkor7.getSelectedItem().toString(), Skor7.getText(), TotalSkor.getText(), 
+            Psikospiritual.getText(), cmbIntervensi.getSelectedItem().toString(), 
+            Implementasi.getText(), Evaluasi.getText(), NIP.getText(),
+            DiagnosaHHC.getText() 
         })==true){
             tabMode.addRow(new Object[]{
                 Valid.SetTgl(Tanggal.getSelectedItem()+"")+" "+Jam.getSelectedItem()+":"+Menit.getSelectedItem()+":"+Detik.getSelectedItem(),
-                TNoRw.getText(), TNoRM.getText(), TPasien.getText(), TotalSkor.getText(), Psikospiritual.getText(), cmbIntervensi.getSelectedItem().toString(), Implementasi.getText(), Evaluasi.getText(), 
+                TNoRw.getText(), TNoRM.getText(), TPasien.getText(), TotalSkor.getText(), DiagnosaHHC.getText(), Psikospiritual.getText(), cmbIntervensi.getSelectedItem().toString(), Implementasi.getText(), Evaluasi.getText(), 
                 TglLahir.getText(), JK.getText(), 
                 cmbSkor1.getSelectedItem().toString(), Skor1.getText(), cmbSkor2.getSelectedItem().toString(), Skor2.getText(), 
                 cmbSkor3.getSelectedItem().toString(), Skor3.getText(), cmbSkor4.getSelectedItem().toString(), Skor4.getText(), 
@@ -2028,20 +2153,29 @@ public final class RMAssessmentHHC extends javax.swing.JDialog {
             LCount.setText(""+tabMode.getRowCount());
         } 
     }
-
+    
     private void ganti() {
+        isDiagnosa(); 
+        
+        // Perhatikan bagian akhir string (nip=?, diagnosa_hhc=?, tanggal=?, no_rawat=?)
         if(Sequel.mengedittf("penilaian_psikospiritual_hhc","tanggal=? and no_rawat=?",
-            "skor1=?, nilai1=?, skor2=?, nilai2=?, skor3=?, nilai3=?, skor4=?, nilai4=?, skor5=?, nilai5=?, skor6=?, nilai6=?, skor7=?, nilai7=?, total_skor=?, keterangan_psikospiritual=?, intervensi=?, implementasi=?, evaluasi=?, nip=?, tanggal=?, no_rawat=?",
-            24, new String[]{
-                cmbSkor1.getSelectedItem().toString(), Skor1.getText(), cmbSkor2.getSelectedItem().toString(), Skor2.getText(),
-                cmbSkor3.getSelectedItem().toString(), Skor3.getText(), cmbSkor4.getSelectedItem().toString(), Skor4.getText(),
-                cmbSkor5.getSelectedItem().toString(), Skor5.getText(), cmbSkor6.getSelectedItem().toString(), Skor6.getText(),
-                cmbSkor7.getSelectedItem().toString(), Skor7.getText(), TotalSkor.getText(), Psikospiritual.getText(), 
-                cmbIntervensi.getSelectedItem().toString(), Implementasi.getText(), Evaluasi.getText(), NIP.getText(),
-                Valid.SetTgl(Tanggal.getSelectedItem()+"")+" "+Jam.getSelectedItem()+":"+Menit.getSelectedItem()+":"+Detik.getSelectedItem(),
-                TNoRw.getText(),
-                tbObat.getValueAt(tbObat.getSelectedRow(), 0).toString(), 
-                tbObat.getValueAt(tbObat.getSelectedRow(), 1).toString() 
+            "skor1=?, nilai1=?, skor2=?, nilai2=?, skor3=?, nilai3=?, skor4=?, nilai4=?, skor5=?, nilai5=?, skor6=?, nilai6=?, skor7=?, nilai7=?, total_skor=?, keterangan_psikospiritual=?, intervensi=?, implementasi=?, evaluasi=?, nip=?, diagnosa_hhc=?, tanggal=?, no_rawat=?",
+            25, new String[]{
+                cmbSkor1.getSelectedItem().toString(), Skor1.getText(), 
+                cmbSkor2.getSelectedItem().toString(), Skor2.getText(),
+                cmbSkor3.getSelectedItem().toString(), Skor3.getText(), 
+                cmbSkor4.getSelectedItem().toString(), Skor4.getText(),
+                cmbSkor5.getSelectedItem().toString(), Skor5.getText(), 
+                cmbSkor6.getSelectedItem().toString(), Skor6.getText(),
+                cmbSkor7.getSelectedItem().toString(), Skor7.getText(), 
+                TotalSkor.getText(), 
+                Psikospiritual.getText(), cmbIntervensi.getSelectedItem().toString(), 
+                Implementasi.getText(), Evaluasi.getText(), NIP.getText(),
+                DiagnosaHHC.getText(), // Data ke-21
+                Valid.SetTgl(Tanggal.getSelectedItem()+"")+" "+Jam.getSelectedItem()+":"+Menit.getSelectedItem()+":"+Detik.getSelectedItem(), // Data ke-22 (Tanggal Baru)
+                TNoRw.getText(), // Data ke-23 (No.Rawat Baru)
+                tbObat.getValueAt(tbObat.getSelectedRow(), 0).toString(), // Data ke-24 (Kondisi Tanggal Lama)
+                tbObat.getValueAt(tbObat.getSelectedRow(), 1).toString()  // Data ke-25 (Kondisi No.Rawat Lama)
             })==true){
             tampil();
             emptTeks();
