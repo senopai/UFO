@@ -1167,12 +1167,10 @@ public final class DlgRawatJalan extends javax.swing.JDialog {
             public void windowClosed(WindowEvent e) {
                 if(akses.getform().equals("DlgRawatJalan")){
                     if(soap.getTable().getSelectedRow()!= -1){
-                        TKeluhan.setText(DlgRawatJalan.this.soap.getTable().getValueAt(DlgRawatJalan.this.soap.getTable().getSelectedRow(), 1).toString());
-                        TPemeriksaan.setText(DlgRawatJalan.this.soap.getTable().getValueAt(DlgRawatJalan.this.soap.getTable().getSelectedRow(), 2).toString());
-                        TPenilaian.setText(DlgRawatJalan.this.soap.getTable().getValueAt(DlgRawatJalan.this.soap.getTable().getSelectedRow(), 3).toString());
-                        TindakLanjut.setText(DlgRawatJalan.this.soap.getTable().getValueAt(DlgRawatJalan.this.soap.getTable().getSelectedRow(), 4).toString());
-                        TInstruksi.setText(DlgRawatJalan.this.soap.getTable().getValueAt(DlgRawatJalan.this.soap.getTable().getSelectedRow(), 5).toString());
-                        TEvaluasi.setText(DlgRawatJalan.this.soap.getTable().getValueAt(DlgRawatJalan.this.soap.getTable().getSelectedRow(), 6).toString());
+                        TKeluhan.setText(soap.getTable().getValueAt(soap.getTable().getSelectedRow(),1).toString());
+                        TPemeriksaan.setText(soap.getTable().getValueAt(soap.getTable().getSelectedRow(),2).toString());
+                        TPenilaian.setText(soap.getTable().getValueAt(soap.getTable().getSelectedRow(),3).toString());
+                        TInstruksi.setText(soap.getTable().getValueAt(soap.getTable().getSelectedRow(),4).toString());
                     }  
                     TindakLanjut.requestFocus();
                 }

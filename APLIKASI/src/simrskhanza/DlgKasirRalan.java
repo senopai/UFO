@@ -17207,20 +17207,15 @@ private void MnDataPemberianObatActionPerformed(java.awt.event.ActionEvent evt) 
         cacherawatjalan.SetPenjab(caripenjab);
         cacherawatjalan.SetStatusBayar(cmbStatusBayar.getSelectedItem().toString());
         cacherawatjalan.SetStatusPelayanan(cmbStatus.getSelectedItem().toString());
+        cacherawatjalan.clearDataPasien();
         
-        ArrayList<Object[]> temp = new ArrayList<>();
-        for (int i = 0; i < tabModekasir.getRowCount(); i++) {
+        for (i = 0; i < tabModekasir.getRowCount(); i++) {
             Object[] baris = new Object[tabModekasir.getColumnCount()];
             for (int j = 0; j < tabModekasir.getColumnCount(); j++) {
                 baris[j] = tabModekasir.getValueAt(i, j);
             }
-            temp.add(baris);
+            cacherawatjalan.setDataPasien(baris);
         }
-
-        cacherawatjalan.clearDataPasien();
-        cacherawatjalan.SetDataPasien(temp);
-        
-        super.dispose();
     }
     
     private void initKasirRalan() {

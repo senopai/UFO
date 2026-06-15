@@ -3,11 +3,17 @@
         exit(header("Location:../index.php"));
     }
     
-    $db_hostname            = "localhost";
-    $db_username            = "root";
-    $db_password            = "";
-    $db_name                = "sik";
-    define('URUTNOREG', 'dokter + poli'); // dokter / poli / dokter + poli
+    if (file_exists(__DIR__ . '/../epasien-modern/db_config.php')) {
+        include(__DIR__ . '/../epasien-modern/db_config.php');
+    } else {
+        $db_hostname            = "localhost";
+        $db_username            = "root";
+        $db_password            = "";
+        $db_name                = "sik";
+        if (!defined('URUTNOREG')) {
+            define('URUTNOREG', 'dokter + poli'); // dokter / poli / dokter + poli
+        }
+    }
     $month          = date('Y-m');
     $date           = date('Y-m-d');
     $time           = date('H:i:s');

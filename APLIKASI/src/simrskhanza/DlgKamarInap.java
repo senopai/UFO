@@ -20190,18 +20190,14 @@ public class DlgKamarInap extends javax.swing.JDialog {
         cacherawatinap.SetStatusBayar(cmbStatusBayar.getSelectedItem().toString());
         cacherawatinap.SetKamar(BangsalCari.getText());
         
-        ArrayList<Object[]> temp = new ArrayList<>();
-        for (int i = 0; i < tabMode.getRowCount(); i++) {
+        cacherawatinap.clearDataPasien();
+        for (i = 0; i < tabMode.getRowCount(); i++) {
             Object[] baris = new Object[tabMode.getColumnCount()];
             for (int j = 0; j < tabMode.getColumnCount(); j++) {
                 baris[j] = tabMode.getValueAt(i, j);
             }
-            temp.add(baris);
+            cacherawatinap.setDataPasien(baris);
         }
-        cacherawatinap.clearDataPasien();
-        cacherawatinap.SetDataPasien(temp);
-        
-        super.dispose();
     }
     private void panggilobat(String norawat) {
         if(Sequel.cariInteger("select count(stok_obat_pasien.no_rawat) from stok_obat_pasien where stok_obat_pasien.no_rawat=? ",norawat)>0){
