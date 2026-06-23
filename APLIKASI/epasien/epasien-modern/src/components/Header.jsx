@@ -23,9 +23,9 @@ export default function Header({ user, onLogout }) {
   return (
     <header className="sticky top-0 z-30 flex items-center justify-between py-4 px-4 md:px-8 border-b border-slate-200/50 glass-panel">
       {/* Mobile Branding - hidden on desktop */}
-      <div className="flex md:hidden items-center gap-2">
-        <HeartPulse size={24} className="text-emerald-600 animate-pulse" />
-        <span className="font-heading font-bold text-slate-800 text-lg tracking-wide">EPasien</span>
+      <div className="flex md:hidden items-center gap-2 max-w-[70%]">
+        <img src="images/logo_rsm.png" alt="Logo RSM" className="w-7 h-7 object-contain drop-shadow-sm" />
+        <span className="font-heading font-bold text-slate-800 text-[15px] tracking-wide truncate">E-Pasien RSM Mardhatillah</span>
       </div>
 
       {/* Greeting - desktop only */}

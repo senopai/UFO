@@ -231,7 +231,7 @@ export default function App() {
 
     handleAddNotification({
       title: 'Booking Berhasil',
-      desc: `Booking ke ${bookingSuccessData.clinicName} berhasil dibuat. Silakan check-in pada hari H.`,
+      desc: `Booking ke ${bookingSuccessData.clinicName} berhasil dibuat dengan nomor antrean ${bookingSuccessData.noReg || ''}.`,
       time: 'Just now'
     });
 
@@ -293,7 +293,6 @@ export default function App() {
           <Dashboard 
             user={user}
             activeQueue={activeQueue}
-            handleCheckIn={handleCheckIn}
             setActiveTab={setActiveTab}
             setHistoryDefaultTab={setHistoryDefaultTab}
             pendingConsentsCount={pendingConsentsCount}
@@ -363,15 +362,14 @@ export default function App() {
         <div className="w-full max-w-md glass-panel p-6 md:p-8 rounded-3xl space-y-6 relative border-slate-200/80 shadow-2xl">
           {/* Logo Branding */}
           <div className="text-center space-y-2">
-            <div className="inline-flex p-3 bg-emerald-500/10 text-emerald-600 rounded-2xl border border-emerald-500/20">
-              <HeartPulse size={36} className="animate-pulse" />
+            <div className="inline-flex p-2 bg-emerald-500/5 rounded-2xl border border-emerald-500/20 shadow-sm">
+              <img src="images/logo_rsm.png" alt="Logo RSM" className="w-12 h-12 object-contain drop-shadow-sm" />
             </div>
             <div>
-              <h1 className="text-2xl font-extrabold font-heading text-slate-800 tracking-wide leading-none">EPasien</h1>
-              <span className="text-[10px] text-emerald-600 font-bold uppercase tracking-widest mt-1 block">SIMKES KHANZA</span>
+              <h1 className="text-xl font-extrabold font-heading text-slate-800 tracking-wide leading-tight">E-Pasien RSM Mardhatillah</h1>
             </div>
-            <p className="text-xs text-slate-500 px-4">
-              Nomor rekam medis & password dapat ditanyakan ke petugas saat registrasi offline di klinik.
+            <p className="text-xs text-slate-500 px-4 mt-2">
+              Nomor rekam medis & password dapat ditanyakan ke petugas saat registrasi offline di rumah sakit.
             </p>
           </div>
 
@@ -433,7 +431,7 @@ export default function App() {
 
           {/* Copyright */}
           <div className="text-[10px] text-center text-slate-400">
-            &copy; 2026 SIMKES Khanza. All rights reserved.
+            &copy; 2026 RSM Mardhatillah. All rights reserved.
           </div>
         </div>
       </div>

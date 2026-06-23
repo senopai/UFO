@@ -31,7 +31,7 @@ export default function Booking({ user, onBookingSuccess }) {
     name: user.name || '',
     address: user.address || 'JL. RAYA DAGO NO. 120, BANDUNG',
     phone: user.phone || '081234567890',
-    email: user.email || 'pasien@gmail.com',
+    nik: user.nik || '',
     clinic: '',
     doctor: '',
     date: ''
@@ -52,6 +52,7 @@ export default function Booking({ user, onBookingSuccess }) {
     if (!formData.name.trim()) newErrors.name = 'Nama lengkap wajib diisi';
     if (!formData.address.trim()) newErrors.address = 'Alamat wajib diisi';
     if (!formData.phone.trim()) newErrors.phone = 'Nomor HP wajib diisi';
+    if (!formData.nik.trim()) newErrors.nik = 'NIK / Nomor KTP wajib diisi';
     if (!formData.clinic) newErrors.clinic = 'Silakan pilih poliklinik';
     if (!formData.doctor) newErrors.doctor = 'Silakan pilih dokter';
     if (!formData.date) {
@@ -164,19 +165,21 @@ export default function Booking({ user, onBookingSuccess }) {
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              {/* Email */}
+              {/* NIK */}
               <div className="space-y-1.5">
                 <label className="text-xs font-semibold text-slate-700 flex items-center gap-1.5">
-                  <Mail size={14} className="text-slate-400" /> Email
+                  <ShieldCheck size={14} className="text-slate-400" /> NIK / No. KTP
                 </label>
                 <input 
-                  type="email" 
-                  name="email"
-                  value={formData.email}
+                  type="text" 
+                  name="nik"
+                  value={formData.nik}
                   onChange={handleChange}
                   className="glass-input w-full py-2.5 px-4 rounded-xl text-sm" 
-                  placeholder="Alamat Email Aktif"
+                  placeholder="NIK Pasien (16 digit)"
+                  maxLength={20}
                 />
+                {errors.nik && <span className="text-[10px] text-rose-600 flex items-center gap-1"><AlertCircle size={10} /> {errors.nik}</span>}
               </div>
 
               {/* Alamat */}

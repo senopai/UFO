@@ -100,14 +100,15 @@
             $_SESSION["ses_pasien"] = encrypt_decrypt($norm, "e");
             
             // Fetch patient profile
-            $queryuser = bukaquery("select pasien.nm_pasien, pasien.email, pasien.jk, personal_pasien.gambar, pasien.no_tlp, pasien.tmp_lahir, date_format(pasien.tgl_lahir,'%d/%m/%Y') as tgl_lahir, pasien.alamat from pasien inner join personal_pasien on personal_pasien.no_rkm_medis=pasien.no_rkm_medis where pasien.no_rkm_medis='$norm'");
+            $queryuser = bukaquery("select pasien.nm_pasien, pasien.no_ktp, pasien.email, pasien.jk, personal_pasien.gambar, pasien.no_tlp, pasien.tmp_lahir, date_format(pasien.tgl_lahir,'%d/%m/%Y') as tgl_lahir, pasien.alamat from pasien inner join personal_pasien on personal_pasien.no_rkm_medis=pasien.no_rkm_medis where pasien.no_rkm_medis='$norm'");
             $user = mysqli_fetch_array($queryuser);
 
+            $protocol = (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off' || $_SERVER['SERVER_PORT'] == 443) ? "https://" : "http://";
             $photo = "";
             if ($user['gambar'] == "" || $user['gambar'] == "-") {
                 $photo = ($user['jk'] == "L") ? "images/userlaki.png" : "images/userperempuan.png";
             } else {
-                $photo = "http://" . host() . "/webapps/photopasien/" . $user['gambar'];
+                $photo = $protocol . $_SERVER['HTTP_HOST'] . "/webapps/photopasien/" . $user['gambar'];
             }
 
             // Set session variables
@@ -124,6 +125,7 @@
                 'user' => [
                     'name' => $user['nm_pasien'],
                     'norm' => $norm,
+                    'nik' => $user['no_ktp'] ? $user['no_ktp'] : '',
                     'phone' => $user['no_tlp'] ? $user['no_tlp'] : '',
                     'email' => $user['email'] ? $user['email'] : '',
                     'gender' => $user['jk'],
@@ -597,6 +599,13 @@
         $rads = [];
         $queryrad = bukaquery("select periksa_radiologi.no_rawat, periksa_radiologi.tgl_periksa, dokter.nm_dokter, hasil_radiologi.hasil from periksa_radiologi inner join reg_periksa on periksa_radiologi.no_rawat=reg_periksa.no_rawat inner join dokter on periksa_radiologi.kd_dokter=dokter.kd_dokter left join hasil_radiologi on periksa_radiologi.no_rawat=hasil_radiologi.no_rawat where reg_periksa.no_rkm_medis='$norm' order by periksa_radiologi.tgl_periksa desc");
         while ($row = mysqli_fetch_array($queryrad)) {
+            $images = [];
+            $queryimg = bukaquery("select lokasi_gambar from gambar_radiologi where no_rawat='".$row['no_rawat']."'");
+            $protocol = (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off' || $_SERVER['SERVER_PORT'] == 443) ? "https://" : "http://";
+            while ($img = mysqli_fetch_array($queryimg)) {
+                $images[] = $protocol . $_SERVER['HTTP_HOST'] . "/webapps/radiologi/" . $img['lokasi_gambar'];
+            }
+
             $rads[] = [
                 'id' => $row['no_rawat'],
                 'date' => date('d M Y', strtotime($row['tgl_periksa'])),
@@ -605,7 +614,8 @@
                 'status' => 'Selesai',
                 'examType' => 'Rontgen / USG',
                 'findings' => $row['hasil'] ? $row['hasil'] : 'Tidak ada catatan temuan.',
-                'kesimpulan' => 'Hasil pemeriksaan radiologi selesai.'
+                'kesimpulan' => 'Hasil pemeriksaan radiologi selesai.',
+                'images' => $images
             ];
         }
 
@@ -645,6 +655,119 @@
             echo json_encode(['success' => false, 'message' => 'Password lama tidak sesuai.']);
         }
         exit;
+    }
+
+    if ($action == 'download_image') {
+        $norm = getSessionNorm();
+        if (!$norm) {
+            echo json_encode(['success' => false, 'message' => 'Session expired. Silakan login kembali.']);
+            exit;
+        }
+
+        $imgUrl = isset($_GET['url']) ? $_GET['url'] : '';
+        if (empty($imgUrl)) {
+            echo json_encode(['success' => false, 'message' => 'Parameter URL wajib diisi.']);
+            exit;
+        }
+
+        // Security check
+        $parsedUrl = parse_url($imgUrl);
+        if (!$parsedUrl || !isset($parsedUrl['host']) || !isset($parsedUrl['path'])) {
+            echo json_encode(['success' => false, 'message' => 'URL tidak valid.']);
+            exit;
+        }
+
+        $allowedHosts = ['localhost', '127.0.0.1', 'rsmardhatillah.com'];
+        $host = $parsedUrl['host'];
+        $path = $parsedUrl['path'];
+
+        // Check if host matches allowed list or ends with rsmardhatillah.com
+        $isAllowedHost = in_array($host, $allowedHosts) || (substr($host, -18) === 'rsmardhatillah.com');
+        $isWebapps = (substr($path, 0, 9) === '/webapps/');
+
+        if (!$isAllowedHost || !$isWebapps) {
+            echo json_encode(['success' => false, 'message' => 'Domain atau path tidak diizinkan.']);
+            exit;
+        }
+
+        $filename = basename($path);
+        if (empty($filename)) {
+            $filename = 'ronsen.jpg';
+        }
+
+        // Determine local path
+        $cleanPath = str_replace('/webapps', '', $path);
+        // Normalize slashes
+        $cleanPath = str_replace('\\', '/', $cleanPath);
+        $localPath = __DIR__ . '/../webapps' . $cleanPath;
+        
+        // Remove duplicate slashes if any
+        $localPath = str_replace('//', '/', $localPath);
+
+        if (file_exists($localPath) && is_file($localPath)) {
+            // Serve local file
+            if (ob_get_level()) {
+                ob_end_clean();
+            }
+            
+            $finfo = finfo_open(FILEINFO_MIME_TYPE);
+            $mimeType = finfo_file($finfo, $localPath);
+            finfo_close($finfo);
+            
+            if (!$mimeType) {
+                $mimeType = 'image/jpeg';
+            }
+
+            header('Content-Description: File Transfer');
+            header('Content-Type: ' . $mimeType);
+            header('Content-Disposition: attachment; filename="' . $filename . '"');
+            header('Expires: 0');
+            header('Cache-Control: must-revalidate');
+            header('Pragma: public');
+            header('Content-Length: ' . filesize($localPath));
+            readfile($localPath);
+            exit;
+        } else {
+            // Fetch remote file via cURL
+            $remoteUrl = $imgUrl;
+            if ($host === 'localhost' || $host === '127.0.0.1') {
+                $remoteUrl = 'https://rsmardhatillah.com' . $path;
+            }
+
+            $ch = curl_init();
+            curl_setopt($ch, CURLOPT_URL, $remoteUrl);
+            curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+            curl_setopt($ch, CURLOPT_FOLLOWLOCATION, true);
+            curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, false);
+            curl_setopt($ch, CURLOPT_TIMEOUT, 30);
+            
+            $fileData = curl_exec($ch);
+            $httpCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
+            $contentType = curl_getinfo($ch, CURLINFO_CONTENT_TYPE);
+            curl_close($ch);
+
+            if ($httpCode === 200 && $fileData !== false) {
+                if (ob_get_level()) {
+                    ob_end_clean();
+                }
+                if (empty($contentType)) {
+                    $contentType = 'image/jpeg';
+                }
+                header('Content-Description: File Transfer');
+                header('Content-Type: ' . $contentType);
+                header('Content-Disposition: attachment; filename="' . $filename . '"');
+                header('Expires: 0');
+                header('Cache-Control: must-revalidate');
+                header('Pragma: public');
+                header('Content-Length: ' . strlen($fileData));
+                echo $fileData;
+                exit;
+            } else {
+                header("HTTP/1.0 404 Not Found");
+                echo json_encode(['success' => false, 'message' => 'File tidak ditemukan di server produksi.']);
+                exit;
+            }
+        }
     }
 
     echo json_encode(['success' => false, 'message' => 'Aksi API tidak valid.']);

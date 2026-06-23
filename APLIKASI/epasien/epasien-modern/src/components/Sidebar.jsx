@@ -34,7 +34,7 @@ export default function Sidebar({
     { id: 'dashboard', name: 'Dashboard', icon: LayoutDashboard },
     { id: 'booking', name: 'Booking Pasien', icon: CalendarRange },
     { id: 'history', name: 'Hasil Lab & Rad', icon: HistoryIcon },
-    { id: 'consent', name: 'E-Persetujuan', icon: FileSignature },
+    // { id: 'consent', name: 'E-Persetujuan', icon: FileSignature },
     { id: 'card', name: 'Kartu Pasien', icon: CreditCard },
     { id: 'settings', name: 'Pengaturan', icon: Settings },
   ];
@@ -46,27 +46,32 @@ export default function Sidebar({
   ];
 
   return (
-    <aside className="fixed bottom-0 left-0 z-40 w-full md:sticky md:top-0 md:h-screen md:w-64 glass-panel border-t md:border-t-0 md:border-r border-slate-200/50 flex flex-col justify-between py-4 px-3 md:py-6 md:px-4">
+    <aside className="fixed bottom-4 left-4 right-4 z-50 md:sticky md:top-0 md:bottom-auto md:left-auto md:right-auto md:h-screen md:w-64 bg-white/90 backdrop-blur-2xl md:bg-white/80 border border-white/60 md:border-slate-200/50 md:border-t-0 md:border-r shadow-[0_10px_40px_rgba(0,0,0,0.1)] md:shadow-none flex flex-col justify-between py-2.5 px-3 md:py-6 md:px-4 rounded-[2rem] md:rounded-none transition-all duration-500">
       {/* Brand Logo - hidden on mobile, shown on desktop */}
       <div className="hidden md:flex items-center gap-3 px-2 mb-8">
-        <div className="p-2 bg-emerald-500/10 text-emerald-600 rounded-xl border border-emerald-500/20">
-          <HeartPulse size={28} className="animate-pulse" />
+        <div className="p-1.5 bg-emerald-500/5 rounded-xl border border-emerald-500/20 shadow-sm shrink-0">
+          <img src="images/logo_rsm.png" alt="Logo RSM" className="w-8 h-8 object-contain" />
         </div>
-        <div>
-          <h1 className="text-xl font-bold font-heading text-slate-800 tracking-wide leading-none">EPasien</h1>
-          <span className="text-[10px] text-emerald-600 font-semibold uppercase tracking-wider">SIMKES KHANZA</span>
+        <div className="overflow-hidden">
+          <h1 className="text-[13px] font-bold font-heading text-slate-800 tracking-wide leading-tight truncate">E-Pasien RSM Mardhatillah</h1>
         </div>
       </div>
 
       {/* Navigation Links */}
-      <nav className="flex md:flex-col justify-around md:justify-start gap-1 w-full md:space-y-1 relative">
+      <nav className="flex md:flex-col justify-around md:justify-start items-center gap-1 w-full md:space-y-1 relative">
         {menuItems.map((item) => {
           const Icon = item.icon;
           const isActive = activeTab === item.id;
+          
+          // Shorten names for mobile to fit nicely in the animated pill
+          let displayName = item.name;
+          if (item.id === 'history') displayName = 'Riwayat';
+          if (item.id === 'booking') displayName = 'Booking';
+          if (item.id === 'card') displayName = 'Kartu';
 
           if (item.id === 'history') {
             return (
-              <div key={item.id} className="w-full flex flex-col relative">
+              <div key={item.id} className="flex flex-col relative w-full max-w-[85px] md:max-w-none">
                 {/* Main Button */}
                 <button
                   onClick={() => {
@@ -74,14 +79,21 @@ export default function Sidebar({
                     setIsMobileMenuOpen(!isMobileMenuOpen);
                     setActiveTab('history');
                   }}
-                  className={`flex flex-col md:flex-row items-center gap-1.5 md:gap-3 py-2 px-3 md:py-3 md:px-4 rounded-xl text-[11px] md:text-sm font-medium transition-all duration-200 w-full max-w-[80px] md:max-w-none ${
+                  className={`relative flex flex-col md:flex-row items-center justify-center md:justify-start gap-1 md:gap-3 py-2.5 px-2 md:py-3 md:px-4 rounded-2xl text-[11px] md:text-sm transition-all duration-300 w-full group ${
                     isActive 
-                      ? 'bg-emerald-50 text-emerald-700 border border-emerald-200/60 shadow-sm font-semibold' 
-                      : 'text-slate-600 hover:text-slate-900 hover:bg-slate-100/60 border border-transparent'
+                      ? 'text-white md:text-emerald-700 font-bold' 
+                      : 'text-slate-500 hover:text-slate-800 font-medium'
                   }`}
                 >
-                  <Icon size={isActive ? 20 : 18} className="transition-transform duration-200 group-hover:scale-110" />
-                  <span className="md:inline">{item.name}</span>
+                  {/* Active Pill (Mobile) */}
+                  <div className={`absolute inset-0 bg-gradient-to-tr from-emerald-500 to-teal-400 rounded-[1.2rem] transition-all duration-300 -z-10 md:hidden ${isActive ? 'scale-100 opacity-100 shadow-[0_4px_15px_rgba(16,185,129,0.3)]' : 'scale-50 opacity-0'}`}></div>
+                  {/* Active Bg (Desktop) */}
+                  <div className={`absolute inset-0 bg-emerald-50 border border-emerald-200/60 rounded-xl transition-all duration-300 -z-10 hidden md:block ${isActive ? 'opacity-100' : 'opacity-0'}`}></div>
+
+                  <Icon size={22} className={`transition-transform duration-300 ${isActive ? 'scale-110 md:scale-110' : 'group-hover:scale-110'}`} />
+                  <span className={`transition-all duration-300 md:inline whitespace-nowrap overflow-hidden ${isActive ? 'max-w-[80px] opacity-100 translate-y-0' : 'max-w-0 opacity-0 translate-y-2 md:max-w-[200px] md:relative md:opacity-100 md:translate-y-0'}`}>
+                    {displayName}
+                  </span>
                 </button>
 
                 {/* Submenu Desktop */}
@@ -111,7 +123,7 @@ export default function Sidebar({
 
                 {/* Submenu Mobile Tooltip Popup */}
                 {isMobileMenuOpen && (
-                  <div className="md:hidden absolute bottom-16 left-1/2 -translate-x-1/2 w-44 glass-panel border border-slate-200/80 rounded-2xl shadow-2xl p-2 z-50 flex flex-col gap-1">
+                  <div className="md:hidden absolute bottom-20 left-1/2 -translate-x-1/2 w-48 glass-panel border border-white/60 bg-white/95 backdrop-blur-xl rounded-2xl shadow-[0_10px_40px_rgba(0,0,0,0.15)] p-2 z-50 flex flex-col gap-1 animate-in slide-in-from-bottom-4 duration-200">
                     {subItems.map((sub) => {
                       const isSubActive = activeTab === 'history' && historyDefaultTab === sub.id;
                       return (
@@ -122,10 +134,10 @@ export default function Sidebar({
                             setActiveTab('history');
                             setIsMobileMenuOpen(false);
                           }}
-                          className={`text-center py-2 px-3 rounded-xl text-xs font-semibold transition-all ${
+                          className={`text-center py-2.5 px-3 rounded-xl text-[11px] uppercase tracking-wider font-bold transition-all ${
                             isSubActive
-                              ? 'bg-emerald-600 text-white shadow-md'
-                              : 'text-slate-700 hover:text-slate-900 hover:bg-slate-100'
+                              ? 'bg-emerald-500 text-white shadow-md'
+                              : 'text-slate-600 hover:text-slate-900 hover:bg-slate-100'
                           }`}
                         >
                           {sub.name}
@@ -145,14 +157,21 @@ export default function Sidebar({
                 setActiveTab(item.id);
                 setIsMobileMenuOpen(false);
               }}
-              className={`flex flex-col md:flex-row items-center gap-1.5 md:gap-3 py-2 px-3 md:py-3 md:px-4 rounded-xl text-[11px] md:text-sm font-medium transition-all duration-200 w-full max-w-[80px] md:max-w-none ${
+              className={`relative flex flex-col md:flex-row items-center justify-center md:justify-start gap-1 md:gap-3 py-2.5 px-2 md:py-3 md:px-4 rounded-2xl text-[11px] md:text-sm transition-all duration-300 w-full max-w-[85px] md:max-w-none group ${
                 isActive 
-                  ? 'bg-emerald-50 text-emerald-700 border border-emerald-200/60 shadow-sm font-semibold' 
-                  : 'text-slate-600 hover:text-slate-900 hover:bg-slate-100/60 border border-transparent'
+                  ? 'text-white md:text-emerald-700 font-bold' 
+                  : 'text-slate-500 hover:text-slate-800 font-medium'
               }`}
             >
-              <Icon size={isActive ? 20 : 18} className="transition-transform duration-200 group-hover:scale-110" />
-              <span className="md:inline">{item.name}</span>
+              {/* Active Pill (Mobile) */}
+              <div className={`absolute inset-0 bg-gradient-to-tr from-emerald-500 to-teal-400 rounded-[1.2rem] transition-all duration-300 -z-10 md:hidden ${isActive ? 'scale-100 opacity-100 shadow-[0_4px_15px_rgba(16,185,129,0.3)]' : 'scale-50 opacity-0'}`}></div>
+              {/* Active Bg (Desktop) */}
+              <div className={`absolute inset-0 bg-emerald-50 border border-emerald-200/60 rounded-xl transition-all duration-300 -z-10 hidden md:block ${isActive ? 'opacity-100' : 'opacity-0'}`}></div>
+
+              <Icon size={22} className={`transition-transform duration-300 ${isActive ? 'scale-110 md:scale-110' : 'group-hover:scale-110'}`} />
+              <span className={`transition-all duration-300 md:inline whitespace-nowrap overflow-hidden ${isActive ? 'max-w-[80px] opacity-100 translate-y-0' : 'max-w-0 opacity-0 translate-y-2 md:max-w-[200px] md:relative md:opacity-100 md:translate-y-0'}`}>
+                {displayName}
+              </span>
             </button>
           );
         })}

@@ -38,6 +38,7 @@ function getDbConfig() {
             user: 'root',
             password: '',
             database: 'sik',
+            webapps_host: 'localhost',
             urutnoreg: 'dokter + poli'
         };
     }
@@ -46,14 +47,17 @@ function getDbConfig() {
     const userMatch = content.match(/\$db_username\s*=\s*['"]([^'"]+)['"]/);
     const passMatch = content.match(/\$db_password\s*=\s*['"]([^'"]*)['"]/);
     const nameMatch = content.match(/\$db_name\s*=\s*['"]([^'"]+)['"]/);
+    const webappsMatch = content.match(/\$webapps_hostname\s*=\s*['"]([^'"]+)['"]/);
     const urutMatch = content.match(/define\(\s*['"]URUTNOREG['"]\s*,\s*['"]([^'"]+)['"]\)/);
     const fonnteMatch = content.match(/define\(\s*['"]FONNTE_TOKEN['"]\s*,\s*['"]([^'"]*)['"]\)/);
 
+    const dbHost = hostMatch ? hostMatch[1] : 'localhost';
     return {
-        host: hostMatch ? hostMatch[1] : 'localhost',
+        host: dbHost,
         user: userMatch ? userMatch[1] : 'root',
         password: passMatch ? passMatch[1] : '',
         database: nameMatch ? nameMatch[1] : 'sik',
+        webapps_host: (webappsMatch && webappsMatch[1]) ? webappsMatch[1] : dbHost,
         urutnoreg: urutMatch ? urutMatch[1] : 'dokter + poli',
         fonnte_token: fonnteMatch ? fonnteMatch[1] : ''
     };
@@ -62,10 +66,21 @@ function getDbConfig() {
 const config = getDbConfig();
 console.log('Database Configuration Loaded:', {
     host: config.host,
+    webapps_host: config.webapps_host,
     user: config.user,
     database: config.database,
     urutnoreg: config.urutnoreg
 });
+
+// Helper: Construct remote URL dynamically (uses HTTPS for domains, HTTP for IPs/localhost)
+function getRemoteUrl(pathStr) {
+    const host = config.webapps_host || config.host;
+    if (host.startsWith('http://') || host.startsWith('https://')) {
+        return `${host}${pathStr}`;
+    }
+    const protocol = (host.includes('.') && !/^[0-9.]+$/.test(host)) ? 'https://' : 'http://';
+    return `${protocol}${host}${pathStr}`;
+}
 
 // Setup Connection Pool
 const pool = mysql.createPool({
@@ -209,7 +224,7 @@ app.all('/api.php', async (req, res) => {
 
                 // Get patient profile
                 const [userRows] = await pool.query(
-                    `select pasien.nm_pasien, pasien.email, pasien.jk, personal_pasien.gambar, pasien.no_tlp, pasien.tmp_lahir, date_format(pasien.tgl_lahir,'%d/%m/%Y') as tgl_lahir, pasien.alamat from pasien inner join personal_pasien on personal_pasien.no_rkm_medis=pasien.no_rkm_medis where pasien.no_rkm_medis=?`,
+                    `select pasien.nm_pasien, pasien.no_ktp, pasien.email, pasien.jk, personal_pasien.gambar, pasien.no_tlp, pasien.tmp_lahir, date_format(pasien.tgl_lahir,'%d/%m/%Y') as tgl_lahir, pasien.alamat from pasien inner join personal_pasien on personal_pasien.no_rkm_medis=pasien.no_rkm_medis where pasien.no_rkm_medis=?`,
                     [norm]
                 );
 
@@ -236,6 +251,7 @@ app.all('/api.php', async (req, res) => {
                         user: {
                             name: user.nm_pasien,
                             norm: norm,
+                            nik: user.no_ktp || '',
                             phone: user.no_tlp || '',
                             email: user.email || '',
                             gender: user.jk,
@@ -748,22 +764,53 @@ Terima kasih atas kepercayaan Anda.
                 });
             }
 
-            // Radiology
+            // Radiologi
             const [radRows] = await pool.query(
                 `select periksa_radiologi.no_rawat, periksa_radiologi.tgl_periksa, dokter.nm_dokter, hasil_radiologi.hasil from periksa_radiologi inner join reg_periksa on periksa_radiologi.no_rawat=reg_periksa.no_rawat inner join dokter on periksa_radiologi.kd_dokter=dokter.kd_dokter left join hasil_radiologi on periksa_radiologi.no_rawat=hasil_radiologi.no_rawat where reg_periksa.no_rkm_medis=? order by periksa_radiologi.tgl_periksa desc`,
                 [norm]
             );
 
-            const rads = radRows.map(r => ({
-                id: r.no_rawat,
-                date: new Date(r.tgl_periksa).toLocaleDateString('id-ID', { day: '2-digit', month: 'short', year: 'numeric' }),
-                title: 'Pemeriksaan Radiologi',
-                doctor: r.nm_dokter,
-                status: 'Selesai',
-                examType: 'Rontgen / USG',
-                findings: r.hasil || 'Tidak ada catatan temuan.',
-                kesimpulan: 'Hasil pemeriksaan radiologi selesai.'
-            }));
+            const rads = [];
+            for (const r of radRows) {
+                const [imgRows] = await pool.query(
+                    `select lokasi_gambar from gambar_radiologi where no_rawat=?`,
+                    [r.no_rawat]
+                );
+                
+                // PERBAIKAN: Format path gambar agar support backslash Windows (\) dan karakter spasi
+                const images = imgRows.map(img => {
+                    let lokasi = img.lokasi_gambar;
+                    // Ubah backslash Windows ke forward slash Web
+                    lokasi = lokasi.replace(/\\/g, '/');
+                    // Encode nama file (mengamankan karakter spasi menjadi %20)
+                    lokasi = encodeURI(lokasi);
+                    
+                    if (lokasi.startsWith('radiologi/')) {
+                        return `http://${req.headers.host}/webapps/${lokasi}`;
+                    } else {
+                        return `http://${req.headers.host}/webapps/radiologi/${lokasi}`;
+                    }
+                });
+
+                let formattedDate = r.tgl_periksa;
+                if (formattedDate instanceof Date) {
+                    formattedDate = formattedDate.toLocaleDateString('id-ID', { day: '2-digit', month: 'short', year: 'numeric' });
+                } else if (formattedDate) {
+                    formattedDate = new Date(formattedDate).toLocaleDateString('id-ID', { day: '2-digit', month: 'short', year: 'numeric' });
+                }
+
+                rads.push({
+                    id: r.no_rawat,
+                    date: formattedDate,
+                    title: 'Pemeriksaan Radiologi',
+                    doctor: r.nm_dokter,
+                    status: 'Selesai',
+                    examType: 'Rontgen / USG',
+                    findings: r.hasil || 'Tidak ada catatan temuan.',
+                    kesimpulan: 'Hasil pemeriksaan radiologi selesai.',
+                    images: images
+                });
+            }
 
             return res.json({
                 success: true,
@@ -799,12 +846,395 @@ Terima kasih atas kepercayaan Anda.
             return res.json({ success: false, message: 'Password lama tidak sesuai.' });
         }
 
+        if (action === 'download_image') {
+            const norm = getSessionNorm(req);
+            if (!norm) {
+                return res.status(401).json({ success: false, message: 'Session expired. Silakan login kembali.' });
+            }
+
+            const imgUrl = params.url || '';
+            if (!imgUrl) {
+                return res.status(400).json({ success: false, message: 'Parameter URL wajib diisi.' });
+            }
+
+            try {
+                const parsedUrl = new URL(imgUrl);
+                const allowedHosts = ['localhost', '127.0.0.1', config.host, config.webapps_host];
+                const isAllowedHost = allowedHosts.includes(parsedUrl.hostname) || parsedUrl.hostname.endsWith('.rsmardhatillah.com');
+                const isWebapps = parsedUrl.pathname.startsWith('/webapps/');
+
+                if (!isAllowedHost || !isWebapps) {
+                    return res.status(403).json({ success: false, message: 'Domain atau path tidak diizinkan.' });
+                }
+
+                const filename = path.basename(parsedUrl.pathname) || 'ronsen.jpg';
+
+                // Check local file
+                const relativePath = parsedUrl.pathname.replace(/^\/webapps/, '');
+                const localPath = path.join(__dirname, '..', '..', 'webapps', relativePath);
+
+                if (fs.existsSync(localPath) && fs.statSync(localPath).isFile()) {
+                    res.setHeader('Content-Disposition', `attachment; filename="${filename}"`);
+                    const ext = path.extname(localPath).toLowerCase();
+                    if (ext === '.png') res.setHeader('Content-Type', 'image/png');
+                    else if (ext === '.gif') res.setHeader('Content-Type', 'image/gif');
+                    else res.setHeader('Content-Type', 'image/jpeg');
+
+                    return fs.createReadStream(localPath).pipe(res);
+                } else {
+                    // Fetch from production/webapps host
+                    let remoteUrl = imgUrl;
+                    if (parsedUrl.hostname === 'localhost' || parsedUrl.hostname === '127.0.0.1') {
+                        remoteUrl = getRemoteUrl(parsedUrl.pathname);
+                    }
+
+                    console.log(`Node downloading remote image: ${remoteUrl}`);
+                    const imgResponse = await fetch(remoteUrl);
+                    if (!imgResponse.ok) {
+                        return res.status(404).json({ success: false, message: 'Gambar tidak ditemukan.' });
+                    }
+
+                    res.setHeader('Content-Disposition', `attachment; filename="${filename}"`);
+                    const contentType = imgResponse.headers.get('content-type');
+                    if (contentType) {
+                        res.setHeader('Content-Type', contentType);
+                    } else {
+                        res.setHeader('Content-Type', 'image/jpeg');
+                    }
+
+                    const arrayBuffer = await imgResponse.arrayBuffer();
+                    return res.send(Buffer.from(arrayBuffer));
+                }
+            } catch (err) {
+                console.error('Download error:', err);
+                return res.status(500).json({ success: false, message: 'Internal Server Error: ' + err.message });
+            }
+        }
+
+        if (action === 'get_consents') {
+            try {
+                // Fetch General Consents
+                const [spuRows] = await pool.query(`
+                    SELECT 
+                        s.no_surat, s.no_rawat, s.tanggal, s.pengobatan_kepada, s.nilai_kepercayaan,
+                        s.nama_pj, s.umur_pj, s.no_ktppj, s.jkpj, s.bertindak_atas, s.no_telp, s.nip,
+                        pp.photo,
+                        d.nm_dokter,
+                        pol.nm_poli
+                    FROM surat_persetujuan_umum s
+                    INNER JOIN reg_periksa rp ON s.no_rawat = rp.no_rawat
+                    INNER JOIN dokter d ON rp.kd_dokter = d.kd_dokter
+                    INNER JOIN poliklinik pol ON rp.kd_poli = pol.kd_poli
+                    LEFT JOIN surat_persetujuan_umum_pembuat_pernyataan pp ON s.no_surat = pp.no_surat
+                    WHERE rp.no_rkm_medis = ?
+                    ORDER BY s.tanggal DESC
+                `, [norm]);
+
+                const generalConsents = spuRows.map(r => {
+                    let dateStr = '';
+                    if (r.tanggal) {
+                        const d = new Date(r.tanggal);
+                        const year = d.getFullYear();
+                        const month = String(d.getMonth() + 1).padStart(2, '0');
+                        const day = String(d.getDate()).padStart(2, '0');
+                        dateStr = `${year}-${month}-${day}`;
+                    }
+                    
+                    const isSigned = !!r.photo;
+                    const photoUrl = isSigned ? `http://${req.headers.host}/webapps/persetujuanumum/${r.photo}` : null;
+
+                    return {
+                        id: r.no_surat,
+                        title: 'Persetujuan Umum (General Consent)',
+                        date: dateStr ? formatIndoDate(dateStr) : '-',
+                        status: isSigned ? 'Ditandatangani' : 'Belum Ditandatangani',
+                        type: 'Umum',
+                        noRawat: r.no_rawat,
+                        photo: photoUrl,
+                        content: `Saya yang bertanda tangan di bawah ini memberikan persetujuan untuk mendapatkan pelayanan kesehatan di rumah sakit dan memberikan kuasa kepada dokter serta perawat untuk melakukan asuhan keperawatan, pemeriksaan fisik, dan prosedur diagnostik rutin yang diperlukan. Saya telah menerima informasi tentang peraturan, hak dan kewajiban pasien, tarif ruang perawatan, tata tertib pasien pulang, serta setuju untuk mematuhi semua ketentuan yang berlaku.`,
+                        meta: {
+                            pengobatan_kepada: r.pengobatan_kepada,
+                            nilai_kepercayaan: r.nilai_kepercayaan,
+                            nama_pj: r.nama_pj,
+                            umur_pj: r.umur_pj,
+                            no_ktppj: r.no_ktppj,
+                            jkpj: r.jkpj,
+                            bertindak_atas: r.bertindak_atas,
+                            no_telp: r.no_telp,
+                            nip: r.nip,
+                            dokter: r.nm_dokter,
+                            poli: r.nm_poli
+                        }
+                    };
+                });
+
+                // Fetch Informed Consents
+                const [pptRows] = await pool.query(`
+                    SELECT 
+                        p.*,
+                        b.photo,
+                        d.nm_dokter,
+                        pol.nm_poli
+                    FROM persetujuan_penolakan_tindakan p
+                    INNER JOIN reg_periksa rp ON p.no_rawat = rp.no_rawat
+                    INNER JOIN dokter d ON p.kd_dokter = d.kd_dokter
+                    LEFT JOIN poliklinik pol ON rp.kd_poli = pol.kd_poli
+                    LEFT JOIN bukti_persetujuan_penolakan_tindakan_penerimainformasi b ON p.no_pernyataan = b.no_pernyataan
+                    WHERE rp.no_rkm_medis = ?
+                    ORDER BY p.tanggal DESC
+                `, [norm]);
+
+                const informedConsents = pptRows.map(r => {
+                    let dateStr = '';
+                    if (r.tanggal) {
+                        const d = new Date(r.tanggal);
+                        const year = d.getFullYear();
+                        const month = String(d.getMonth() + 1).padStart(2, '0');
+                        const day = String(d.getDate()).padStart(2, '0');
+                        dateStr = `${year}-${month}-${day}`;
+                    }
+
+                    const isSigned = !!r.photo && r.pernyataan !== 'Belum Dikonfirmasi';
+                    const photoUrl = isSigned ? `http://${req.headers.host}/webapps/persetujuantindakan/${r.photo}` : null;
+
+                    return {
+                        id: r.no_pernyataan,
+                        title: `Persetujuan/Penolakan Tindakan Medis (${r.tindakan})`,
+                        date: dateStr ? formatIndoDate(dateStr) : '-',
+                        status: isSigned ? 'Ditandatangani' : 'Belum Ditandatangani',
+                        type: 'Tindakan',
+                        noRawat: r.no_rawat,
+                        photo: photoUrl,
+                        content: `Persetujuan/penolakan pemberian tindakan kedokteran berupa ${r.tindakan} untuk diagnosa ${r.diagnosa}. Penerima informasi telah dijelaskan mengenai tujuan tindakan, risiko, komplikasi, prognosis, tata cara, alternatif tindakan, serta konsekuensi jika tindakan ini ditolak.`,
+                        meta: {
+                            diagnosa: r.diagnosa,
+                            tindakan: r.tindakan,
+                            indikasi_tindakan: r.indikasi_tindakan,
+                            tata_cara: r.tata_cara,
+                            tujuan: r.tujuan,
+                            risiko: r.risiko,
+                            komplikasi: r.komplikasi,
+                            prognosis: r.prognosis,
+                            alternatif_dan_risikonya: r.alternatif_dan_risikonya,
+                            biaya: r.biaya,
+                            penerima_informasi: r.penerima_informasi,
+                            alasan_diwakilkan_penerima_informasi: r.alasan_diwakilkan_penerima_informasi,
+                            jk_penerima_informasi: r.jk_penerima_informasi,
+                            tanggal_lahir_penerima_informasi: r.tanggal_lahir_penerima_informasi,
+                            umur_penerima_informasi: r.umur_penerima_informasi,
+                            alamat_penerima_informasi: r.alamat_penerima_informasi,
+                            no_hp: r.no_hp,
+                            hubungan_penerima_informasi: r.hubungan_penerima_informasi,
+                            pernyataan: r.pernyataan,
+                            saksi_keluarga: r.saksi_keluarga,
+                            dokter: r.nm_dokter,
+                            poli: r.nm_poli
+                        }
+                    };
+                });
+
+                return res.json({
+                    success: true,
+                    consents: [...generalConsents, ...informedConsents]
+                });
+            } catch (err) {
+                console.error('get_consents error:', err);
+                return res.status(500).json({ success: false, message: 'Database Error: ' + err.message });
+            }
+        }
+
+        if (action === 'save_consent') {
+            const { id, type, photo, choices } = params;
+            if (!id || !type || !photo) {
+                return res.status(400).json({ success: false, message: 'Parameter id, type, dan photo wajib diisi.' });
+            }
+
+            try {
+                // Decode base64 image
+                const base64Data = photo.replace(/^data:image\/\w+;base64,/, "");
+                const buffer = Buffer.from(base64Data, 'base64');
+
+                if (type === 'Umum') {
+                    // 1. Save locally (if directories exist/can be created)
+                    try {
+                        const uploadDir = path.join(__dirname, '..', '..', 'webapps', 'persetujuanumum', 'pages', 'upload');
+                        if (!fs.existsSync(uploadDir)) {
+                            fs.mkdirSync(uploadDir, { recursive: true });
+                        }
+                        const fileName = `${id}.jpeg`;
+                        const filePath = path.join(uploadDir, fileName);
+                        fs.writeFileSync(filePath, buffer);
+                    } catch (localErr) {
+                        console.warn('Warning: Could not save General Consent file locally:', localErr.message);
+                    }
+
+                    // 2. Forward to the main server PHP endpoint dynamically using config.webapps_host
+                    const remoteUrl = getRemoteUrl('/webapps/persetujuanumum/pages/storeImage.php');
+                    console.log(`Forwarding Persetujuan Umum to main server: ${remoteUrl}`);
+                    try {
+                        const formData = new URLSearchParams();
+                        formData.append('nosurat', id);
+                        formData.append('pengobatan_kepada', choices?.pengobatan_kepada || '-');
+                        formData.append('nilai_kepercayaan', choices?.nilai_kepercayaan || '');
+                        formData.append('image', photo);
+
+                        const remoteResponse = await fetch(remoteUrl, {
+                            method: 'POST',
+                            headers: {
+                                'Content-Type': 'application/x-www-form-urlencoded'
+                            },
+                            body: formData.toString()
+                        });
+                        const remoteText = await remoteResponse.text();
+                        console.log(`Main server storeImage.php response (General Consent):`, remoteText);
+                    } catch (remoteErr) {
+                        console.error('Error forwarding General Consent to main server:', remoteErr.message);
+                    }
+
+                    // 3. Update database directly from Node as redundancy
+                    const dbPhotoPath = `pages/upload/${id}.jpeg`;
+                    console.log('Inserting into DB. id:', id, 'dbPhotoPath:', dbPhotoPath);
+                    await pool.query(`
+                        INSERT INTO surat_persetujuan_umum_pembuat_pernyataan (no_surat, photo)
+                        VALUES (?, ?)
+                        ON DUPLICATE KEY UPDATE photo = ?
+                    `, [id, dbPhotoPath, dbPhotoPath]);
+                    console.log('DB Insert Success for Persetujuan Umum!');
+
+                    const pengobatan_kepada = choices?.pengobatan_kepada || '-';
+                    const nilai_kepercayaan = choices?.nilai_kepercayaan || '';
+                    await pool.query(`
+                        UPDATE surat_persetujuan_umum 
+                        SET pengobatan_kepada = ?, nilai_kepercayaan = ?
+                        WHERE no_surat = ?
+                    `, [pengobatan_kepada, nilai_kepercayaan, id]);
+
+                    return res.json({ success: true, message: 'Persetujuan Umum berhasil ditandatangani.' });
+
+                } else if (type === 'Tindakan') {
+                    // 1. Save locally (if directories exist/can be created)
+                    try {
+                        const uploadDir = path.join(__dirname, '..', '..', 'webapps', 'persetujuantindakan', 'pages', 'upload');
+                        if (!fs.existsSync(uploadDir)) {
+                            fs.mkdirSync(uploadDir, { recursive: true });
+                        }
+                        const fileName = `${id}PP.jpeg`;
+                        const filePath = path.join(uploadDir, fileName);
+                        fs.writeFileSync(filePath, buffer);
+                    } catch (localErr) {
+                        console.warn('Warning: Could not save Informed Consent file locally:', localErr.message);
+                    }
+
+                    // 2. Forward to the main server PHP endpoint dynamically using config.webapps_host
+                    const remoteUrl = getRemoteUrl('/webapps/persetujuantindakan/pages/storeImage.php');
+                    console.log(`Forwarding Persetujuan Tindakan to main server: ${remoteUrl}`);
+                    try {
+                        const formData = new URLSearchParams();
+                        formData.append('nopernyataan', id);
+                        formData.append('pilihansetuju', choices?.pernyataan || 'Persetujuan');
+                        formData.append('image', photo);
+                        formData.append('diagnosa_konfirmasi', 'true');
+                        formData.append('tindakan_konfirmasi', 'true');
+                        formData.append('indikasi_tindakan_konfirmasi', 'true');
+                        formData.append('tata_cara_konfirmasi', 'true');
+                        formData.append('tujuan_konfirmasi', 'true');
+                        formData.append('risiko_konfirmasi', 'true');
+                        formData.append('komplikasi_konfirmasi', 'true');
+                        formData.append('prognosis_konfirmasi', 'true');
+                        formData.append('alternatif_konfirmasi', 'true');
+                        formData.append('biaya_konfirmasi', 'true');
+                        formData.append('lain_lain_konfirmasi', 'true');
+
+                        const remoteResponse = await fetch(remoteUrl, {
+                            method: 'POST',
+                            headers: {
+                                'Content-Type': 'application/x-www-form-urlencoded'
+                            },
+                            body: formData.toString()
+                        });
+                        const remoteText = await remoteResponse.text();
+                        console.log(`Main server storeImage.php response (Informed Consent):`, remoteText);
+                    } catch (remoteErr) {
+                        console.error('Error forwarding Informed Consent to main server:', remoteErr.message);
+                    }
+
+                    // 3. Update database directly from Node as redundancy
+                    const dbPhotoPath = `pages/upload/${id}PP.jpeg`;
+                    console.log('Inserting into DB. id:', id, 'dbPhotoPath:', dbPhotoPath);
+                    await pool.query(`
+                        INSERT INTO bukti_persetujuan_penolakan_tindakan_penerimainformasi (no_pernyataan, photo)
+                        VALUES (?, ?)
+                        ON DUPLICATE KEY UPDATE photo = ?
+                    `, [id, dbPhotoPath, dbPhotoPath]);
+                    console.log('DB Insert Success for Persetujuan Tindakan!');
+
+                    const pernyataan = choices?.pernyataan || 'Persetujuan';
+                    await pool.query(`
+                        UPDATE persetujuan_penolakan_tindakan 
+                        SET pernyataan = ?, 
+                            diagnosa_konfirmasi = 'true', 
+                            tindakan_konfirmasi = 'true', 
+                            indikasi_tindakan_konfirmasi = 'true', 
+                            tata_cara_konfirmasi = 'true', 
+                            tujuan_konfirmasi = 'true', 
+                            risiko_konfirmasi = 'true', 
+                            komplikasi_konfirmasi = 'true', 
+                            prognosis_konfirmasi = 'true', 
+                            alternatif_konfirmasi = 'true', 
+                            biaya_konfirmasi = 'true', 
+                            lain_lain_konfirmasi = 'true'
+                        WHERE no_pernyataan = ?
+                    `, [pernyataan, id]);
+
+                    return res.json({ success: true, message: 'Persetujuan Tindakan Medis berhasil ditandatangani.' });
+                } else {
+                    return res.status(400).json({ success: false, message: 'Tipe dokumen tidak valid.' });
+                }
+            } catch (err) {
+                console.error('save_consent error:', err);
+                return res.status(500).json({ success: false, message: 'Gagal menyimpan persetujuan: ' + err.message });
+            }
+        }
+
         return res.json({ success: false, message: 'Aksi API tidak valid.' });
 
     } catch (err) {
         console.error(`Error executing API action "${action}":`, err);
         return res.status(500).json({ success: false, message: 'Internal Server Error: ' + err.message });
     }
+});
+
+app.use('/images', express.static(path.join(__dirname, '..', 'images')));
+
+app.use('/webapps', async (req, res, next) => {
+    const localPath = path.join(__dirname, '..', '..', 'webapps', req.path);
+    if (fs.existsSync(localPath) && fs.statSync(localPath).isFile()) {
+        return res.sendFile(localPath);
+    }
+    
+    // Fallback: Fetch from the main server (config.webapps_host)
+    const remoteUrl = getRemoteUrl(`/webapps${req.path}`);
+    console.log(`Local file not found: ${req.path}. Fetching from main server: ${remoteUrl}`);
+    try {
+        const fileResponse = await fetch(remoteUrl);
+        if (fileResponse.ok) {
+            const contentType = fileResponse.headers.get('content-type');
+            if (contentType) {
+                res.setHeader('Content-Type', contentType);
+            }
+            const arrayBuffer = await fileResponse.arrayBuffer();
+            return res.send(Buffer.from(arrayBuffer));
+        } else {
+            console.warn(`File not found on main server: ${remoteUrl}. Status: ${fileResponse.status}. Trying live server fallback.`);
+        }
+    } catch (err) {
+        console.error(`Error fetching file from main server (${remoteUrl}):`, err.message);
+    }
+    
+    // Secondary fallback: Redirect to live server
+    const fallbackUrl = `https://rsmardhatillah.com/webapps${req.path}`;
+    console.log(`Fallback redirect to: ${fallbackUrl}`);
+    return res.redirect(fallbackUrl);
 });
 
 // Serve compiled React bundle in production (fallback)

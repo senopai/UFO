@@ -18,7 +18,6 @@ import {
 export default function Dashboard({ 
   user, 
   activeQueue, 
-  handleCheckIn, 
   setActiveTab, 
   setHistoryDefaultTab,
   pendingConsentsCount,
@@ -83,39 +82,27 @@ export default function Dashboard({
                 </p>
                 <div className="flex flex-wrap items-center gap-x-4 gap-y-2 mt-3 text-xs text-slate-500">
                   <span className="flex items-center gap-1.5"><Clock size={14} className="text-emerald-600" /> Sesi: 09:00 - 12:00</span>
-                  <span className="flex items-center gap-1.5"><Activity size={14} className="text-emerald-600" /> Status: {activeQueue.status === 'Terdaftar' ? 'Dalam Antrean' : 'Menunggu Check-in'}</span>
+                  <span className="flex items-center gap-1.5"><Activity size={14} className="text-emerald-600" /> Status: Dalam Antrean</span>
                 </div>
               </div>
             </div>
 
             {/* Action Box */}
             <div className="flex items-center gap-4 bg-slate-50 p-4 rounded-2xl border border-slate-200/80 w-full lg:w-auto lg:min-w-[320px]">
-              {activeQueue.status === 'Belum Check-in' ? (
-                <div className="w-full text-center space-y-3">
-                  <p className="text-xs text-slate-600">Anda berada di area klinik? Lakukan check-in online sekarang.</p>
-                  <button 
-                    onClick={handleCheckIn}
-                    className="w-full py-2.5 px-4 bg-emerald-600 hover:bg-emerald-500 text-white font-semibold text-sm rounded-xl shadow-[0_4px_20px_rgba(16,185,129,0.2)] transition-all duration-200"
-                  >
-                    Check-in Mandiri
-                  </button>
+              <div className="flex items-center justify-between w-full">
+                <div>
+                  <span className="text-[10px] text-slate-500 block uppercase font-bold">Nomor Antrean Anda</span>
+                  <span className="text-3xl md:text-4xl font-extrabold font-heading text-emerald-600 tracking-tight">
+                    {activeQueue.queueNum}
+                  </span>
+                  <span className="text-[10px] text-emerald-600 block mt-1 font-semibold flex items-center gap-1">
+                    <CheckCircle size={10} /> Sudah Terdaftar
+                  </span>
                 </div>
-              ) : (
-                <div className="flex items-center justify-between w-full">
-                  <div>
-                    <span className="text-[10px] text-slate-500 block uppercase font-bold">Nomor Antrean Anda</span>
-                    <span className="text-3xl md:text-4xl font-extrabold font-heading text-emerald-600 tracking-tight">
-                      {activeQueue.queueNum}
-                    </span>
-                    <span className="text-[10px] text-emerald-600 block mt-1 font-semibold flex items-center gap-1">
-                      <CheckCircle size={10} /> Sudah Terdaftar
-                    </span>
-                  </div>
-                  <div className="p-3 bg-white border border-slate-200 rounded-xl">
-                    <QrCode size={48} className="text-slate-700" />
-                  </div>
+                <div className="p-3 bg-white border border-slate-200 rounded-xl">
+                  <QrCode size={48} className="text-slate-700" />
                 </div>
-              )}
+              </div>
             </div>
           </div>
         </section>
@@ -211,8 +198,6 @@ export default function Dashboard({
                 <th className="py-3 px-4">Poliklinik</th>
                 <th className="py-3 px-4 text-center">Mulai</th>
                 <th className="py-3 px-4 text-center">Selesai</th>
-                <th className="py-3 px-4 text-center">Kuota</th>
-                <th className="py-3 px-4 text-center">Cek-In</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-100 text-slate-600">
@@ -222,16 +207,6 @@ export default function Dashboard({
                   <td className="py-3.5 px-4 text-slate-500">{doc.clinic}</td>
                   <td className="py-3.5 px-4 text-center font-mono">{doc.start}</td>
                   <td className="py-3.5 px-4 text-center font-mono">{doc.end}</td>
-                  <td className="py-3.5 px-4 text-center font-mono text-slate-500">{doc.quota}</td>
-                  <td className="py-3.5 px-4 text-center">
-                    <span className={`px-2.5 py-0.5 rounded-full text-[10px] font-bold ${
-                      doc.checkin > 0 
-                        ? 'bg-emerald-50 text-emerald-700 border border-emerald-200/50' 
-                        : 'bg-slate-50 text-slate-400 border border-slate-200'
-                    }`}>
-                      {doc.checkin}
-                    </span>
-                  </td>
                 </tr>
               ))}
             </tbody>
@@ -260,14 +235,7 @@ export default function Dashboard({
                 action: () => setActiveTab('history'), 
                 icon: History, 
                 color: 'text-indigo-600 bg-indigo-50 border-indigo-100'
-              },
-              { 
-                title: 'Formulir Persetujuan', 
-                desc: 'Tandatangani E-Consent & persetujuan umum rumah sakit.', 
-                action: () => setActiveTab('consent'), 
-                icon: FileSignature, 
-                color: 'text-amber-600 bg-amber-50 border-amber-100'
-              },
+              }
             ].map((act, i) => (
               <button 
                 key={i} 
