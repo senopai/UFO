@@ -222,7 +222,7 @@ public class DlgDpjp extends javax.swing.JDialog {
         Scroll.setName("Scroll"); // NOI18N
         Scroll.setOpaque(true);
 
-        tbPasien.setAutoCreateRowSorter(true);
+        tbPasien.setAutoCreateRowSorter(false);
         tbPasien.setName("tbPasien"); // NOI18N
         tbPasien.addMouseListener(new java.awt.event.MouseAdapter() {
             public void mouseClicked(java.awt.event.MouseEvent evt) {
@@ -944,7 +944,7 @@ private void ChkInputActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRS
                     }
                 }
             });
-        
+            
             Dokter.getDocument().addDocumentListener(new javax.swing.event.DocumentListener(){
                 @Override
                 public void insertUpdate(DocumentEvent e) {
@@ -965,7 +965,7 @@ private void ChkInputActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRS
                     }
                 }
             });
-        }
+        } 
     }//GEN-LAST:event_formWindowOpened
 
     /**
@@ -1080,7 +1080,7 @@ private void ChkInputActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRS
             System.out.println("Notifikasi : "+e);
         }
     }
-
+    
     public void tampil2() {
         runBackground(() ->tampil());
     }
@@ -1171,8 +1171,8 @@ private void ChkInputActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRS
             ps=koneksi.prepareStatement("select dokter.kd_dokter,dokter.nm_dokter from dokter where dokter.status='1' "+(Dokter.getText().trim().equals("")?"":"and (dokter.kd_dokter like ? or dokter.nm_dokter like ?) ")+"order by dokter.nm_dokter");            
             try {
                 if(!Dokter.getText().trim().equals("")){
-                ps.setString(1,"%"+Dokter.getText().trim()+"%");
-                ps.setString(2,"%"+Dokter.getText().trim()+"%");            
+                    ps.setString(1,"%"+Dokter.getText().trim()+"%");
+                    ps.setString(2,"%"+Dokter.getText().trim()+"%");   
                 }         
                 rs=ps.executeQuery();
                 while(rs.next()){
@@ -1202,22 +1202,22 @@ private void ChkInputActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRS
         setCursor(Cursor.getPredefinedCursor(Cursor.WAIT_CURSOR));
 
         try {
-        executor.submit(() -> {
-            try {
-                task.run();
-            } finally {
-                ceksukses = false;
-                SwingUtilities.invokeLater(() -> {
+            executor.submit(() -> {
+                try {
+                    task.run();
+                } finally {
+                    ceksukses = false;
+                    SwingUtilities.invokeLater(() -> {
                         if (isDisplayable()) {
                             setCursor(Cursor.getDefaultCursor());
                         }
-                });
-            }
-        });
+                    });
+                }
+            });
         } catch (RejectedExecutionException ex) {
             ceksukses = false;
+        }
     }
-}
     
     @Override
     public void dispose() {

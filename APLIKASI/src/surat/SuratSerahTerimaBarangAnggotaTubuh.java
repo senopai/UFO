@@ -1493,7 +1493,7 @@ public final class SuratSerahTerimaBarangAnggotaTubuh extends javax.swing.JDialo
             }
                 
             try {
-                if(TCari.getText().toString().trim().equals("")){
+                if(TCari.getText().trim().equals("")){
                     ps.setString(1,Valid.SetTgl(DTPCari1.getSelectedItem()+""));
                     ps.setString(2,Valid.SetTgl(DTPCari2.getSelectedItem()+""));
                 }else{
@@ -1772,6 +1772,15 @@ public final class SuratSerahTerimaBarangAnggotaTubuh extends javax.swing.JDialo
     public void dispose() {
         executor.shutdownNow();
         super.dispose();
+    }
+    
+    public void setNoRm(String norwt,String norm,String nama) {
+        TNoRw.setText(norwt);
+        TNoRM.setText(norm);
+        TPasien.setText(nama);
+        isRawat();
+        ChkInput.setSelected(true);
+        isForm();
     }
 }
 

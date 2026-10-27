@@ -25,8 +25,12 @@ import java.util.Calendar;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.RejectedExecutionException;
 import javax.swing.JOptionPane;
 import javax.swing.JTable;
+import javax.swing.SwingUtilities;
 import javax.swing.Timer;
 import javax.swing.event.DocumentEvent;
 import javax.swing.table.DefaultTableModel;
@@ -45,11 +49,11 @@ public final class DlgAuditBundleIADP extends javax.swing.JDialog {
     private PreparedStatement ps;
     private ResultSet rs;
     private int i=0;    
-    private DlgCariPegawai petugas=new DlgCariPegawai(null,false);
-    private double handhygiene=0,apd=0,skin_antiseptik=0,
-                lokasi_iv=0,perawatan_rutin=0,ttlhandhygiene=0,
-                ttlapd=0,ttlskin_antiseptik=0,ttllokasi_iv=0,
-                ttlperawatan_rutin=0,ttlpenilaian=0;
+    private final ExecutorService executor = Executors.newSingleThreadExecutor();
+    private volatile boolean ceksukses = false;
+    private double handhygiene=0,apd=0,skin_antiseptik=0,lokasi_iv=0,perawatan_rutin=0,pembagi=0,
+                   nahandhygiene=0,naapd=0,naskin_antiseptik=0,nalokasi_iv=0,naperawatan_rutin=0,
+                   ttlhandhygiene=0,ttlapd=0,ttlskin_antiseptik=0,ttllokasi_iv=0,ttlperawatan_rutin=0,ttlpenilaian=0;
     
     /** Creates new form DlgRujuk
      * @param parent
@@ -100,51 +104,6 @@ public final class DlgAuditBundleIADP extends javax.swing.JDialog {
         Nip.setDocument(new batasInput((byte)20).getKata(Nip));
         TCari.setDocument(new batasInput((int)100).getKata(TCari));
         
-        if(koneksiDB.CARICEPAT().equals("aktif")){
-            TCari.getDocument().addDocumentListener(new javax.swing.event.DocumentListener(){
-                @Override
-                public void insertUpdate(DocumentEvent e) {
-                    if(TCari.getText().length()>2){
-                        tampil();
-                    }
-                }
-                @Override
-                public void removeUpdate(DocumentEvent e) {
-                    if(TCari.getText().length()>2){
-                        tampil();
-                    }
-                }
-                @Override
-                public void changedUpdate(DocumentEvent e) {
-                    if(TCari.getText().length()>2){
-                        tampil();
-                    }
-                }
-            });
-        }
-        
-        petugas.addWindowListener(new WindowListener() {
-            @Override
-            public void windowOpened(WindowEvent e) {}
-            @Override
-            public void windowClosing(WindowEvent e) {}
-            @Override
-            public void windowClosed(WindowEvent e) {
-                if(petugas.getTable().getSelectedRow()!= -1){                   
-                    Nip.setText(petugas.getTable().getValueAt(petugas.getTable().getSelectedRow(),0).toString());
-                    NamaPetugas.setText(petugas.getTable().getValueAt(petugas.getTable().getSelectedRow(),1).toString());
-                }  
-                Nip.requestFocus();
-            }
-            @Override
-            public void windowIconified(WindowEvent e) {}
-            @Override
-            public void windowDeiconified(WindowEvent e) {}
-            @Override
-            public void windowActivated(WindowEvent e) {}
-            @Override
-            public void windowDeactivated(WindowEvent e) {}
-        }); 
         ChkInput.setSelected(false);
         isForm();
         
@@ -211,6 +170,11 @@ public final class DlgAuditBundleIADP extends javax.swing.JDialog {
         setDefaultCloseOperation(javax.swing.WindowConstants.DISPOSE_ON_CLOSE);
         setUndecorated(true);
         setResizable(false);
+        addWindowListener(new java.awt.event.WindowAdapter() {
+            public void windowOpened(java.awt.event.WindowEvent evt) {
+                formWindowOpened(evt);
+            }
+        });
 
         internalFrame1.setBorder(javax.swing.BorderFactory.createTitledBorder(javax.swing.BorderFactory.createLineBorder(new java.awt.Color(240, 245, 235)), "::[ Audit Bundle IADP (Plebitis) ]::", javax.swing.border.TitledBorder.DEFAULT_JUSTIFICATION, javax.swing.border.TitledBorder.DEFAULT_POSITION, new java.awt.Font("Tahoma", 0, 11), new java.awt.Color(50, 50, 50))); // NOI18N
         internalFrame1.setFont(new java.awt.Font("Tahoma", 2, 12)); // NOI18N
@@ -377,7 +341,7 @@ public final class DlgAuditBundleIADP extends javax.swing.JDialog {
         panelGlass9.add(jLabel19);
 
         DTPCari1.setForeground(new java.awt.Color(50, 70, 50));
-        DTPCari1.setModel(new javax.swing.DefaultComboBoxModel(new String[] { "20-06-2022" }));
+        DTPCari1.setModel(new javax.swing.DefaultComboBoxModel(new String[] { "10-02-2026" }));
         DTPCari1.setDisplayFormat("dd-MM-yyyy");
         DTPCari1.setName("DTPCari1"); // NOI18N
         DTPCari1.setOpaque(false);
@@ -391,7 +355,7 @@ public final class DlgAuditBundleIADP extends javax.swing.JDialog {
         panelGlass9.add(jLabel21);
 
         DTPCari2.setForeground(new java.awt.Color(50, 70, 50));
-        DTPCari2.setModel(new javax.swing.DefaultComboBoxModel(new String[] { "20-06-2022" }));
+        DTPCari2.setModel(new javax.swing.DefaultComboBoxModel(new String[] { "10-02-2026" }));
         DTPCari2.setDisplayFormat("dd-MM-yyyy");
         DTPCari2.setName("DTPCari2"); // NOI18N
         DTPCari2.setOpaque(false);
@@ -461,7 +425,7 @@ public final class DlgAuditBundleIADP extends javax.swing.JDialog {
         FormInput.setLayout(null);
 
         Tanggal.setForeground(new java.awt.Color(50, 70, 50));
-        Tanggal.setModel(new javax.swing.DefaultComboBoxModel(new String[] { "20-06-2022" }));
+        Tanggal.setModel(new javax.swing.DefaultComboBoxModel(new String[] { "10-02-2026" }));
         Tanggal.setDisplayFormat("dd-MM-yyyy");
         Tanggal.setName("Tanggal"); // NOI18N
         Tanggal.setOpaque(false);
@@ -557,7 +521,7 @@ public final class DlgAuditBundleIADP extends javax.swing.JDialog {
         FormInput.add(jLabel14);
         jLabel14.setBounds(64, 40, 110, 23);
 
-        HandHygiene.setModel(new javax.swing.DefaultComboBoxModel(new String[] { "Ya", "Tidak" }));
+        HandHygiene.setModel(new javax.swing.DefaultComboBoxModel(new String[] { "Ya", "Tidak", "NA" }));
         HandHygiene.setName("HandHygiene"); // NOI18N
         HandHygiene.addKeyListener(new java.awt.event.KeyAdapter() {
             public void keyPressed(java.awt.event.KeyEvent evt) {
@@ -573,7 +537,7 @@ public final class DlgAuditBundleIADP extends javax.swing.JDialog {
         FormInput.add(jLabel17);
         jLabel17.setBounds(320, 40, 105, 23);
 
-        APD.setModel(new javax.swing.DefaultComboBoxModel(new String[] { "Ya", "Tidak" }));
+        APD.setModel(new javax.swing.DefaultComboBoxModel(new String[] { "Ya", "Tidak", "NA" }));
         APD.setName("APD"); // NOI18N
         APD.addKeyListener(new java.awt.event.KeyAdapter() {
             public void keyPressed(java.awt.event.KeyEvent evt) {
@@ -589,7 +553,7 @@ public final class DlgAuditBundleIADP extends javax.swing.JDialog {
         FormInput.add(jLabel23);
         jLabel23.setBounds(580, 40, 120, 23);
 
-        SkinAntiSeptik.setModel(new javax.swing.DefaultComboBoxModel(new String[] { "Ya", "Tidak" }));
+        SkinAntiSeptik.setModel(new javax.swing.DefaultComboBoxModel(new String[] { "Ya", "Tidak", "NA" }));
         SkinAntiSeptik.setName("SkinAntiSeptik"); // NOI18N
         SkinAntiSeptik.addKeyListener(new java.awt.event.KeyAdapter() {
             public void keyPressed(java.awt.event.KeyEvent evt) {
@@ -621,7 +585,7 @@ public final class DlgAuditBundleIADP extends javax.swing.JDialog {
         FormInput.add(jLabel20);
         jLabel20.setBounds(320, 70, 105, 23);
 
-        LokasiIV.setModel(new javax.swing.DefaultComboBoxModel(new String[] { "Ya", "Tidak" }));
+        LokasiIV.setModel(new javax.swing.DefaultComboBoxModel(new String[] { "Ya", "Tidak", "NA" }));
         LokasiIV.setName("LokasiIV"); // NOI18N
         LokasiIV.addKeyListener(new java.awt.event.KeyAdapter() {
             public void keyPressed(java.awt.event.KeyEvent evt) {
@@ -631,7 +595,7 @@ public final class DlgAuditBundleIADP extends javax.swing.JDialog {
         FormInput.add(LokasiIV);
         LokasiIV.setBounds(170, 70, 78, 23);
 
-        PerawatanRutin.setModel(new javax.swing.DefaultComboBoxModel(new String[] { "Ya", "Tidak" }));
+        PerawatanRutin.setModel(new javax.swing.DefaultComboBoxModel(new String[] { "Ya", "Tidak", "NA" }));
         PerawatanRutin.setName("PerawatanRutin"); // NOI18N
         PerawatanRutin.addKeyListener(new java.awt.event.KeyAdapter() {
             public void keyPressed(java.awt.event.KeyEvent evt) {
@@ -679,7 +643,7 @@ public final class DlgAuditBundleIADP extends javax.swing.JDialog {
                 Valid.SetTgl(Tanggal.getSelectedItem()+"")+" "+Jam.getSelectedItem()+":"+Menit.getSelectedItem()+":"+Detik.getSelectedItem(),Nip.getText(),HandHygiene.getSelectedItem().toString(),
                 APD.getSelectedItem().toString(),SkinAntiSeptik.getSelectedItem().toString(),LokasiIV.getSelectedItem().toString(),PerawatanRutin.getSelectedItem().toString()
             })==true){
-                tampil();
+                runBackground(() ->tampil());
                 emptTeks();
             }  
         }
@@ -710,7 +674,7 @@ public final class DlgAuditBundleIADP extends javax.swing.JDialog {
             if(Sequel.queryu2tf("delete from audit_bundle_iadp where nik=? and tanggal=?",2,new String[]{
                 tbObat.getValueAt(tbObat.getSelectedRow(),1).toString(),tbObat.getValueAt(tbObat.getSelectedRow(),0).toString()
             })==true){
-                tampil();
+                runBackground(() ->tampil());
                 emptTeks();
             }else{
                 JOptionPane.showMessageDialog(null,"Gagal menghapus..!!");
@@ -735,7 +699,7 @@ public final class DlgAuditBundleIADP extends javax.swing.JDialog {
                 Valid.SetTgl(Tanggal.getSelectedItem()+"")+" "+Jam.getSelectedItem()+":"+Menit.getSelectedItem()+":"+Detik.getSelectedItem(),Nip.getText(),HandHygiene.getSelectedItem().toString(),APD.getSelectedItem().toString(),SkinAntiSeptik.getSelectedItem().toString(),
                 LokasiIV.getSelectedItem().toString(),PerawatanRutin.getSelectedItem().toString(),tbObat.getValueAt(tbObat.getSelectedRow(),1).toString(),tbObat.getValueAt(tbObat.getSelectedRow(),0).toString()
             });
-            if(tabMode.getRowCount()!=0){tampil();}
+            if(tabMode.getRowCount()!=0){runBackground(() ->tampil());}
             emptTeks();
         }
 }//GEN-LAST:event_BtnEditActionPerformed
@@ -749,7 +713,6 @@ public final class DlgAuditBundleIADP extends javax.swing.JDialog {
 }//GEN-LAST:event_BtnEditKeyPressed
 
     private void BtnKeluarActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_BtnKeluarActionPerformed
-        petugas.dispose();
         dispose();
 }//GEN-LAST:event_BtnKeluarActionPerformed
 
@@ -811,7 +774,7 @@ public final class DlgAuditBundleIADP extends javax.swing.JDialog {
 }//GEN-LAST:event_TCariKeyPressed
 
     private void BtnCariActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_BtnCariActionPerformed
-        tampil();
+        runBackground(() ->tampil());
 }//GEN-LAST:event_BtnCariActionPerformed
 
     private void BtnCariKeyPressed(java.awt.event.KeyEvent evt) {//GEN-FIRST:event_BtnCariKeyPressed
@@ -824,13 +787,13 @@ public final class DlgAuditBundleIADP extends javax.swing.JDialog {
 
     private void BtnAllActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_BtnAllActionPerformed
         TCari.setText("");
-        tampil();
+        runBackground(() ->tampil());
 }//GEN-LAST:event_BtnAllActionPerformed
 
     private void BtnAllKeyPressed(java.awt.event.KeyEvent evt) {//GEN-FIRST:event_BtnAllKeyPressed
         if(evt.getKeyCode()==KeyEvent.VK_SPACE){
             TCari.setText("");
-            tampil();
+            runBackground(() ->tampil());
         }else{
             //Valid.pindah(evt, BtnCari, TPasien);
         }
@@ -887,6 +850,29 @@ public final class DlgAuditBundleIADP extends javax.swing.JDialog {
     }//GEN-LAST:event_NipKeyPressed
 
     private void btnPetugasActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_btnPetugasActionPerformed
+        DlgCariPegawai petugas=new DlgCariPegawai(null,false);
+        petugas.addWindowListener(new WindowListener() {
+            @Override
+            public void windowOpened(WindowEvent e) {}
+            @Override
+            public void windowClosing(WindowEvent e) {}
+            @Override
+            public void windowClosed(WindowEvent e) {
+                if(petugas.getTable().getSelectedRow()!= -1){                   
+                    Nip.setText(petugas.getTable().getValueAt(petugas.getTable().getSelectedRow(),0).toString());
+                    NamaPetugas.setText(petugas.getTable().getValueAt(petugas.getTable().getSelectedRow(),1).toString());
+                }  
+                Nip.requestFocus();
+            }
+            @Override
+            public void windowIconified(WindowEvent e) {}
+            @Override
+            public void windowDeiconified(WindowEvent e) {}
+            @Override
+            public void windowActivated(WindowEvent e) {}
+            @Override
+            public void windowDeactivated(WindowEvent e) {}
+        }); 
         petugas.emptTeks();
         petugas.setSize(internalFrame1.getWidth()-20,internalFrame1.getHeight()-20);
         petugas.setLocationRelativeTo(internalFrame1);
@@ -916,6 +902,31 @@ public final class DlgAuditBundleIADP extends javax.swing.JDialog {
     private void PerawatanRutinKeyPressed(java.awt.event.KeyEvent evt) {//GEN-FIRST:event_PerawatanRutinKeyPressed
         Valid.pindah(evt, LokasiIV,BtnSimpan);
     }//GEN-LAST:event_PerawatanRutinKeyPressed
+
+    private void formWindowOpened(java.awt.event.WindowEvent evt) {//GEN-FIRST:event_formWindowOpened
+        if(koneksiDB.CARICEPAT().equals("aktif")){
+            TCari.getDocument().addDocumentListener(new javax.swing.event.DocumentListener(){
+                @Override
+                public void insertUpdate(DocumentEvent e) {
+                    if(TCari.getText().length()>2){
+                        runBackground(() ->tampil());
+                    }
+                }
+                @Override
+                public void removeUpdate(DocumentEvent e) {
+                    if(TCari.getText().length()>2){
+                        runBackground(() ->tampil());
+                    }
+                }
+                @Override
+                public void changedUpdate(DocumentEvent e) {
+                    if(TCari.getText().length()>2){
+                        runBackground(() ->tampil());
+                    }
+                }
+            });
+        }
+    }//GEN-LAST:event_formWindowOpened
 
     /**
     * @param args the command line arguments
@@ -985,7 +996,7 @@ public final class DlgAuditBundleIADP extends javax.swing.JDialog {
     private void tampil() {
         Valid.tabelKosong(tabMode);
         try{
-            if(TCari.getText().toString().trim().equals("")){
+            if(TCari.getText().trim().equals("")){
                 ps=koneksi.prepareStatement(
                     "select audit_bundle_iadp.nik,pegawai.nama,audit_bundle_iadp.tanggal,audit_bundle_iadp.handhygiene,"+
                     "audit_bundle_iadp.apd,audit_bundle_iadp.skin_antiseptik,audit_bundle_iadp.lokasi_iv,audit_bundle_iadp.perawatan_rutin "+
@@ -999,9 +1010,9 @@ public final class DlgAuditBundleIADP extends javax.swing.JDialog {
                     "where audit_bundle_iadp.tanggal between ? and ? "+
                     "and (audit_bundle_iadp.nik like ? or pegawai.nama like ?) order by audit_bundle_iadp.tanggal");
             }
-                
+
             try {
-                if(TCari.getText().toString().trim().equals("")){
+                if(TCari.getText().trim().equals("")){
                     ps.setString(1,Valid.SetTgl(DTPCari1.getSelectedItem()+"")+" 00:00:00");
                     ps.setString(2,Valid.SetTgl(DTPCari2.getSelectedItem()+"")+" 23:59:59");
                 }else{
@@ -1010,44 +1021,78 @@ public final class DlgAuditBundleIADP extends javax.swing.JDialog {
                     ps.setString(3,"%"+TCari.getText()+"%");
                     ps.setString(4,"%"+TCari.getText()+"%");
                 }
-                    
+
                 rs=ps.executeQuery();
                 ttlhandhygiene=0;ttlapd=0;ttlskin_antiseptik=0;ttllokasi_iv=0;ttlperawatan_rutin=0;ttlpenilaian=0;
+                nahandhygiene=0;naapd=0;naskin_antiseptik=0;nalokasi_iv=0;naperawatan_rutin=0;
                 i=1;
                 while(rs.next()){
-                    handhygiene=Double.parseDouble(rs.getString("handhygiene").replaceAll("Ya","1").replaceAll("Tidak","0"));
-                    ttlhandhygiene=ttlhandhygiene+handhygiene;
-                    apd=Double.parseDouble(rs.getString("apd").replaceAll("Ya","1").replaceAll("Tidak","0"));
-                    ttlapd=ttlapd+apd;
-                    skin_antiseptik=Double.parseDouble(rs.getString("skin_antiseptik").replaceAll("Ya","1").replaceAll("Tidak","0"));
-                    ttlskin_antiseptik=ttlskin_antiseptik+skin_antiseptik;
-                    lokasi_iv=Double.parseDouble(rs.getString("lokasi_iv").replaceAll("Ya","1").replaceAll("Tidak","0"));
-                    ttllokasi_iv=ttllokasi_iv+lokasi_iv;
-                    perawatan_rutin=Double.parseDouble(rs.getString("perawatan_rutin").replaceAll("Ya","1").replaceAll("Tidak","0"));
-                    ttlperawatan_rutin=ttlperawatan_rutin+perawatan_rutin;
-                    ttlpenilaian=ttlpenilaian+(((handhygiene+apd+skin_antiseptik+lokasi_iv+perawatan_rutin)/5)*100);
+                    pembagi=0;
+                    handhygiene=0;apd=0;skin_antiseptik=0;lokasi_iv=0;perawatan_rutin=0;
+
+                    if(!rs.getString("handhygiene").equals("NA")){
+                        handhygiene=Double.parseDouble(rs.getString("handhygiene").replaceAll("Ya","1").replaceAll("Tidak","0"));
+                        ttlhandhygiene=ttlhandhygiene+handhygiene;
+                        pembagi++;
+                    }else{
+                        nahandhygiene++;
+                    }
+
+                    if(!rs.getString("apd").equals("NA")){
+                        apd=Double.parseDouble(rs.getString("apd").replaceAll("Ya","1").replaceAll("Tidak","0"));
+                        ttlapd=ttlapd+apd;
+                        pembagi++;
+                    }else{
+                        naapd++;
+                    }
+
+                    if(!rs.getString("skin_antiseptik").equals("NA")){
+                        skin_antiseptik=Double.parseDouble(rs.getString("skin_antiseptik").replaceAll("Ya","1").replaceAll("Tidak","0"));
+                        ttlskin_antiseptik=ttlskin_antiseptik+skin_antiseptik;
+                        pembagi++;
+                    }else{
+                        naskin_antiseptik++;
+                    }
+
+                    if(!rs.getString("lokasi_iv").equals("NA")){
+                        lokasi_iv=Double.parseDouble(rs.getString("lokasi_iv").replaceAll("Ya","1").replaceAll("Tidak","0"));
+                        ttllokasi_iv=ttllokasi_iv+lokasi_iv;
+                        pembagi++;
+                    }else{
+                        nalokasi_iv++;
+                    }
+
+                    if(!rs.getString("perawatan_rutin").equals("NA")){
+                        perawatan_rutin=Double.parseDouble(rs.getString("perawatan_rutin").replaceAll("Ya","1").replaceAll("Tidak","0"));
+                        ttlperawatan_rutin=ttlperawatan_rutin+perawatan_rutin;
+                        pembagi++;
+                    }else{
+                        naperawatan_rutin++;
+                    }
+
+                    ttlpenilaian=ttlpenilaian+(((handhygiene+apd+skin_antiseptik+lokasi_iv+perawatan_rutin)/pembagi)*100);
                     tabMode.addRow(new Object[]{
                         rs.getString("tanggal"),rs.getString("nik"),rs.getString("nama"),rs.getString("handhygiene"),rs.getString("apd"),
                         rs.getString("skin_antiseptik"),rs.getString("lokasi_iv"),rs.getString("perawatan_rutin"),
-                        Math.round(((handhygiene+apd+skin_antiseptik+lokasi_iv+perawatan_rutin)/5)*100)+" %"
+                        Math.round(((handhygiene+apd+skin_antiseptik+lokasi_iv+perawatan_rutin)/pembagi)*100)+" %"
                     });
                     i++;
                 }
                 i=i-1;
                 if(i>0){
                     tabMode.addRow(new Object[]{
-                        "","Ya",":",""+ttlhandhygiene,""+ttlapd,""+ttlskin_antiseptik,
-                        ""+ttllokasi_iv,""+ttlperawatan_rutin,""+(ttlhandhygiene+ttlapd+
-                        ttlskin_antiseptik+ttllokasi_iv+ttlperawatan_rutin)
+                        "","NA",":",""+nahandhygiene,""+naapd,""+naskin_antiseptik,""+nalokasi_iv,""+naperawatan_rutin,""+(nahandhygiene+naapd+naskin_antiseptik+nalokasi_iv+naperawatan_rutin)
                     });
                     tabMode.addRow(new Object[]{
-                        "","Tidak",":",""+(i-ttlhandhygiene),""+(i-ttlapd),""+(i-ttlskin_antiseptik),
-                        ""+(i-ttllokasi_iv),""+(i-ttlperawatan_rutin),""+((i-ttlhandhygiene)+(i-ttlapd)+
-                        (i-ttlskin_antiseptik)+(i-ttllokasi_iv)+(i-ttlperawatan_rutin))
+                        "","Ya",":",""+ttlhandhygiene,""+ttlapd,""+ttlskin_antiseptik,""+ttllokasi_iv,""+ttlperawatan_rutin,""+(ttlhandhygiene+ttlapd+ttlskin_antiseptik+ttllokasi_iv+ttlperawatan_rutin)
                     });
                     tabMode.addRow(new Object[]{
-                        "","Rata-rata",":",Math.round((ttlhandhygiene/i)*100)+" %",Math.round((ttlapd/i)*100)+" %",Math.round((ttlskin_antiseptik/i)*100)+" %",
-                        Math.round((ttllokasi_iv/i)*100)+" %",Math.round((ttlperawatan_rutin/i)*100)+" %",Math.round(ttlpenilaian/i)+" %"
+                        "","Tidak",":",""+(i-ttlhandhygiene-nahandhygiene),""+(i-ttlapd-naapd),""+(i-ttlskin_antiseptik-naskin_antiseptik),""+(i-ttllokasi_iv-nalokasi_iv),""+(i-ttlperawatan_rutin-naperawatan_rutin),
+                        ""+((i-ttlhandhygiene-nahandhygiene)+(i-ttlapd-naapd)+(i-ttlskin_antiseptik-naskin_antiseptik)+(i-ttllokasi_iv-nalokasi_iv)+(i-ttlperawatan_rutin-naperawatan_rutin))
+                    });
+                    tabMode.addRow(new Object[]{
+                        "","Rata-rata",":",Math.round((ttlhandhygiene/(i-nahandhygiene))*100)+" %",Math.round((ttlapd/(i-naapd))*100)+" %",Math.round((ttlskin_antiseptik/(i-naskin_antiseptik))*100)+" %",
+                        Math.round((ttllokasi_iv/(i-nalokasi_iv))*100)+" %",Math.round((ttlperawatan_rutin/(i-naperawatan_rutin))*100)+" %",Math.round(ttlpenilaian/i)+" %"
                     });
                 }
             } catch (Exception e) {
@@ -1063,7 +1108,7 @@ public final class DlgAuditBundleIADP extends javax.swing.JDialog {
         }catch(Exception e){
             System.out.println("Notifikasi : "+e);
         }
-        
+
         LCount.setText(""+i);
     }
     
@@ -1166,5 +1211,37 @@ public final class DlgAuditBundleIADP extends javax.swing.JDialog {
         };
         // Timer
         new Timer(1000, taskPerformer).start();
+    }
+    
+    private void runBackground(Runnable task) {
+        if (ceksukses) return;
+        if (executor.isShutdown() || executor.isTerminated()) return;
+        if (!isDisplayable()) return;
+
+        ceksukses = true;
+        setCursor(Cursor.getPredefinedCursor(Cursor.WAIT_CURSOR));
+
+        try {
+            executor.submit(() -> {
+                try {
+                    task.run();
+                } finally {
+                    ceksukses = false;
+                    SwingUtilities.invokeLater(() -> {
+                        if (isDisplayable()) {
+                            setCursor(Cursor.getDefaultCursor());
+                        }
+                    });
+                }
+            });
+        } catch (RejectedExecutionException ex) {
+            ceksukses = false;
+        }
+    }
+    
+    @Override
+    public void dispose() {
+        executor.shutdownNow();
+        super.dispose();
     }
 }

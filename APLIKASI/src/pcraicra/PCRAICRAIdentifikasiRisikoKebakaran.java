@@ -56,7 +56,7 @@ public final class PCRAICRAIdentifikasiRisikoKebakaran extends javax.swing.JDial
         this.setLocation(10,10);
         
 
-        Object[] row={"Kode","Risiko Keselamatan"};
+        Object[] row={"Kode","Risiko Kebakaran"};
         tabMode=new DefaultTableModel(null,row){
               @Override public boolean isCellEditable(int rowIndex, int colIndex){return false;}
         };
@@ -130,7 +130,7 @@ public final class PCRAICRAIdentifikasiRisikoKebakaran extends javax.swing.JDial
         Scroll.setName("Scroll"); // NOI18N
         Scroll.setOpaque(true);
 
-        tbJabatan.setAutoCreateRowSorter(true);
+        tbJabatan.setAutoCreateRowSorter(false);
         tbJabatan.setToolTipText("Silahkan klik untuk memilih data yang mau diedit ataupun dihapus");
         tbJabatan.setName("tbJabatan"); // NOI18N
         tbJabatan.addMouseListener(new java.awt.event.MouseAdapter() {

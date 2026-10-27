@@ -32,6 +32,7 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
+import java.util.concurrent.RejectedExecutionException;
 import javax.swing.JButton;
 import javax.swing.JOptionPane;
 import javax.swing.JTable;
@@ -122,28 +123,6 @@ public final class DlgStokOpname extends javax.swing.JDialog {
         Keterangan.setDocument(new batasInput((byte)60).getKata(Keterangan));
         
         TCari.setDocument(new batasInput((byte)100).getKata(TCari));
-        if(koneksiDB.CARICEPAT().equals("aktif")){
-            TCari.getDocument().addDocumentListener(new javax.swing.event.DocumentListener(){
-                @Override
-                public void insertUpdate(DocumentEvent e) {
-                    if(TCari.getText().length()>2){
-                        runBackground(() ->tampil());
-                    }
-                }
-                @Override
-                public void removeUpdate(DocumentEvent e) {
-                    if(TCari.getText().length()>2){
-                        runBackground(() ->tampil());
-                    }
-                }
-                @Override
-                public void changedUpdate(DocumentEvent e) {
-                    if(TCari.getText().length()>2){
-                        runBackground(() ->tampil());
-                    }
-                }
-            });
-        }
     } 
     private DecimalFormat df2 = new DecimalFormat("###,###,###,###,###,###,###");
     double total=0,totalreal=0,totallebih=0;
@@ -189,20 +168,20 @@ public final class DlgStokOpname extends javax.swing.JDialog {
         nofaktur = new widget.TextBox();
         KdGudang = new widget.TextBox();
         Popup1 = new javax.swing.JPopupMenu();
-        MnKodeBarangDesc = new javax.swing.JMenuItem();
-        MnKodeBarangAsc = new javax.swing.JMenuItem();
-        MnNamaBarangDesc = new javax.swing.JMenuItem();
-        MnNamaBarangAsc = new javax.swing.JMenuItem();
-        MnKategoriAsc = new javax.swing.JMenuItem();
-        MnKategoriDesc = new javax.swing.JMenuItem();
-        MnJenisDesc = new javax.swing.JMenuItem();
-        MnJenisAsc = new javax.swing.JMenuItem();
-        MnGolonganDesc = new javax.swing.JMenuItem();
-        MnGolonganAsc = new javax.swing.JMenuItem();
-        MnKodeLokasiOpnameDesc = new javax.swing.JMenuItem();
-        MnKodeLokasiOpnameAsc = new javax.swing.JMenuItem();
-        MnNamaLokasiOpnameDesc = new javax.swing.JMenuItem();
-        MnNamaLokasiOpnameAsc = new javax.swing.JMenuItem();
+        MnKodeBarangDesc = new widget.MenuItem();
+        MnKodeBarangAsc = new widget.MenuItem();
+        MnNamaBarangDesc = new widget.MenuItem();
+        MnNamaBarangAsc = new widget.MenuItem();
+        MnKategoriAsc = new widget.MenuItem();
+        MnKategoriDesc = new widget.MenuItem();
+        MnJenisDesc = new widget.MenuItem();
+        MnJenisAsc = new widget.MenuItem();
+        MnGolonganDesc = new widget.MenuItem();
+        MnGolonganAsc = new widget.MenuItem();
+        MnKodeLokasiOpnameDesc = new widget.MenuItem();
+        MnKodeLokasiOpnameAsc = new widget.MenuItem();
+        MnNamaLokasiOpnameDesc = new widget.MenuItem();
+        MnNamaLokasiOpnameAsc = new widget.MenuItem();
         internalFrame1 = new widget.InternalFrame();
         Scroll = new widget.ScrollPane();
         tbKamar = new widget.Table();
@@ -224,11 +203,11 @@ public final class DlgStokOpname extends javax.swing.JDialog {
         label10 = new widget.Label();
         LCount = new widget.Label();
         label13 = new widget.Label();
-        LTotalBeli = new widget.Label();
+        LTotalReal = new widget.Label();
         label12 = new widget.Label();
-        LTotal = new widget.Label();
+        LTotalHilang = new widget.Label();
         label14 = new widget.Label();
-        LTotal2 = new widget.Label();
+        LTotalLebih = new widget.Label();
         BtnPrint = new widget.Button();
         BtnKeluar = new widget.Button();
         panelBiasa1 = new widget.PanelBiasa();
@@ -713,6 +692,11 @@ public final class DlgStokOpname extends javax.swing.JDialog {
         setDefaultCloseOperation(javax.swing.WindowConstants.DISPOSE_ON_CLOSE);
         setUndecorated(true);
         setResizable(false);
+        addWindowListener(new java.awt.event.WindowAdapter() {
+            public void windowOpened(java.awt.event.WindowEvent evt) {
+                formWindowOpened(evt);
+            }
+        });
 
         internalFrame1.setBorder(javax.swing.BorderFactory.createTitledBorder(javax.swing.BorderFactory.createLineBorder(new java.awt.Color(240, 245, 235)), "::[ Stok Opname Obat, Alkes & BHP Medis ]::", javax.swing.border.TitledBorder.DEFAULT_JUSTIFICATION, javax.swing.border.TitledBorder.DEFAULT_POSITION, new java.awt.Font("Tahoma", 0, 11), new java.awt.Color(50, 50, 50))); // NOI18N
         internalFrame1.setName("internalFrame1"); // NOI18N
@@ -721,7 +705,7 @@ public final class DlgStokOpname extends javax.swing.JDialog {
         Scroll.setName("Scroll"); // NOI18N
         Scroll.setOpaque(true);
 
-        tbKamar.setAutoCreateRowSorter(true);
+        tbKamar.setAutoCreateRowSorter(false);
         tbKamar.setComponentPopupMenu(Popup1);
         tbKamar.setName("tbKamar"); // NOI18N
         tbKamar.addMouseListener(new java.awt.event.MouseAdapter() {
@@ -879,33 +863,33 @@ public final class DlgStokOpname extends javax.swing.JDialog {
         label13.setPreferredSize(new java.awt.Dimension(45, 30));
         panelisi1.add(label13);
 
-        LTotalBeli.setHorizontalAlignment(javax.swing.SwingConstants.LEFT);
-        LTotalBeli.setText("0");
-        LTotalBeli.setName("LTotalBeli"); // NOI18N
-        LTotalBeli.setPreferredSize(new java.awt.Dimension(100, 30));
-        panelisi1.add(LTotalBeli);
+        LTotalReal.setHorizontalAlignment(javax.swing.SwingConstants.LEFT);
+        LTotalReal.setText("0");
+        LTotalReal.setName("LTotalReal"); // NOI18N
+        LTotalReal.setPreferredSize(new java.awt.Dimension(100, 30));
+        panelisi1.add(LTotalReal);
 
         label12.setText("Hilang :");
         label12.setName("label12"); // NOI18N
         label12.setPreferredSize(new java.awt.Dimension(50, 30));
         panelisi1.add(label12);
 
-        LTotal.setHorizontalAlignment(javax.swing.SwingConstants.LEFT);
-        LTotal.setText("0");
-        LTotal.setName("LTotal"); // NOI18N
-        LTotal.setPreferredSize(new java.awt.Dimension(85, 30));
-        panelisi1.add(LTotal);
+        LTotalHilang.setHorizontalAlignment(javax.swing.SwingConstants.LEFT);
+        LTotalHilang.setText("0");
+        LTotalHilang.setName("LTotalHilang"); // NOI18N
+        LTotalHilang.setPreferredSize(new java.awt.Dimension(85, 30));
+        panelisi1.add(LTotalHilang);
 
         label14.setText("Lebih :");
         label14.setName("label14"); // NOI18N
         label14.setPreferredSize(new java.awt.Dimension(50, 30));
         panelisi1.add(label14);
 
-        LTotal2.setHorizontalAlignment(javax.swing.SwingConstants.LEFT);
-        LTotal2.setText("0");
-        LTotal2.setName("LTotal2"); // NOI18N
-        LTotal2.setPreferredSize(new java.awt.Dimension(85, 30));
-        panelisi1.add(LTotal2);
+        LTotalLebih.setHorizontalAlignment(javax.swing.SwingConstants.LEFT);
+        LTotalLebih.setText("0");
+        LTotalLebih.setName("LTotalLebih"); // NOI18N
+        LTotalLebih.setPreferredSize(new java.awt.Dimension(85, 30));
+        panelisi1.add(LTotalLebih);
 
         BtnPrint.setIcon(new javax.swing.ImageIcon(getClass().getResource("/picture/b_print.png"))); // NOI18N
         BtnPrint.setMnemonic('T');
@@ -1025,9 +1009,16 @@ public final class DlgStokOpname extends javax.swing.JDialog {
     }// </editor-fold>//GEN-END:initComponents
 
     private void BtnHapusActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_BtnHapusActionPerformed
-        Valid.hapusTable(tabMode,Kdbar,"opname","kd_bangsal='"+kdgudang.getText()+"' and tanggal='"+Tanggal.getSelectedItem()+"' and no_batch='"+nobatch.getText()+"' and no_faktur='"+nofaktur.getText()+"' and kode_brng");
-        BtnCariActionPerformed(evt);
-        emptTeks();
+        if(Valid.hapusTabletf(tabMode,Kdbar,"opname","kd_bangsal='"+kdgudang.getText()+"' and tanggal='"+Tanggal.getSelectedItem()+"' and no_batch='"+nobatch.getText()+"' and no_faktur='"+nofaktur.getText()+"' and kode_brng")==true){
+            totalreal=totalreal-Double.parseDouble(tbKamar.getValueAt(tbKamar.getSelectedRow(),9).toString().replaceAll(",",""));
+            total=total-Double.parseDouble(tbKamar.getValueAt(tbKamar.getSelectedRow(),10).toString().replaceAll(",",""));       
+            totallebih=totallebih-Double.parseDouble(tbKamar.getValueAt(tbKamar.getSelectedRow(),11).toString().replaceAll(",",""));        
+            LTotalReal.setText(df2.format(totalreal));
+            LTotalHilang.setText(df2.format(total));
+            LTotalLebih.setText(df2.format(totallebih));
+            LCount.setText(""+tabMode.getRowCount());
+            tabMode.removeRow(tbKamar.getSelectedRow());
+        }
 }//GEN-LAST:event_BtnHapusActionPerformed
 
     private void BtnHapusKeyPressed(java.awt.event.KeyEvent evt) {//GEN-FIRST:event_BtnHapusKeyPressed
@@ -1050,7 +1041,6 @@ public final class DlgStokOpname extends javax.swing.JDialog {
 
     private void BtnPrintActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_BtnPrintActionPerformed
         this.setCursor(Cursor.getPredefinedCursor(Cursor.WAIT_CURSOR));
-        BtnCariActionPerformed(evt);
         if(tbKamar.getRowCount()==0){
             JOptionPane.showMessageDialog(null,"Maaf, data sudah habis. Tidak ada data yang bisa anda print...!!!!");
             TCari.requestFocus();
@@ -1453,6 +1443,31 @@ private void StokKeyPressed(java.awt.event.KeyEvent evt) {//GEN-FIRST:event_Stok
         runBackground(() ->tampil());
     }//GEN-LAST:event_MnNamaLokasiOpnameAscActionPerformed
 
+    private void formWindowOpened(java.awt.event.WindowEvent evt) {//GEN-FIRST:event_formWindowOpened
+        if(koneksiDB.CARICEPAT().equals("aktif")){
+            TCari.getDocument().addDocumentListener(new javax.swing.event.DocumentListener(){
+                @Override
+                public void insertUpdate(DocumentEvent e) {
+                    if(TCari.getText().length()>2){
+                        runBackground(() ->tampil());
+                    }
+                }
+                @Override
+                public void removeUpdate(DocumentEvent e) {
+                    if(TCari.getText().length()>2){
+                        runBackground(() ->tampil());
+                    }
+                }
+                @Override
+                public void changedUpdate(DocumentEvent e) {
+                    if(TCari.getText().length()>2){
+                        runBackground(() ->tampil());
+                    }
+                }
+            });
+        }
+    }//GEN-LAST:event_formWindowOpened
+
     /**
     * @param args the command line arguments
     */
@@ -1485,24 +1500,24 @@ private void StokKeyPressed(java.awt.event.KeyEvent evt) {//GEN-FIRST:event_Stok
     private widget.TextBox Kdbar;
     private widget.TextBox Keterangan;
     private widget.Label LCount;
-    private widget.Label LTotal;
-    private widget.Label LTotal2;
-    private widget.Label LTotalBeli;
+    private widget.Label LTotalHilang;
+    private widget.Label LTotalLebih;
+    private widget.Label LTotalReal;
     private widget.TextBox Lebih;
-    private javax.swing.JMenuItem MnGolonganAsc;
-    private javax.swing.JMenuItem MnGolonganDesc;
-    private javax.swing.JMenuItem MnJenisAsc;
-    private javax.swing.JMenuItem MnJenisDesc;
-    private javax.swing.JMenuItem MnKategoriAsc;
-    private javax.swing.JMenuItem MnKategoriDesc;
-    private javax.swing.JMenuItem MnKodeBarangAsc;
-    private javax.swing.JMenuItem MnKodeBarangDesc;
-    private javax.swing.JMenuItem MnKodeLokasiOpnameAsc;
-    private javax.swing.JMenuItem MnKodeLokasiOpnameDesc;
-    private javax.swing.JMenuItem MnNamaBarangAsc;
-    private javax.swing.JMenuItem MnNamaBarangDesc;
-    private javax.swing.JMenuItem MnNamaLokasiOpnameAsc;
-    private javax.swing.JMenuItem MnNamaLokasiOpnameDesc;
+    private widget.MenuItem MnGolonganAsc;
+    private widget.MenuItem MnGolonganDesc;
+    private widget.MenuItem MnJenisAsc;
+    private widget.MenuItem MnJenisDesc;
+    private widget.MenuItem MnKategoriAsc;
+    private widget.MenuItem MnKategoriDesc;
+    private widget.MenuItem MnKodeBarangAsc;
+    private widget.MenuItem MnKodeBarangDesc;
+    private widget.MenuItem MnKodeLokasiOpnameAsc;
+    private widget.MenuItem MnKodeLokasiOpnameDesc;
+    private widget.MenuItem MnNamaBarangAsc;
+    private widget.MenuItem MnNamaBarangDesc;
+    private widget.MenuItem MnNamaLokasiOpnameAsc;
+    private widget.MenuItem MnNamaLokasiOpnameDesc;
     private widget.TextBox NmGudang;
     private widget.TextBox Nmbar;
     private widget.TextBox NomiLebih;
@@ -1629,9 +1644,9 @@ private void StokKeyPressed(java.awt.event.KeyEvent evt) {//GEN-FIRST:event_Stok
             System.out.println("Notifikasi : "+e);
         }
         LCount.setText(""+tabMode.getRowCount());
-        LTotalBeli.setText(df2.format(totalreal));
-        LTotal.setText(df2.format(total));
-        LTotal2.setText(df2.format(totallebih));
+        LTotalReal.setText(df2.format(totalreal));
+        LTotalHilang.setText(df2.format(total));
+        LTotalLebih.setText(df2.format(totallebih));
     }
 
     public void emptTeks() {
@@ -1689,19 +1704,33 @@ private void StokKeyPressed(java.awt.event.KeyEvent evt) {//GEN-FIRST:event_Stok
     
     private void runBackground(Runnable task) {
         if (ceksukses) return;
+        if (executor.isShutdown() || executor.isTerminated()) return;
+        if (!isDisplayable()) return;
+
         ceksukses = true;
+        setCursor(Cursor.getPredefinedCursor(Cursor.WAIT_CURSOR));
 
-        this.setCursor(Cursor.getPredefinedCursor(Cursor.WAIT_CURSOR));
-
-        executor.submit(() -> {
-            try {
-                task.run();
-            } finally {
-                ceksukses = false;
-                SwingUtilities.invokeLater(() -> {
-                    this.setCursor(Cursor.getDefaultCursor());
-                });
-            }
-        });
+        try {
+            executor.submit(() -> {
+                try {
+                    task.run();
+                } finally {
+                    ceksukses = false;
+                    SwingUtilities.invokeLater(() -> {
+                        if (isDisplayable()) {
+                            setCursor(Cursor.getDefaultCursor());
+                        }
+                    });
+                }
+            });
+        } catch (RejectedExecutionException ex) {
+            ceksukses = false;
+        }
+    }
+    
+    @Override
+    public void dispose() {
+        executor.shutdownNow();
+        super.dispose();
     }
 }

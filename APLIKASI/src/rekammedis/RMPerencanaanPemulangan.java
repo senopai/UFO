@@ -5,8 +5,6 @@
 
 package rekammedis;
 
-import com.fasterxml.jackson.databind.JsonNode;
-import com.fasterxml.jackson.databind.ObjectMapper;
 import fungsi.WarnaTable;
 import fungsi.batasInput;
 import fungsi.koneksiDB;
@@ -18,10 +16,11 @@ import java.awt.Desktop;
 import java.awt.Dimension;
 import java.awt.event.KeyEvent;
 import java.awt.event.WindowEvent;
-import java.awt.event.WindowListener;
+import java.awt.event.WindowAdapter;
+import java.util.concurrent.RejectedExecutionException;
+import javax.swing.SwingUtilities;
 import java.io.BufferedWriter;
 import java.io.File;
-import java.io.FileReader;
 import java.io.FileWriter;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
@@ -29,8 +28,11 @@ import java.sql.ResultSet;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 import javax.swing.JOptionPane;
 import javax.swing.JTable;
+import javax.swing.WindowConstants;
 import javax.swing.event.DocumentEvent;
 import javax.swing.table.DefaultTableModel;
 import javax.swing.table.TableColumn;
@@ -52,7 +54,9 @@ public final class RMPerencanaanPemulangan extends javax.swing.JDialog {
     private PreparedStatement ps;
     private ResultSet rs;
     private int i=0;
-    private DlgCariPetugas petugas=new DlgCariPetugas(null,false);
+    private DlgCariPetugas petugas;
+    private final ExecutorService executor = Executors.newSingleThreadExecutor();
+    private volatile boolean ceksukses = false;
     private StringBuilder htmlContent;
     private String pilihan="";
     private String finger="",lokasifile="";
@@ -65,14 +69,15 @@ public final class RMPerencanaanPemulangan extends javax.swing.JDialog {
         initComponents();
         
         tabMode=new DefaultTableModel(null,new Object[]{
-            "No.Rawat","No.RM","Nama Pasien","Tgl.Lahir","J.K.","Masuk Dirawat","Rencana Pulang","Diagnosa Medis","Alasan Masuk / Dirawat",
+            "No.Rawat","No.RM","Nama Pasien","Tgl.Lahir","J.K.","Masuk Dirawat","Rencana Pulang","Diagnosa Medis","Diagnosa Keluar","Alasan Masuk / Dirawat",
             "Pengaruh RI Pasien & Keluarga","Keterangan Pengaruh RI Pasien & Keluarga","Pengaruh RI Pekerjaan/Sekolah","Keterangan Pengaruh RI Pekerjaan/Sekolah",
             "Pengaruh RI Keuangan","Keterangan Pengaruh RI Keuangan","Usia Lanjut","Hambatan","Perawatan","Aktifitas","Kritis","Antisipasi Masalah","Keterangan Antisipasi Masalah",
             "Bantuan Diperlukan","Keterangan Bantuan Diperlukan","Membantu Keperluan","Keterangan Yang Membantu Keperluan","Tinggal Sendiri","Keterangan Pasien Tinggal Sendiri",
             "Peralatan Medis","Keterangan Peralatan Medis","Alat Bantu","Keterangan Memerlukan Alat Bantu","Perawatan Khusus","Keterangan Perawatan Khusus","Memenuhi Kebutuhan",
             "Keterangan Memenuhi Kebutuhan","Nyeri Kronis","Keterangan Nyeri Kronis","Edukasi Kesehatan","Keterangan Edukasi Kesehatan","Keterampilkan Khusus",
             "Keterangan Keterampilkan Khusus","Jadwal Kontrol","Keterangan Jadwal Kontrol","Diberikan","Keterangan Diberikan","Obat Pulang","Keterangan Obat Pulang",
-            "Faskes Rumah","Keterangan Faskes Rumah","Pasien/Keluarga","NIP","Nama Petugas"
+            "Faskes Rumah","Keterangan Faskes Rumah","Stroke","Serangan Jantung","PPOK","Gagal Jantung","Emfisema","Demensia","Alzheimer","AIDS","Trauma","Kriminal",
+            "Bunuh Diri","Pasien Kembali","Panti Jompo","Tanpa Dukungan","Luar Kota","Tunawisma","Tidak Ada Asuransi","Pasien/Keluarga","NIP","Nama Petugas"
         }){
             @Override public boolean isCellEditable(int rowIndex, int colIndex){return false;}
         };
@@ -81,7 +86,7 @@ public final class RMPerencanaanPemulangan extends javax.swing.JDialog {
         tbObat.setPreferredScrollableViewportSize(new Dimension(500,500));
         tbObat.setAutoResizeMode(JTable.AUTO_RESIZE_OFF);
 
-        for (i = 0; i < 53; i++) {
+        for (i = 0; i < 71; i++) {
             TableColumn column = tbObat.getColumnModel().getColumn(i);
             if(i==0){
                 column.setPreferredWidth(105);
@@ -102,19 +107,19 @@ public final class RMPerencanaanPemulangan extends javax.swing.JDialog {
             }else if(i==8){
                 column.setPreferredWidth(180);
             }else if(i==9){
-                column.setPreferredWidth(160);
+                column.setPreferredWidth(180); 
             }else if(i==10){
-                column.setPreferredWidth(220);
-            }else if(i==11){
                 column.setPreferredWidth(160);
-            }else if(i==12){
+            }else if(i==11){
                 column.setPreferredWidth(220);
+            }else if(i==12){
+                column.setPreferredWidth(160);
             }else if(i==13){
-                column.setPreferredWidth(119);
+                column.setPreferredWidth(220);
             }else if(i==14){
-                column.setPreferredWidth(178);
+                column.setPreferredWidth(119);
             }else if(i==15){
-                column.setPreferredWidth(99);
+                column.setPreferredWidth(178);
             }else if(i==16){
                 column.setPreferredWidth(99);
             }else if(i==17){
@@ -126,47 +131,47 @@ public final class RMPerencanaanPemulangan extends javax.swing.JDialog {
             }else if(i==20){
                 column.setPreferredWidth(99);
             }else if(i==21){
-                column.setPreferredWidth(158);
+                column.setPreferredWidth(99);
             }else if(i==22){
-                column.setPreferredWidth(108);
+                column.setPreferredWidth(158);
             }else if(i==23){
-                column.setPreferredWidth(163);
+                column.setPreferredWidth(108);
             }else if(i==24){
-                column.setPreferredWidth(110);
+                column.setPreferredWidth(163);
             }else if(i==25){
-                column.setPreferredWidth(195);
+                column.setPreferredWidth(110);
             }else if(i==26){
-                column.setPreferredWidth(80);
+                column.setPreferredWidth(195);
             }else if(i==27){
-                column.setPreferredWidth(175);
+                column.setPreferredWidth(80);
             }else if(i==28){
-                column.setPreferredWidth(87);
-            }else if(i==29){
-                column.setPreferredWidth(145);
-            }else if(i==30){
-                column.setPreferredWidth(61);
-            }else if(i==31){
-                column.setPreferredWidth(181);
-            }else if(i==32){
-                column.setPreferredWidth(98);
-            }else if(i==33){
-                column.setPreferredWidth(156);
-            }else if(i==34){
-                column.setPreferredWidth(112);
-            }else if(i==35){
-                column.setPreferredWidth(173);
-            }else if(i==36){
-                column.setPreferredWidth(67);
-            }else if(i==37){
-                column.setPreferredWidth(126);
-            }else if(i==38){
-                column.setPreferredWidth(98);
-            }else if(i==39){
-                column.setPreferredWidth(157);
-            }else if(i==40){
-                column.setPreferredWidth(116);
-            }else if(i==41){
                 column.setPreferredWidth(175);
+            }else if(i==29){
+                column.setPreferredWidth(87);
+            }else if(i==30){
+                column.setPreferredWidth(145);
+            }else if(i==31){
+                column.setPreferredWidth(61);
+            }else if(i==32){
+                column.setPreferredWidth(181);
+            }else if(i==33){
+                column.setPreferredWidth(98);
+            }else if(i==34){
+                column.setPreferredWidth(156);
+            }else if(i==35){
+                column.setPreferredWidth(112);
+            }else if(i==36){
+                column.setPreferredWidth(173);
+            }else if(i==37){
+                column.setPreferredWidth(67);
+            }else if(i==38){
+                column.setPreferredWidth(126);
+            }else if(i==39){
+                column.setPreferredWidth(98);
+            }else if(i==40){
+                column.setPreferredWidth(157);
+            }else if(i==41){
+                column.setPreferredWidth(116);
             }else if(i==42){
                 column.setPreferredWidth(175);
             }else if(i==43){
@@ -184,17 +189,22 @@ public final class RMPerencanaanPemulangan extends javax.swing.JDialog {
             }else if(i==49){
                 column.setPreferredWidth(175);
             }else if(i==50){
+                column.setPreferredWidth(175);
+            }else if(i >= 51 && i <= 67){
+                column.setPreferredWidth(110); // Lebar kolom-kolom kriteria baru
+            }else if(i==68){
                 column.setPreferredWidth(150);
-            }else if(i==51){
-                column.setPreferredWidth(90);
-            }else if(i==52){
-                column.setPreferredWidth(150);
+            }else if(i==69){
+                column.setPreferredWidth(90); 
+            }else if(i==70){
+                column.setPreferredWidth(150); 
             }
         }
         tbObat.setDefaultRenderer(Object.class, new WarnaTable());
         
         TNoRw.setDocument(new batasInput((byte)17).getKata(TNoRw));
         DiagnosaMedis.setDocument(new batasInput((int)50).getKata(DiagnosaMedis));
+        DiagnosaMedisKeluar.setDocument(new batasInput((int)100).getKata(DiagnosaMedisKeluar));
         AlasanMasuk.setDocument(new batasInput((int)150).getKata(AlasanMasuk));
         KeteranganPengaruhRIKeluarga.setDocument(new batasInput((int)100).getKata(KeteranganPengaruhRIKeluarga));
         KeteranganPengaruhRIPekerjaanSekolah.setDocument(new batasInput((int)100).getKata(KeteranganPengaruhRIPekerjaanSekolah));
@@ -219,52 +229,6 @@ public final class RMPerencanaanPemulangan extends javax.swing.JDialog {
         
         ChkAccor.setSelected(false);
         isPhoto();
-        
-        if(koneksiDB.CARICEPAT().equals("aktif")){
-            TCari.getDocument().addDocumentListener(new javax.swing.event.DocumentListener(){
-                @Override
-                public void insertUpdate(DocumentEvent e) {
-                    if(TCari.getText().length()>2){
-                        tampil();
-                    }
-                }
-                @Override
-                public void removeUpdate(DocumentEvent e) {
-                    if(TCari.getText().length()>2){
-                        tampil();
-                    }
-                }
-                @Override
-                public void changedUpdate(DocumentEvent e) {
-                    if(TCari.getText().length()>2){
-                        tampil();
-                    }
-                }
-            });
-        }
-        
-        petugas.addWindowListener(new WindowListener() {
-            @Override
-            public void windowOpened(WindowEvent e) {}
-            @Override
-            public void windowClosing(WindowEvent e) {}
-            @Override
-            public void windowClosed(WindowEvent e) {
-                if(petugas.getTable().getSelectedRow()!= -1){
-                    KdPetugas.setText(petugas.getTable().getValueAt(petugas.getTable().getSelectedRow(),0).toString());
-                    NmPetugas.setText(petugas.getTable().getValueAt(petugas.getTable().getSelectedRow(),1).toString());
-                    KdPetugas.requestFocus();
-                }
-            }
-            @Override
-            public void windowIconified(WindowEvent e) {}
-            @Override
-            public void windowDeiconified(WindowEvent e) {}
-            @Override
-            public void windowActivated(WindowEvent e) {}
-            @Override
-            public void windowDeactivated(WindowEvent e) {}
-        });
         
         HTMLEditorKit kit = new HTMLEditorKit();
         LoadHTML2.setEditable(true);
@@ -304,7 +268,7 @@ public final class RMPerencanaanPemulangan extends javax.swing.JDialog {
         BtnPrint = new widget.Button();
         BtnAll = new widget.Button();
         BtnKeluar = new widget.Button();
-        TabRawat = new javax.swing.JTabbedPane();
+        TabRawat = new widget.TabPane();
         internalFrame2 = new widget.InternalFrame();
         scrollInput = new widget.ScrollPane();
         FormInput = new widget.PanelBiasa();
@@ -327,13 +291,11 @@ public final class RMPerencanaanPemulangan extends javax.swing.JDialog {
         label15 = new widget.Label();
         KdPetugas = new widget.TextBox();
         NmPetugas = new widget.TextBox();
-        BtnDokter = new widget.Button();
+        BtnPetugas = new widget.Button();
         jLabel42 = new widget.Label();
         SaksiKeluarga = new widget.TextBox();
         MasukDirawat = new widget.TextBox();
         label12 = new widget.Label();
-        jLabel40 = new widget.Label();
-        DiagnosaMedis = new widget.TextBox();
         jLabel41 = new widget.Label();
         AlasanMasuk = new widget.TextBox();
         jLabel53 = new widget.Label();
@@ -343,8 +305,10 @@ public final class RMPerencanaanPemulangan extends javax.swing.JDialog {
         jLabel44 = new widget.Label();
         PengaruhRIPekerjaanSekolah = new widget.ComboBox();
         KeteranganPengaruhRIPekerjaanSekolah = new widget.TextBox();
+        jLabel45 = new widget.Label();
         PengaruhRIKeuangan = new widget.ComboBox();
         KeteranganPengaruhRIKeuangan = new widget.TextBox();
+        jLabel54 = new widget.Label();
         AntisipasiMasalah = new widget.ComboBox();
         KeteranganAntisipasiMasalah = new widget.TextBox();
         jLabel55 = new widget.Label();
@@ -372,25 +336,7 @@ public final class RMPerencanaanPemulangan extends javax.swing.JDialog {
         jLabel63 = new widget.Label();
         EdukasiPasien = new widget.ComboBox();
         KeteranganEdukasiPasien = new widget.TextBox();
-        jLabel64 = new widget.Label();
-        KeterampilanKhusus = new widget.ComboBox();
-        KeteranganKeterampilanKhusus = new widget.TextBox();
-        jLabel65 = new widget.Label();
-        JadwalKontrol = new widget.ComboBox();
-        KeteranganJadwalKontrol = new widget.TextBox();
-        jLabel66 = new widget.Label();
-        Diberikan = new widget.ComboBox();
-        KeteranganDiberikan = new widget.TextBox();
-        jLabel67 = new widget.Label();
-        ObatPulang = new widget.ComboBox();
-        KeteranganObatPulang = new widget.TextBox();
-        jLabel68 = new widget.Label();
-        FaskesRumah = new widget.ComboBox();
-        KeteranganFaskesRumah = new widget.TextBox();
-        jLabel70 = new widget.Label();
-        jLabel71 = new widget.Label();
         jLabel73 = new widget.Label();
-        jLabel46 = new widget.Label();
         jLabel74 = new widget.Label();
         jLabel75 = new widget.Label();
         Perawatan = new widget.ComboBox();
@@ -401,6 +347,60 @@ public final class RMPerencanaanPemulangan extends javax.swing.JDialog {
         Aktifitas = new widget.ComboBox();
         jLabel78 = new widget.Label();
         Kritis = new widget.ComboBox();
+        jLabel79 = new widget.Label();
+        jLabel80 = new widget.Label();
+        PPOK = new widget.ComboBox();
+        Stroke = new widget.ComboBox();
+        jLabel81 = new widget.Label();
+        SeranganJantung = new widget.ComboBox();
+        jLabel82 = new widget.Label();
+        GagalJantung = new widget.ComboBox();
+        jLabel83 = new widget.Label();
+        Emfisema = new widget.ComboBox();
+        jLabel84 = new widget.Label();
+        jLabel85 = new widget.Label();
+        AIDS = new widget.ComboBox();
+        Demensia = new widget.ComboBox();
+        jLabel86 = new widget.Label();
+        Alzheimer = new widget.ComboBox();
+        jLabel87 = new widget.Label();
+        Trauma = new widget.ComboBox();
+        jLabel89 = new widget.Label();
+        jLabel90 = new widget.Label();
+        TanpaDukungan = new widget.ComboBox();
+        PasienKembali = new widget.ComboBox();
+        jLabel91 = new widget.Label();
+        PantiJompo = new widget.ComboBox();
+        jLabel92 = new widget.Label();
+        LuarKota = new widget.ComboBox();
+        jLabel93 = new widget.Label();
+        Tunawisma = new widget.ComboBox();
+        jLabel94 = new widget.Label();
+        TidakAdaAsuransi = new widget.ComboBox();
+        jLabel95 = new widget.Label();
+        BunuhDiri = new widget.ComboBox();
+        jLabel96 = new widget.Label();
+        Kriminal = new widget.ComboBox();
+        jLabel70 = new widget.Label();
+        jLabel65 = new widget.Label();
+        KeterampilanKhusus = new widget.ComboBox();
+        KeteranganKeterampilanKhusus = new widget.TextBox();
+        jLabel66 = new widget.Label();
+        JadwalKontrol = new widget.ComboBox();
+        KeteranganJadwalKontrol = new widget.TextBox();
+        jLabel67 = new widget.Label();
+        Diberikan = new widget.ComboBox();
+        KeteranganDiberikan = new widget.TextBox();
+        jLabel68 = new widget.Label();
+        ObatPulang = new widget.ComboBox();
+        KeteranganObatPulang = new widget.TextBox();
+        jLabel69 = new widget.Label();
+        FaskesRumah = new widget.ComboBox();
+        KeteranganFaskesRumah = new widget.TextBox();
+        jLabel40 = new widget.Label();
+        DiagnosaMedis = new widget.TextBox();
+        DiagnosaMedisKeluar = new widget.TextBox();
+        jLabel46 = new widget.Label();
         internalFrame3 = new widget.InternalFrame();
         Scroll = new widget.ScrollPane();
         tbObat = new widget.Table();
@@ -427,6 +427,11 @@ public final class RMPerencanaanPemulangan extends javax.swing.JDialog {
         setDefaultCloseOperation(javax.swing.WindowConstants.DISPOSE_ON_CLOSE);
         setUndecorated(true);
         setResizable(false);
+        addWindowListener(new java.awt.event.WindowAdapter() {
+            public void windowOpened(java.awt.event.WindowEvent evt) {
+                formWindowOpened(evt);
+            }
+        });
 
         internalFrame1.setBorder(javax.swing.BorderFactory.createTitledBorder(javax.swing.BorderFactory.createLineBorder(new java.awt.Color(240, 245, 235)), "::[ Data Perencanaan Pemulangan Pasien ]::", javax.swing.border.TitledBorder.DEFAULT_JUSTIFICATION, javax.swing.border.TitledBorder.DEFAULT_POSITION, new java.awt.Font("Tahoma", 0, 11), new java.awt.Color(50, 50, 50))); // NOI18N
         internalFrame1.setFont(new java.awt.Font("Tahoma", 2, 12)); // NOI18N
@@ -566,7 +571,6 @@ public final class RMPerencanaanPemulangan extends javax.swing.JDialog {
         internalFrame1.add(panelGlass8, java.awt.BorderLayout.PAGE_END);
 
         TabRawat.setBackground(new java.awt.Color(254, 255, 254));
-        TabRawat.setForeground(new java.awt.Color(50, 50, 50));
         TabRawat.setFont(new java.awt.Font("Tahoma", 0, 11)); // NOI18N
         TabRawat.setName("TabRawat"); // NOI18N
         TabRawat.addMouseListener(new java.awt.event.MouseAdapter() {
@@ -585,7 +589,7 @@ public final class RMPerencanaanPemulangan extends javax.swing.JDialog {
         FormInput.setBackground(new java.awt.Color(255, 255, 255));
         FormInput.setBorder(null);
         FormInput.setName("FormInput"); // NOI18N
-        FormInput.setPreferredSize(new java.awt.Dimension(954, 1302));
+        FormInput.setPreferredSize(new java.awt.Dimension(954, 1480));
         FormInput.setLayout(null);
 
         jSeparator14.setBackground(new java.awt.Color(239, 244, 234));
@@ -658,13 +662,12 @@ public final class RMPerencanaanPemulangan extends javax.swing.JDialog {
             }
         });
         FormInput.add(TinggalSendiri);
-        TinggalSendiri.setBounds(30, 590, 80, 23);
+        TinggalSendiri.setBounds(40, 760, 80, 23);
 
         RencanaPemulangan.setForeground(new java.awt.Color(50, 70, 50));
-        RencanaPemulangan.setModel(new javax.swing.DefaultComboBoxModel(new String[] { "02-05-2025" }));
+        RencanaPemulangan.setModel(new javax.swing.DefaultComboBoxModel(new String[] { "16-10-2026" }));
         RencanaPemulangan.setDisplayFormat("dd-MM-yyyy");
         RencanaPemulangan.setName("RencanaPemulangan"); // NOI18N
-        RencanaPemulangan.setOpaque(false);
         RencanaPemulangan.addKeyListener(new java.awt.event.KeyAdapter() {
             public void keyPressed(java.awt.event.KeyEvent evt) {
                 RencanaPemulanganKeyPressed(evt);
@@ -678,7 +681,7 @@ public final class RMPerencanaanPemulangan extends javax.swing.JDialog {
         jSeparator1.setBorder(javax.swing.BorderFactory.createLineBorder(new java.awt.Color(239, 244, 234)));
         jSeparator1.setName("jSeparator1"); // NOI18N
         FormInput.add(jSeparator1);
-        jSeparator1.setBounds(0, 100, 880, 1);
+        jSeparator1.setBounds(0, 140, 880, 1);
 
         KeteranganTinggalSendiri.setHighlighter(null);
         KeteranganTinggalSendiri.setName("KeteranganTinggalSendiri"); // NOI18N
@@ -688,61 +691,61 @@ public final class RMPerencanaanPemulangan extends javax.swing.JDialog {
             }
         });
         FormInput.add(KeteranganTinggalSendiri);
-        KeteranganTinggalSendiri.setBounds(120, 590, 730, 23);
+        KeteranganTinggalSendiri.setBounds(120, 760, 730, 23);
 
         jSeparator3.setBackground(new java.awt.Color(239, 244, 234));
         jSeparator3.setForeground(new java.awt.Color(239, 244, 234));
         jSeparator3.setBorder(javax.swing.BorderFactory.createLineBorder(new java.awt.Color(239, 244, 234)));
         jSeparator3.setName("jSeparator3"); // NOI18N
         FormInput.add(jSeparator3);
-        jSeparator3.setBounds(0, 1200, 880, 1);
+        jSeparator3.setBounds(0, 1370, 880, 1);
 
         jLabel101.setHorizontalAlignment(javax.swing.SwingConstants.LEFT);
         jLabel101.setText("Proses Tanya Jawab Dilakukan Oleh :");
         jLabel101.setName("jLabel101"); // NOI18N
         FormInput.add(jLabel101);
-        jLabel101.setBounds(20, 1200, 220, 23);
+        jLabel101.setBounds(10, 1370, 220, 23);
 
         label15.setText("Perawat/Petugas :");
         label15.setName("label15"); // NOI18N
         label15.setPreferredSize(new java.awt.Dimension(70, 23));
         FormInput.add(label15);
-        label15.setBounds(10, 1250, 130, 23);
+        label15.setBounds(0, 1390, 130, 23);
 
         KdPetugas.setEditable(false);
         KdPetugas.setName("KdPetugas"); // NOI18N
         KdPetugas.setPreferredSize(new java.awt.Dimension(80, 23));
         FormInput.add(KdPetugas);
-        KdPetugas.setBounds(140, 1250, 100, 23);
+        KdPetugas.setBounds(130, 1390, 100, 23);
 
         NmPetugas.setEditable(false);
         NmPetugas.setName("NmPetugas"); // NOI18N
         NmPetugas.setPreferredSize(new java.awt.Dimension(207, 23));
         FormInput.add(NmPetugas);
-        NmPetugas.setBounds(250, 1250, 193, 23);
+        NmPetugas.setBounds(240, 1390, 193, 23);
 
-        BtnDokter.setIcon(new javax.swing.ImageIcon(getClass().getResource("/picture/190.png"))); // NOI18N
-        BtnDokter.setMnemonic('2');
-        BtnDokter.setToolTipText("Alt+2");
-        BtnDokter.setName("BtnDokter"); // NOI18N
-        BtnDokter.setPreferredSize(new java.awt.Dimension(28, 23));
-        BtnDokter.addActionListener(new java.awt.event.ActionListener() {
+        BtnPetugas.setIcon(new javax.swing.ImageIcon(getClass().getResource("/picture/190.png"))); // NOI18N
+        BtnPetugas.setMnemonic('2');
+        BtnPetugas.setToolTipText("Alt+2");
+        BtnPetugas.setName("BtnPetugas"); // NOI18N
+        BtnPetugas.setPreferredSize(new java.awt.Dimension(28, 23));
+        BtnPetugas.addActionListener(new java.awt.event.ActionListener() {
             public void actionPerformed(java.awt.event.ActionEvent evt) {
-                BtnDokterActionPerformed(evt);
+                BtnPetugasActionPerformed(evt);
             }
         });
-        BtnDokter.addKeyListener(new java.awt.event.KeyAdapter() {
+        BtnPetugas.addKeyListener(new java.awt.event.KeyAdapter() {
             public void keyPressed(java.awt.event.KeyEvent evt) {
-                BtnDokterKeyPressed(evt);
+                BtnPetugasKeyPressed(evt);
             }
         });
-        FormInput.add(BtnDokter);
-        BtnDokter.setBounds(440, 1250, 28, 23);
+        FormInput.add(BtnPetugas);
+        BtnPetugas.setBounds(430, 1390, 28, 23);
 
         jLabel42.setText("Pasien/Keluarga :");
         jLabel42.setName("jLabel42"); // NOI18N
         FormInput.add(jLabel42);
-        jLabel42.setBounds(470, 1250, 110, 23);
+        jLabel42.setBounds(460, 1390, 110, 23);
 
         SaksiKeluarga.setHighlighter(null);
         SaksiKeluarga.setName("SaksiKeluarga"); // NOI18N
@@ -752,7 +755,7 @@ public final class RMPerencanaanPemulangan extends javax.swing.JDialog {
             }
         });
         FormInput.add(SaksiKeluarga);
-        SaksiKeluarga.setBounds(580, 1250, 280, 23);
+        SaksiKeluarga.setBounds(570, 1390, 280, 23);
 
         MasukDirawat.setEditable(false);
         MasukDirawat.setHighlighter(null);
@@ -766,7 +769,838 @@ public final class RMPerencanaanPemulangan extends javax.swing.JDialog {
         FormInput.add(label12);
         label12.setBounds(240, 40, 120, 23);
 
-        jLabel40.setText("Diagnosa Medis :");
+        jLabel41.setText("Alasan Masuk / Dirawat :");
+        jLabel41.setName("jLabel41"); // NOI18N
+        FormInput.add(jLabel41);
+        jLabel41.setBounds(0, 110, 137, 23);
+
+        AlasanMasuk.setHighlighter(null);
+        AlasanMasuk.setName("AlasanMasuk"); // NOI18N
+        AlasanMasuk.addKeyListener(new java.awt.event.KeyAdapter() {
+            public void keyPressed(java.awt.event.KeyEvent evt) {
+                AlasanMasukKeyPressed(evt);
+            }
+        });
+        FormInput.add(AlasanMasuk);
+        AlasanMasuk.setBounds(140, 110, 713, 23);
+
+        jLabel53.setHorizontalAlignment(javax.swing.SwingConstants.LEFT);
+        jLabel53.setText("1. Pengaruh Rawat Inap Terhadap :");
+        jLabel53.setName("jLabel53"); // NOI18N
+        FormInput.add(jLabel53);
+        jLabel53.setBounds(10, 140, 590, 23);
+
+        jLabel43.setText("Pasien & Keluarga Pasien :");
+        jLabel43.setName("jLabel43"); // NOI18N
+        FormInput.add(jLabel43);
+        jLabel43.setBounds(0, 160, 180, 23);
+
+        KeteranganPengaruhRIKeluarga.setHighlighter(null);
+        KeteranganPengaruhRIKeluarga.setName("KeteranganPengaruhRIKeluarga"); // NOI18N
+        KeteranganPengaruhRIKeluarga.addKeyListener(new java.awt.event.KeyAdapter() {
+            public void keyPressed(java.awt.event.KeyEvent evt) {
+                KeteranganPengaruhRIKeluargaKeyPressed(evt);
+            }
+        });
+        FormInput.add(KeteranganPengaruhRIKeluarga);
+        KeteranganPengaruhRIKeluarga.setBounds(260, 160, 586, 23);
+
+        PengaruhRIKeluarga.setModel(new javax.swing.DefaultComboBoxModel(new String[] { "Tidak", "Ya" }));
+        PengaruhRIKeluarga.setName("PengaruhRIKeluarga"); // NOI18N
+        PengaruhRIKeluarga.addKeyListener(new java.awt.event.KeyAdapter() {
+            public void keyPressed(java.awt.event.KeyEvent evt) {
+                PengaruhRIKeluargaKeyPressed(evt);
+            }
+        });
+        FormInput.add(PengaruhRIKeluarga);
+        PengaruhRIKeluarga.setBounds(180, 160, 80, 23);
+
+        jLabel44.setText("Pekerjaan / Sekolah :");
+        jLabel44.setName("jLabel44"); // NOI18N
+        FormInput.add(jLabel44);
+        jLabel44.setBounds(0, 190, 180, 23);
+
+        PengaruhRIPekerjaanSekolah.setModel(new javax.swing.DefaultComboBoxModel(new String[] { "Tidak", "Ya" }));
+        PengaruhRIPekerjaanSekolah.setName("PengaruhRIPekerjaanSekolah"); // NOI18N
+        PengaruhRIPekerjaanSekolah.addKeyListener(new java.awt.event.KeyAdapter() {
+            public void keyPressed(java.awt.event.KeyEvent evt) {
+                PengaruhRIPekerjaanSekolahKeyPressed(evt);
+            }
+        });
+        FormInput.add(PengaruhRIPekerjaanSekolah);
+        PengaruhRIPekerjaanSekolah.setBounds(180, 190, 80, 23);
+
+        KeteranganPengaruhRIPekerjaanSekolah.setHighlighter(null);
+        KeteranganPengaruhRIPekerjaanSekolah.setName("KeteranganPengaruhRIPekerjaanSekolah"); // NOI18N
+        KeteranganPengaruhRIPekerjaanSekolah.addKeyListener(new java.awt.event.KeyAdapter() {
+            public void keyPressed(java.awt.event.KeyEvent evt) {
+                KeteranganPengaruhRIPekerjaanSekolahKeyPressed(evt);
+            }
+        });
+        FormInput.add(KeteranganPengaruhRIPekerjaanSekolah);
+        KeteranganPengaruhRIPekerjaanSekolah.setBounds(260, 190, 586, 23);
+
+        jLabel45.setText("Keuangan :");
+        jLabel45.setName("jLabel45"); // NOI18N
+        FormInput.add(jLabel45);
+        jLabel45.setBounds(0, 220, 180, 23);
+
+        PengaruhRIKeuangan.setModel(new javax.swing.DefaultComboBoxModel(new String[] { "Tidak", "Ya" }));
+        PengaruhRIKeuangan.setName("PengaruhRIKeuangan"); // NOI18N
+        PengaruhRIKeuangan.addKeyListener(new java.awt.event.KeyAdapter() {
+            public void keyPressed(java.awt.event.KeyEvent evt) {
+                PengaruhRIKeuanganKeyPressed(evt);
+            }
+        });
+        FormInput.add(PengaruhRIKeuangan);
+        PengaruhRIKeuangan.setBounds(180, 220, 80, 23);
+
+        KeteranganPengaruhRIKeuangan.setHighlighter(null);
+        KeteranganPengaruhRIKeuangan.setName("KeteranganPengaruhRIKeuangan"); // NOI18N
+        KeteranganPengaruhRIKeuangan.addKeyListener(new java.awt.event.KeyAdapter() {
+            public void keyPressed(java.awt.event.KeyEvent evt) {
+                KeteranganPengaruhRIKeuanganKeyPressed(evt);
+            }
+        });
+        FormInput.add(KeteranganPengaruhRIKeuangan);
+        KeteranganPengaruhRIKeuangan.setBounds(260, 220, 586, 23);
+
+        jLabel54.setHorizontalAlignment(javax.swing.SwingConstants.LEFT);
+        jLabel54.setText("3. Antisipasi Terhadap Masalah Saat Pulang ?");
+        jLabel54.setName("jLabel54"); // NOI18N
+        FormInput.add(jLabel54);
+        jLabel54.setBounds(10, 590, 590, 23);
+
+        AntisipasiMasalah.setModel(new javax.swing.DefaultComboBoxModel(new String[] { "Tidak", "Ya" }));
+        AntisipasiMasalah.setName("AntisipasiMasalah"); // NOI18N
+        AntisipasiMasalah.addKeyListener(new java.awt.event.KeyAdapter() {
+            public void keyPressed(java.awt.event.KeyEvent evt) {
+                AntisipasiMasalahKeyPressed(evt);
+            }
+        });
+        FormInput.add(AntisipasiMasalah);
+        AntisipasiMasalah.setBounds(40, 610, 80, 23);
+
+        KeteranganAntisipasiMasalah.setHighlighter(null);
+        KeteranganAntisipasiMasalah.setName("KeteranganAntisipasiMasalah"); // NOI18N
+        KeteranganAntisipasiMasalah.addKeyListener(new java.awt.event.KeyAdapter() {
+            public void keyPressed(java.awt.event.KeyEvent evt) {
+                KeteranganAntisipasiMasalahKeyPressed(evt);
+            }
+        });
+        FormInput.add(KeteranganAntisipasiMasalah);
+        KeteranganAntisipasiMasalah.setBounds(120, 610, 730, 23);
+
+        jLabel55.setHorizontalAlignment(javax.swing.SwingConstants.LEFT);
+        jLabel55.setText("4. Bantuan Diperlukan Dalam Hal ?");
+        jLabel55.setName("jLabel55"); // NOI18N
+        FormInput.add(jLabel55);
+        jLabel55.setBounds(10, 640, 590, 23);
+
+        BantuanDiperlukan.setModel(new javax.swing.DefaultComboBoxModel(new String[] { "Menyiapkan Makanan", "Edukasi Kesehatan", "Makan", "Mandi", "Diet", "Berpakaian", "Menyiapkan Obat", "Transportasi", "Minum Obat" }));
+        BantuanDiperlukan.setName("BantuanDiperlukan"); // NOI18N
+        BantuanDiperlukan.addKeyListener(new java.awt.event.KeyAdapter() {
+            public void keyPressed(java.awt.event.KeyEvent evt) {
+                BantuanDiperlukanKeyPressed(evt);
+            }
+        });
+        FormInput.add(BantuanDiperlukan);
+        BantuanDiperlukan.setBounds(40, 660, 160, 23);
+
+        KeteranganBantuanDiperlukan.setHighlighter(null);
+        KeteranganBantuanDiperlukan.setName("KeteranganBantuanDiperlukan"); // NOI18N
+        KeteranganBantuanDiperlukan.addKeyListener(new java.awt.event.KeyAdapter() {
+            public void keyPressed(java.awt.event.KeyEvent evt) {
+                KeteranganBantuanDiperlukanKeyPressed(evt);
+            }
+        });
+        FormInput.add(KeteranganBantuanDiperlukan);
+        KeteranganBantuanDiperlukan.setBounds(200, 660, 650, 23);
+
+        jLabel56.setHorizontalAlignment(javax.swing.SwingConstants.LEFT);
+        jLabel56.setText("6. Apakah Pasien Tinggal Sendiri Setelah Keluar Dari Rumah Sakit ?");
+        jLabel56.setName("jLabel56"); // NOI18N
+        FormInput.add(jLabel56);
+        jLabel56.setBounds(10, 740, 590, 23);
+
+        YangMembantuKeperluan.setModel(new javax.swing.DefaultComboBoxModel(new String[] { "Tidak", "Ada" }));
+        YangMembantuKeperluan.setName("YangMembantuKeperluan"); // NOI18N
+        YangMembantuKeperluan.addKeyListener(new java.awt.event.KeyAdapter() {
+            public void keyPressed(java.awt.event.KeyEvent evt) {
+                YangMembantuKeperluanKeyPressed(evt);
+            }
+        });
+        FormInput.add(YangMembantuKeperluan);
+        YangMembantuKeperluan.setBounds(40, 710, 80, 23);
+
+        KeteranganYangMembantuKeperluan.setHighlighter(null);
+        KeteranganYangMembantuKeperluan.setName("KeteranganYangMembantuKeperluan"); // NOI18N
+        KeteranganYangMembantuKeperluan.addKeyListener(new java.awt.event.KeyAdapter() {
+            public void keyPressed(java.awt.event.KeyEvent evt) {
+                KeteranganYangMembantuKeperluanKeyPressed(evt);
+            }
+        });
+        FormInput.add(KeteranganYangMembantuKeperluan);
+        KeteranganYangMembantuKeperluan.setBounds(120, 710, 730, 23);
+
+        jLabel57.setHorizontalAlignment(javax.swing.SwingConstants.LEFT);
+        jLabel57.setText("5. Adakah Yang Membantu Keperluan Di Atas ?");
+        jLabel57.setName("jLabel57"); // NOI18N
+        FormInput.add(jLabel57);
+        jLabel57.setBounds(10, 690, 590, 23);
+
+        jLabel58.setHorizontalAlignment(javax.swing.SwingConstants.LEFT);
+        jLabel58.setText("7. Apakah Pasien Menggunakan Peralatan Medis (Kateter, NGT, Oksigen, Dll) Di Rumah Setelah Keluar / Pulang ?");
+        jLabel58.setName("jLabel58"); // NOI18N
+        FormInput.add(jLabel58);
+        jLabel58.setBounds(10, 790, 820, 23);
+
+        PeralatanMedis.setModel(new javax.swing.DefaultComboBoxModel(new String[] { "Tidak", "Ya" }));
+        PeralatanMedis.setName("PeralatanMedis"); // NOI18N
+        PeralatanMedis.addKeyListener(new java.awt.event.KeyAdapter() {
+            public void keyPressed(java.awt.event.KeyEvent evt) {
+                PeralatanMedisKeyPressed(evt);
+            }
+        });
+        FormInput.add(PeralatanMedis);
+        PeralatanMedis.setBounds(40, 810, 80, 23);
+
+        KeteranganPeralatanMedis.setHighlighter(null);
+        KeteranganPeralatanMedis.setName("KeteranganPeralatanMedis"); // NOI18N
+        KeteranganPeralatanMedis.addKeyListener(new java.awt.event.KeyAdapter() {
+            public void keyPressed(java.awt.event.KeyEvent evt) {
+                KeteranganPeralatanMedisKeyPressed(evt);
+            }
+        });
+        FormInput.add(KeteranganPeralatanMedis);
+        KeteranganPeralatanMedis.setBounds(120, 810, 730, 23);
+
+        jLabel59.setHorizontalAlignment(javax.swing.SwingConstants.LEFT);
+        jLabel59.setText("8. Apakah Pasien Memerlukan Alat Bantu (Tongkat, Kursi Roda, Walker, Dll) Setelah Keluar Keluar / Pulang ?");
+        jLabel59.setName("jLabel59"); // NOI18N
+        FormInput.add(jLabel59);
+        jLabel59.setBounds(10, 840, 820, 23);
+
+        AlatBantu.setModel(new javax.swing.DefaultComboBoxModel(new String[] { "Tidak", "Ya" }));
+        AlatBantu.setName("AlatBantu"); // NOI18N
+        AlatBantu.addKeyListener(new java.awt.event.KeyAdapter() {
+            public void keyPressed(java.awt.event.KeyEvent evt) {
+                AlatBantuKeyPressed(evt);
+            }
+        });
+        FormInput.add(AlatBantu);
+        AlatBantu.setBounds(40, 860, 80, 23);
+
+        KeteranganAlatBantu.setHighlighter(null);
+        KeteranganAlatBantu.setName("KeteranganAlatBantu"); // NOI18N
+        KeteranganAlatBantu.addKeyListener(new java.awt.event.KeyAdapter() {
+            public void keyPressed(java.awt.event.KeyEvent evt) {
+                KeteranganAlatBantuKeyPressed(evt);
+            }
+        });
+        FormInput.add(KeteranganAlatBantu);
+        KeteranganAlatBantu.setBounds(120, 860, 730, 23);
+
+        jLabel60.setHorizontalAlignment(javax.swing.SwingConstants.LEFT);
+        jLabel60.setText("9. Apakah Memerlukan Bantuan / Perawatan Khusus (Homecare, Home Visit) Di Rumah Setelah Keluar / Pulang ?");
+        jLabel60.setName("jLabel60"); // NOI18N
+        FormInput.add(jLabel60);
+        jLabel60.setBounds(10, 890, 820, 23);
+
+        PerawatanKhusus.setModel(new javax.swing.DefaultComboBoxModel(new String[] { "Tidak", "Ya" }));
+        PerawatanKhusus.setName("PerawatanKhusus"); // NOI18N
+        PerawatanKhusus.addKeyListener(new java.awt.event.KeyAdapter() {
+            public void keyPressed(java.awt.event.KeyEvent evt) {
+                PerawatanKhususKeyPressed(evt);
+            }
+        });
+        FormInput.add(PerawatanKhusus);
+        PerawatanKhusus.setBounds(40, 910, 80, 23);
+
+        KeteranganPerawatanKhusus.setHighlighter(null);
+        KeteranganPerawatanKhusus.setName("KeteranganPerawatanKhusus"); // NOI18N
+        KeteranganPerawatanKhusus.addKeyListener(new java.awt.event.KeyAdapter() {
+            public void keyPressed(java.awt.event.KeyEvent evt) {
+                KeteranganPerawatanKhususKeyPressed(evt);
+            }
+        });
+        FormInput.add(KeteranganPerawatanKhusus);
+        KeteranganPerawatanKhusus.setBounds(120, 910, 730, 23);
+
+        jLabel61.setHorizontalAlignment(javax.swing.SwingConstants.LEFT);
+        jLabel61.setText("10. Apakah Pasien Bermasalah Dalam Memenuhi Kebutuhan Pribadinya (Makan, Minum, BAK, BAB, Dll) Setelah Keluar / Pulang ?");
+        jLabel61.setName("jLabel61"); // NOI18N
+        FormInput.add(jLabel61);
+        jLabel61.setBounds(10, 940, 820, 23);
+
+        MemenuhiKebutuhan.setModel(new javax.swing.DefaultComboBoxModel(new String[] { "Tidak", "Ya" }));
+        MemenuhiKebutuhan.setName("MemenuhiKebutuhan"); // NOI18N
+        MemenuhiKebutuhan.addKeyListener(new java.awt.event.KeyAdapter() {
+            public void keyPressed(java.awt.event.KeyEvent evt) {
+                MemenuhiKebutuhanKeyPressed(evt);
+            }
+        });
+        FormInput.add(MemenuhiKebutuhan);
+        MemenuhiKebutuhan.setBounds(40, 960, 80, 23);
+
+        KeteranganMemenuhiKebutuhan.setHighlighter(null);
+        KeteranganMemenuhiKebutuhan.setName("KeteranganMemenuhiKebutuhan"); // NOI18N
+        KeteranganMemenuhiKebutuhan.addKeyListener(new java.awt.event.KeyAdapter() {
+            public void keyPressed(java.awt.event.KeyEvent evt) {
+                KeteranganMemenuhiKebutuhanKeyPressed(evt);
+            }
+        });
+        FormInput.add(KeteranganMemenuhiKebutuhan);
+        KeteranganMemenuhiKebutuhan.setBounds(120, 960, 730, 23);
+
+        jLabel62.setHorizontalAlignment(javax.swing.SwingConstants.LEFT);
+        jLabel62.setText("11. Apakah Pasien Memiliki Nyeri Kronis Dan Kelelahan Setelah Keluar / Pulang ?");
+        jLabel62.setName("jLabel62"); // NOI18N
+        FormInput.add(jLabel62);
+        jLabel62.setBounds(10, 990, 820, 23);
+
+        NyeriKronis.setModel(new javax.swing.DefaultComboBoxModel(new String[] { "Tidak", "Ya" }));
+        NyeriKronis.setName("NyeriKronis"); // NOI18N
+        NyeriKronis.addKeyListener(new java.awt.event.KeyAdapter() {
+            public void keyPressed(java.awt.event.KeyEvent evt) {
+                NyeriKronisKeyPressed(evt);
+            }
+        });
+        FormInput.add(NyeriKronis);
+        NyeriKronis.setBounds(40, 1010, 80, 23);
+
+        KeteranganNyeriKronis.setHighlighter(null);
+        KeteranganNyeriKronis.setName("KeteranganNyeriKronis"); // NOI18N
+        KeteranganNyeriKronis.addKeyListener(new java.awt.event.KeyAdapter() {
+            public void keyPressed(java.awt.event.KeyEvent evt) {
+                KeteranganNyeriKronisKeyPressed(evt);
+            }
+        });
+        FormInput.add(KeteranganNyeriKronis);
+        KeteranganNyeriKronis.setBounds(120, 1010, 730, 23);
+
+        jLabel63.setHorizontalAlignment(javax.swing.SwingConstants.LEFT);
+        jLabel63.setText("12. Apakah Pasien & Keluarga Memerlukan Edukasi Kesehatan (Obatan-obatan, Efek Samping Obat, Nyeri Diit, Mencari Pertolongan, Follow Up, Dll) Setelah Keluar / Pulang ?");
+        jLabel63.setName("jLabel63"); // NOI18N
+        FormInput.add(jLabel63);
+        jLabel63.setBounds(10, 1040, 850, 23);
+
+        EdukasiPasien.setModel(new javax.swing.DefaultComboBoxModel(new String[] { "Tidak", "Ya" }));
+        EdukasiPasien.setName("EdukasiPasien"); // NOI18N
+        EdukasiPasien.addKeyListener(new java.awt.event.KeyAdapter() {
+            public void keyPressed(java.awt.event.KeyEvent evt) {
+                EdukasiPasienKeyPressed(evt);
+            }
+        });
+        FormInput.add(EdukasiPasien);
+        EdukasiPasien.setBounds(40, 1060, 80, 23);
+
+        KeteranganEdukasiPasien.setHighlighter(null);
+        KeteranganEdukasiPasien.setName("KeteranganEdukasiPasien"); // NOI18N
+        KeteranganEdukasiPasien.addKeyListener(new java.awt.event.KeyAdapter() {
+            public void keyPressed(java.awt.event.KeyEvent evt) {
+                KeteranganEdukasiPasienKeyPressed(evt);
+            }
+        });
+        FormInput.add(KeteranganEdukasiPasien);
+        KeteranganEdukasiPasien.setBounds(120, 1060, 730, 23);
+
+        jLabel73.setHorizontalAlignment(javax.swing.SwingConstants.LEFT);
+        jLabel73.setText("Membutuhkan Pelayanan Medis Dan Perawatan Berkelanjutan :");
+        jLabel73.setName("jLabel73"); // NOI18N
+        FormInput.add(jLabel73);
+        jLabel73.setBounds(30, 320, 310, 20);
+
+        jLabel74.setForeground(new java.awt.Color(255, 0, 0));
+        jLabel74.setHorizontalAlignment(javax.swing.SwingConstants.LEFT);
+        jLabel74.setText("( Bila Terdapat Salah Satu Kreteria Pengelompokan Perawatan, Maka Kordinasikan Dengan MPP )");
+        jLabel74.setName("jLabel74"); // NOI18N
+        FormInput.add(jLabel74);
+        jLabel74.setBounds(30, 560, 470, 20);
+
+        jLabel75.setHorizontalAlignment(javax.swing.SwingConstants.LEFT);
+        jLabel75.setText("Usia Lanjut ( 60 Tahun Lebih )  :");
+        jLabel75.setName("jLabel75"); // NOI18N
+        FormInput.add(jLabel75);
+        jLabel75.setBounds(30, 260, 160, 20);
+
+        Perawatan.setModel(new javax.swing.DefaultComboBoxModel(new String[] { "Tidak", "Ya" }));
+        Perawatan.setName("Perawatan"); // NOI18N
+        Perawatan.addKeyListener(new java.awt.event.KeyAdapter() {
+            public void keyPressed(java.awt.event.KeyEvent evt) {
+                PerawatanKeyPressed(evt);
+            }
+        });
+        FormInput.add(Perawatan);
+        Perawatan.setBounds(340, 320, 80, 23);
+
+        UsiaLanjut.setModel(new javax.swing.DefaultComboBoxModel(new String[] { "Tidak", "Ya" }));
+        UsiaLanjut.setName("UsiaLanjut"); // NOI18N
+        UsiaLanjut.addKeyListener(new java.awt.event.KeyAdapter() {
+            public void keyPressed(java.awt.event.KeyEvent evt) {
+                UsiaLanjutKeyPressed(evt);
+            }
+        });
+        FormInput.add(UsiaLanjut);
+        UsiaLanjut.setBounds(190, 260, 80, 23);
+
+        jLabel76.setHorizontalAlignment(javax.swing.SwingConstants.LEFT);
+        jLabel76.setText("Hambatan Mobilisasi :");
+        jLabel76.setName("jLabel76"); // NOI18N
+        FormInput.add(jLabel76);
+        jLabel76.setBounds(30, 290, 160, 20);
+
+        Hambatan.setModel(new javax.swing.DefaultComboBoxModel(new String[] { "Tidak", "Ya" }));
+        Hambatan.setName("Hambatan"); // NOI18N
+        Hambatan.addKeyListener(new java.awt.event.KeyAdapter() {
+            public void keyPressed(java.awt.event.KeyEvent evt) {
+                HambatanKeyPressed(evt);
+            }
+        });
+        FormInput.add(Hambatan);
+        Hambatan.setBounds(140, 290, 80, 23);
+
+        jLabel77.setHorizontalAlignment(javax.swing.SwingConstants.LEFT);
+        jLabel77.setText("Tergantung Dengan Orang Lain Dalam Aktifitas Harian :");
+        jLabel77.setName("jLabel77"); // NOI18N
+        FormInput.add(jLabel77);
+        jLabel77.setBounds(30, 350, 270, 20);
+
+        Aktifitas.setModel(new javax.swing.DefaultComboBoxModel(new String[] { "Tidak", "Ya" }));
+        Aktifitas.setName("Aktifitas"); // NOI18N
+        Aktifitas.addKeyListener(new java.awt.event.KeyAdapter() {
+            public void keyPressed(java.awt.event.KeyEvent evt) {
+                AktifitasKeyPressed(evt);
+            }
+        });
+        FormInput.add(Aktifitas);
+        Aktifitas.setBounds(300, 350, 80, 23);
+
+        jLabel78.setHorizontalAlignment(javax.swing.SwingConstants.LEFT);
+        jLabel78.setText("Pasien Dengan Perawatan Kritis :");
+        jLabel78.setName("jLabel78"); // NOI18N
+        FormInput.add(jLabel78);
+        jLabel78.setBounds(30, 380, 180, 20);
+
+        Kritis.setModel(new javax.swing.DefaultComboBoxModel(new String[] { "Tidak", "Ya" }));
+        Kritis.setName("Kritis"); // NOI18N
+        Kritis.addKeyListener(new java.awt.event.KeyAdapter() {
+            public void keyPressed(java.awt.event.KeyEvent evt) {
+                KritisKeyPressed(evt);
+            }
+        });
+        FormInput.add(Kritis);
+        Kritis.setBounds(200, 380, 80, 23);
+
+        jLabel79.setHorizontalAlignment(javax.swing.SwingConstants.LEFT);
+        jLabel79.setText("Penyakit Paru Obstruktif Kronis (PPOK) :");
+        jLabel79.setName("jLabel79"); // NOI18N
+        FormInput.add(jLabel79);
+        jLabel79.setBounds(470, 320, 200, 20);
+
+        jLabel80.setHorizontalAlignment(javax.swing.SwingConstants.LEFT);
+        jLabel80.setText("Stroke :");
+        jLabel80.setName("jLabel80"); // NOI18N
+        FormInput.add(jLabel80);
+        jLabel80.setBounds(470, 260, 40, 20);
+
+        PPOK.setModel(new javax.swing.DefaultComboBoxModel(new String[] { "Tidak", "Ya" }));
+        PPOK.setName("PPOK"); // NOI18N
+        PPOK.addKeyListener(new java.awt.event.KeyAdapter() {
+            public void keyPressed(java.awt.event.KeyEvent evt) {
+                PPOKKeyPressed(evt);
+            }
+        });
+        FormInput.add(PPOK);
+        PPOK.setBounds(670, 320, 80, 23);
+
+        Stroke.setModel(new javax.swing.DefaultComboBoxModel(new String[] { "Tidak", "Ya" }));
+        Stroke.setName("Stroke"); // NOI18N
+        Stroke.addKeyListener(new java.awt.event.KeyAdapter() {
+            public void keyPressed(java.awt.event.KeyEvent evt) {
+                StrokeKeyPressed(evt);
+            }
+        });
+        FormInput.add(Stroke);
+        Stroke.setBounds(520, 260, 80, 23);
+
+        jLabel81.setHorizontalAlignment(javax.swing.SwingConstants.LEFT);
+        jLabel81.setText("Serangan Jantung :");
+        jLabel81.setName("jLabel81"); // NOI18N
+        FormInput.add(jLabel81);
+        jLabel81.setBounds(470, 290, 100, 20);
+
+        SeranganJantung.setModel(new javax.swing.DefaultComboBoxModel(new String[] { "Tidak", "Ya" }));
+        SeranganJantung.setName("SeranganJantung"); // NOI18N
+        SeranganJantung.addKeyListener(new java.awt.event.KeyAdapter() {
+            public void keyPressed(java.awt.event.KeyEvent evt) {
+                SeranganJantungKeyPressed(evt);
+            }
+        });
+        FormInput.add(SeranganJantung);
+        SeranganJantung.setBounds(570, 290, 80, 23);
+
+        jLabel82.setHorizontalAlignment(javax.swing.SwingConstants.LEFT);
+        jLabel82.setText("Gagal Jantung Kongestif :");
+        jLabel82.setName("jLabel82"); // NOI18N
+        FormInput.add(jLabel82);
+        jLabel82.setBounds(470, 350, 130, 20);
+
+        GagalJantung.setModel(new javax.swing.DefaultComboBoxModel(new String[] { "Tidak", "Ya" }));
+        GagalJantung.setName("GagalJantung"); // NOI18N
+        GagalJantung.addKeyListener(new java.awt.event.KeyAdapter() {
+            public void keyPressed(java.awt.event.KeyEvent evt) {
+                GagalJantungKeyPressed(evt);
+            }
+        });
+        FormInput.add(GagalJantung);
+        GagalJantung.setBounds(600, 350, 80, 23);
+
+        jLabel83.setHorizontalAlignment(javax.swing.SwingConstants.LEFT);
+        jLabel83.setText("Emfisema :");
+        jLabel83.setName("jLabel83"); // NOI18N
+        FormInput.add(jLabel83);
+        jLabel83.setBounds(470, 380, 60, 20);
+
+        Emfisema.setModel(new javax.swing.DefaultComboBoxModel(new String[] { "Tidak", "Ya" }));
+        Emfisema.setName("Emfisema"); // NOI18N
+        Emfisema.addKeyListener(new java.awt.event.KeyAdapter() {
+            public void keyPressed(java.awt.event.KeyEvent evt) {
+                EmfisemaKeyPressed(evt);
+            }
+        });
+        FormInput.add(Emfisema);
+        Emfisema.setBounds(530, 380, 80, 23);
+
+        jLabel84.setHorizontalAlignment(javax.swing.SwingConstants.LEFT);
+        jLabel84.setText("AIDS :");
+        jLabel84.setName("jLabel84"); // NOI18N
+        FormInput.add(jLabel84);
+        jLabel84.setBounds(640, 410, 40, 20);
+
+        jLabel85.setHorizontalAlignment(javax.swing.SwingConstants.LEFT);
+        jLabel85.setText("Demensia :");
+        jLabel85.setName("jLabel85"); // NOI18N
+        FormInput.add(jLabel85);
+        jLabel85.setBounds(470, 410, 60, 20);
+
+        AIDS.setModel(new javax.swing.DefaultComboBoxModel(new String[] { "Tidak", "Ya" }));
+        AIDS.setName("AIDS"); // NOI18N
+        AIDS.addKeyListener(new java.awt.event.KeyAdapter() {
+            public void keyPressed(java.awt.event.KeyEvent evt) {
+                AIDSKeyPressed(evt);
+            }
+        });
+        FormInput.add(AIDS);
+        AIDS.setBounds(700, 410, 80, 23);
+
+        Demensia.setModel(new javax.swing.DefaultComboBoxModel(new String[] { "Tidak", "Ya" }));
+        Demensia.setName("Demensia"); // NOI18N
+        Demensia.addKeyListener(new java.awt.event.KeyAdapter() {
+            public void keyPressed(java.awt.event.KeyEvent evt) {
+                DemensiaKeyPressed(evt);
+            }
+        });
+        FormInput.add(Demensia);
+        Demensia.setBounds(530, 410, 80, 23);
+
+        jLabel86.setHorizontalAlignment(javax.swing.SwingConstants.LEFT);
+        jLabel86.setText("Alzheimer :");
+        jLabel86.setName("jLabel86"); // NOI18N
+        FormInput.add(jLabel86);
+        jLabel86.setBounds(640, 380, 60, 20);
+
+        Alzheimer.setModel(new javax.swing.DefaultComboBoxModel(new String[] { "Tidak", "Ya" }));
+        Alzheimer.setName("Alzheimer"); // NOI18N
+        Alzheimer.addKeyListener(new java.awt.event.KeyAdapter() {
+            public void keyPressed(java.awt.event.KeyEvent evt) {
+                AlzheimerKeyPressed(evt);
+            }
+        });
+        FormInput.add(Alzheimer);
+        Alzheimer.setBounds(700, 380, 80, 23);
+
+        jLabel87.setHorizontalAlignment(javax.swing.SwingConstants.LEFT);
+        jLabel87.setText("Trauma multipel / penyakit mengancam nyawa :");
+        jLabel87.setName("jLabel87"); // NOI18N
+        FormInput.add(jLabel87);
+        jLabel87.setBounds(470, 440, 230, 20);
+
+        Trauma.setModel(new javax.swing.DefaultComboBoxModel(new String[] { "Tidak", "Ya" }));
+        Trauma.setName("Trauma"); // NOI18N
+        Trauma.addKeyListener(new java.awt.event.KeyAdapter() {
+            public void keyPressed(java.awt.event.KeyEvent evt) {
+                TraumaKeyPressed(evt);
+            }
+        });
+        FormInput.add(Trauma);
+        Trauma.setBounds(700, 440, 80, 23);
+
+        jLabel89.setHorizontalAlignment(javax.swing.SwingConstants.LEFT);
+        jLabel89.setText("Tinggal sendirian tanpa dukungan sosial :");
+        jLabel89.setName("jLabel89"); // NOI18N
+        FormInput.add(jLabel89);
+        jLabel89.setBounds(30, 470, 210, 20);
+
+        jLabel90.setHorizontalAlignment(javax.swing.SwingConstants.LEFT);
+        jLabel90.setText("Pasien kembali dirawat dalam tempo 30 hari :");
+        jLabel90.setName("jLabel90"); // NOI18N
+        FormInput.add(jLabel90);
+        jLabel90.setBounds(30, 410, 230, 20);
+
+        TanpaDukungan.setModel(new javax.swing.DefaultComboBoxModel(new String[] { "Tidak", "Ya" }));
+        TanpaDukungan.setName("TanpaDukungan"); // NOI18N
+        TanpaDukungan.addKeyListener(new java.awt.event.KeyAdapter() {
+            public void keyPressed(java.awt.event.KeyEvent evt) {
+                TanpaDukunganKeyPressed(evt);
+            }
+        });
+        FormInput.add(TanpaDukungan);
+        TanpaDukungan.setBounds(240, 470, 80, 23);
+
+        PasienKembali.setModel(new javax.swing.DefaultComboBoxModel(new String[] { "Tidak", "Ya" }));
+        PasienKembali.setName("PasienKembali"); // NOI18N
+        PasienKembali.addKeyListener(new java.awt.event.KeyAdapter() {
+            public void keyPressed(java.awt.event.KeyEvent evt) {
+                PasienKembaliKeyPressed(evt);
+            }
+        });
+        FormInput.add(PasienKembali);
+        PasienKembali.setBounds(250, 410, 80, 23);
+
+        jLabel91.setHorizontalAlignment(javax.swing.SwingConstants.LEFT);
+        jLabel91.setText("Pasien berasal dari panti jompo :");
+        jLabel91.setName("jLabel91"); // NOI18N
+        FormInput.add(jLabel91);
+        jLabel91.setBounds(30, 440, 160, 20);
+
+        PantiJompo.setModel(new javax.swing.DefaultComboBoxModel(new String[] { "Tidak", "Ya" }));
+        PantiJompo.setName("PantiJompo"); // NOI18N
+        PantiJompo.addKeyListener(new java.awt.event.KeyAdapter() {
+            public void keyPressed(java.awt.event.KeyEvent evt) {
+                PantiJompoKeyPressed(evt);
+            }
+        });
+        FormInput.add(PantiJompo);
+        PantiJompo.setBounds(190, 440, 80, 23);
+
+        jLabel92.setHorizontalAlignment(javax.swing.SwingConstants.LEFT);
+        jLabel92.setText("Alamat tidak diketahui / luar kota :");
+        jLabel92.setName("jLabel92"); // NOI18N
+        FormInput.add(jLabel92);
+        jLabel92.setBounds(30, 500, 170, 20);
+
+        LuarKota.setModel(new javax.swing.DefaultComboBoxModel(new String[] { "Tidak", "Ya" }));
+        LuarKota.setName("LuarKota"); // NOI18N
+        LuarKota.addKeyListener(new java.awt.event.KeyAdapter() {
+            public void keyPressed(java.awt.event.KeyEvent evt) {
+                LuarKotaKeyPressed(evt);
+            }
+        });
+        FormInput.add(LuarKota);
+        LuarKota.setBounds(200, 500, 80, 23);
+
+        jLabel93.setHorizontalAlignment(javax.swing.SwingConstants.LEFT);
+        jLabel93.setText("Pasien tidak dikenal / tunawisma :");
+        jLabel93.setName("jLabel93"); // NOI18N
+        FormInput.add(jLabel93);
+        jLabel93.setBounds(30, 530, 180, 20);
+
+        Tunawisma.setModel(new javax.swing.DefaultComboBoxModel(new String[] { "Tidak", "Ya" }));
+        Tunawisma.setName("Tunawisma"); // NOI18N
+        Tunawisma.addKeyListener(new java.awt.event.KeyAdapter() {
+            public void keyPressed(java.awt.event.KeyEvent evt) {
+                TunawismaKeyPressed(evt);
+            }
+        });
+        FormInput.add(Tunawisma);
+        Tunawisma.setBounds(200, 530, 80, 23);
+
+        jLabel94.setHorizontalAlignment(javax.swing.SwingConstants.LEFT);
+        jLabel94.setText("Tidak bekerja / tidak ada asuransi :");
+        jLabel94.setName("jLabel94"); // NOI18N
+        FormInput.add(jLabel94);
+        jLabel94.setBounds(470, 530, 180, 20);
+
+        TidakAdaAsuransi.setModel(new javax.swing.DefaultComboBoxModel(new String[] { "Tidak", "Ya" }));
+        TidakAdaAsuransi.setName("TidakAdaAsuransi"); // NOI18N
+        TidakAdaAsuransi.addKeyListener(new java.awt.event.KeyAdapter() {
+            public void keyPressed(java.awt.event.KeyEvent evt) {
+                TidakAdaAsuransiKeyPressed(evt);
+            }
+        });
+        FormInput.add(TidakAdaAsuransi);
+        TidakAdaAsuransi.setBounds(640, 530, 80, 23);
+
+        jLabel95.setHorizontalAlignment(javax.swing.SwingConstants.LEFT);
+        jLabel95.setText("Percobaan bunuh diri :");
+        jLabel95.setName("jLabel95"); // NOI18N
+        FormInput.add(jLabel95);
+        jLabel95.setBounds(470, 500, 120, 20);
+
+        BunuhDiri.setModel(new javax.swing.DefaultComboBoxModel(new String[] { "Tidak", "Ya" }));
+        BunuhDiri.setName("BunuhDiri"); // NOI18N
+        BunuhDiri.addKeyListener(new java.awt.event.KeyAdapter() {
+            public void keyPressed(java.awt.event.KeyEvent evt) {
+                BunuhDiriKeyPressed(evt);
+            }
+        });
+        FormInput.add(BunuhDiri);
+        BunuhDiri.setBounds(580, 500, 80, 23);
+
+        jLabel96.setHorizontalAlignment(javax.swing.SwingConstants.LEFT);
+        jLabel96.setText("Korban dari kasus kriminal :");
+        jLabel96.setName("jLabel96"); // NOI18N
+        FormInput.add(jLabel96);
+        jLabel96.setBounds(470, 470, 140, 20);
+
+        Kriminal.setModel(new javax.swing.DefaultComboBoxModel(new String[] { "Tidak", "Ya" }));
+        Kriminal.setName("Kriminal"); // NOI18N
+        Kriminal.addKeyListener(new java.awt.event.KeyAdapter() {
+            public void keyPressed(java.awt.event.KeyEvent evt) {
+                KriminalKeyPressed(evt);
+            }
+        });
+        FormInput.add(Kriminal);
+        Kriminal.setBounds(610, 470, 80, 23);
+
+        jLabel70.setHorizontalAlignment(javax.swing.SwingConstants.LEFT);
+        jLabel70.setText("2. Pengelompokan Perawatan");
+        jLabel70.setName("jLabel70"); // NOI18N
+        FormInput.add(jLabel70);
+        jLabel70.setBounds(10, 240, 590, 23);
+
+        jLabel65.setHorizontalAlignment(javax.swing.SwingConstants.LEFT);
+        jLabel65.setText("16. Apakah Ada Obat - Obatan Yang Dibawa Pulang Pasien?");
+        jLabel65.setName("jLabel65"); // NOI18N
+        FormInput.add(jLabel65);
+        jLabel65.setBounds(10, 1240, 850, 23);
+
+        KeterampilanKhusus.setModel(new javax.swing.DefaultComboBoxModel(new String[] { "Tidak", "Ya" }));
+        KeterampilanKhusus.setName("KeterampilanKhusus"); // NOI18N
+        KeterampilanKhusus.addKeyListener(new java.awt.event.KeyAdapter() {
+            public void keyPressed(java.awt.event.KeyEvent evt) {
+                KeterampilanKhususKeyPressed(evt);
+            }
+        });
+        FormInput.add(KeterampilanKhusus);
+        KeterampilanKhusus.setBounds(30, 1110, 80, 23);
+
+        KeteranganKeterampilanKhusus.setHighlighter(null);
+        KeteranganKeterampilanKhusus.setName("KeteranganKeterampilanKhusus"); // NOI18N
+        KeteranganKeterampilanKhusus.addKeyListener(new java.awt.event.KeyAdapter() {
+            public void keyPressed(java.awt.event.KeyEvent evt) {
+                KeteranganKeterampilanKhususKeyPressed(evt);
+            }
+        });
+        FormInput.add(KeteranganKeterampilanKhusus);
+        KeteranganKeterampilanKhusus.setBounds(120, 1110, 730, 23);
+
+        jLabel66.setHorizontalAlignment(javax.swing.SwingConstants.LEFT);
+        jLabel66.setText("13. Apakah Pasien Dan Keluarga Memerlukan Keterampilan Khusus (Perawatan Luka, Injeksi, Perawatan Bayi, Dll) Setelah Keluar / Pulang ?");
+        jLabel66.setName("jLabel66"); // NOI18N
+        FormInput.add(jLabel66);
+        jLabel66.setBounds(10, 1090, 850, 23);
+
+        JadwalKontrol.setModel(new javax.swing.DefaultComboBoxModel(new String[] { "Tidak", "Ya" }));
+        JadwalKontrol.setName("JadwalKontrol"); // NOI18N
+        JadwalKontrol.addKeyListener(new java.awt.event.KeyAdapter() {
+            public void keyPressed(java.awt.event.KeyEvent evt) {
+                JadwalKontrolKeyPressed(evt);
+            }
+        });
+        FormInput.add(JadwalKontrol);
+        JadwalKontrol.setBounds(30, 1160, 80, 23);
+
+        KeteranganJadwalKontrol.setHighlighter(null);
+        KeteranganJadwalKontrol.setName("KeteranganJadwalKontrol"); // NOI18N
+        KeteranganJadwalKontrol.addKeyListener(new java.awt.event.KeyAdapter() {
+            public void keyPressed(java.awt.event.KeyEvent evt) {
+                KeteranganJadwalKontrolKeyPressed(evt);
+            }
+        });
+        FormInput.add(KeteranganJadwalKontrol);
+        KeteranganJadwalKontrol.setBounds(120, 1160, 730, 23);
+
+        jLabel67.setHorizontalAlignment(javax.swing.SwingConstants.LEFT);
+        jLabel67.setText("14. Apakah Pasien & Keluarga Sudah diberi Edukasi Jadwal Kontrol ?");
+        jLabel67.setName("jLabel67"); // NOI18N
+        FormInput.add(jLabel67);
+        jLabel67.setBounds(10, 1140, 850, 23);
+
+        Diberikan.setModel(new javax.swing.DefaultComboBoxModel(new String[] { "Tidak", "Ya" }));
+        Diberikan.setName("Diberikan"); // NOI18N
+        Diberikan.addKeyListener(new java.awt.event.KeyAdapter() {
+            public void keyPressed(java.awt.event.KeyEvent evt) {
+                DiberikanKeyPressed(evt);
+            }
+        });
+        FormInput.add(Diberikan);
+        Diberikan.setBounds(30, 1210, 80, 23);
+
+        KeteranganDiberikan.setHighlighter(null);
+        KeteranganDiberikan.setName("KeteranganDiberikan"); // NOI18N
+        KeteranganDiberikan.addKeyListener(new java.awt.event.KeyAdapter() {
+            public void keyPressed(java.awt.event.KeyEvent evt) {
+                KeteranganDiberikanKeyPressed(evt);
+            }
+        });
+        FormInput.add(KeteranganDiberikan);
+        KeteranganDiberikan.setBounds(120, 1210, 730, 23);
+
+        jLabel68.setHorizontalAlignment(javax.swing.SwingConstants.LEFT);
+        jLabel68.setText("15. Apakah Ada Yang diberikan Kepada Pasien & Keluarga Saat Pulang ?");
+        jLabel68.setName("jLabel68"); // NOI18N
+        FormInput.add(jLabel68);
+        jLabel68.setBounds(10, 1190, 850, 23);
+
+        ObatPulang.setModel(new javax.swing.DefaultComboBoxModel(new String[] { "Tidak", "Ya" }));
+        ObatPulang.setName("ObatPulang"); // NOI18N
+        ObatPulang.addKeyListener(new java.awt.event.KeyAdapter() {
+            public void keyPressed(java.awt.event.KeyEvent evt) {
+                ObatPulangKeyPressed(evt);
+            }
+        });
+        FormInput.add(ObatPulang);
+        ObatPulang.setBounds(30, 1270, 80, 23);
+
+        KeteranganObatPulang.setHighlighter(null);
+        KeteranganObatPulang.setName("KeteranganObatPulang"); // NOI18N
+        KeteranganObatPulang.addKeyListener(new java.awt.event.KeyAdapter() {
+            public void keyPressed(java.awt.event.KeyEvent evt) {
+                KeteranganObatPulangKeyPressed(evt);
+            }
+        });
+        FormInput.add(KeteranganObatPulang);
+        KeteranganObatPulang.setBounds(120, 1270, 730, 23);
+
+        jLabel69.setHorizontalAlignment(javax.swing.SwingConstants.LEFT);
+        jLabel69.setText("17. Apakah Ada Fasilitas Kesehatan Yang Bisa Dihubungi Saat Dirumah ?");
+        jLabel69.setName("jLabel69"); // NOI18N
+        FormInput.add(jLabel69);
+        jLabel69.setBounds(10, 1300, 850, 23);
+
+        FaskesRumah.setModel(new javax.swing.DefaultComboBoxModel(new String[] { "Tidak", "Ya" }));
+        FaskesRumah.setName("FaskesRumah"); // NOI18N
+        FaskesRumah.addKeyListener(new java.awt.event.KeyAdapter() {
+            public void keyPressed(java.awt.event.KeyEvent evt) {
+                FaskesRumahKeyPressed(evt);
+            }
+        });
+        FormInput.add(FaskesRumah);
+        FaskesRumah.setBounds(30, 1330, 80, 23);
+
+        KeteranganFaskesRumah.setHighlighter(null);
+        KeteranganFaskesRumah.setName("KeteranganFaskesRumah"); // NOI18N
+        KeteranganFaskesRumah.addKeyListener(new java.awt.event.KeyAdapter() {
+            public void keyPressed(java.awt.event.KeyEvent evt) {
+                KeteranganFaskesRumahKeyPressed(evt);
+            }
+        });
+        FormInput.add(KeteranganFaskesRumah);
+        KeteranganFaskesRumah.setBounds(120, 1330, 730, 23);
+
+        jLabel40.setText("Diagnosa Masuk :");
         jLabel40.setName("jLabel40"); // NOI18N
         FormInput.add(jLabel40);
         jLabel40.setBounds(453, 40, 100, 23);
@@ -781,563 +1615,20 @@ public final class RMPerencanaanPemulangan extends javax.swing.JDialog {
         FormInput.add(DiagnosaMedis);
         DiagnosaMedis.setBounds(557, 40, 297, 23);
 
-        jLabel41.setText("Alasan Masuk / Dirawat :");
-        jLabel41.setName("jLabel41"); // NOI18N
-        FormInput.add(jLabel41);
-        jLabel41.setBounds(0, 70, 137, 23);
-
-        AlasanMasuk.setHighlighter(null);
-        AlasanMasuk.setName("AlasanMasuk"); // NOI18N
-        AlasanMasuk.addKeyListener(new java.awt.event.KeyAdapter() {
+        DiagnosaMedisKeluar.setHighlighter(null);
+        DiagnosaMedisKeluar.setName("DiagnosaMedisKeluar"); // NOI18N
+        DiagnosaMedisKeluar.addKeyListener(new java.awt.event.KeyAdapter() {
             public void keyPressed(java.awt.event.KeyEvent evt) {
-                AlasanMasukKeyPressed(evt);
+                DiagnosaMedisKeluarKeyPressed(evt);
             }
         });
-        FormInput.add(AlasanMasuk);
-        AlasanMasuk.setBounds(141, 70, 713, 23);
+        FormInput.add(DiagnosaMedisKeluar);
+        DiagnosaMedisKeluar.setBounds(557, 70, 297, 23);
 
-        jLabel53.setHorizontalAlignment(javax.swing.SwingConstants.LEFT);
-        jLabel53.setText("1. Pengaruh Rawat Inap Terhadap :");
-        jLabel53.setName("jLabel53"); // NOI18N
-        FormInput.add(jLabel53);
-        jLabel53.setBounds(15, 100, 590, 23);
-
-        jLabel43.setText("Pasien & Keluarga Pasien :");
-        jLabel43.setName("jLabel43"); // NOI18N
-        FormInput.add(jLabel43);
-        jLabel43.setBounds(0, 120, 180, 23);
-
-        KeteranganPengaruhRIKeluarga.setHighlighter(null);
-        KeteranganPengaruhRIKeluarga.setName("KeteranganPengaruhRIKeluarga"); // NOI18N
-        KeteranganPengaruhRIKeluarga.addKeyListener(new java.awt.event.KeyAdapter() {
-            public void keyPressed(java.awt.event.KeyEvent evt) {
-                KeteranganPengaruhRIKeluargaKeyPressed(evt);
-            }
-        });
-        FormInput.add(KeteranganPengaruhRIKeluarga);
-        KeteranganPengaruhRIKeluarga.setBounds(268, 120, 586, 23);
-
-        PengaruhRIKeluarga.setModel(new javax.swing.DefaultComboBoxModel(new String[] { "Tidak", "Ya" }));
-        PengaruhRIKeluarga.setName("PengaruhRIKeluarga"); // NOI18N
-        PengaruhRIKeluarga.addKeyListener(new java.awt.event.KeyAdapter() {
-            public void keyPressed(java.awt.event.KeyEvent evt) {
-                PengaruhRIKeluargaKeyPressed(evt);
-            }
-        });
-        FormInput.add(PengaruhRIKeluarga);
-        PengaruhRIKeluarga.setBounds(184, 120, 80, 23);
-
-        jLabel44.setText("Pekerjaan / Sekolah :");
-        jLabel44.setName("jLabel44"); // NOI18N
-        FormInput.add(jLabel44);
-        jLabel44.setBounds(0, 150, 180, 23);
-
-        PengaruhRIPekerjaanSekolah.setModel(new javax.swing.DefaultComboBoxModel(new String[] { "Tidak", "Ya" }));
-        PengaruhRIPekerjaanSekolah.setName("PengaruhRIPekerjaanSekolah"); // NOI18N
-        PengaruhRIPekerjaanSekolah.addKeyListener(new java.awt.event.KeyAdapter() {
-            public void keyPressed(java.awt.event.KeyEvent evt) {
-                PengaruhRIPekerjaanSekolahKeyPressed(evt);
-            }
-        });
-        FormInput.add(PengaruhRIPekerjaanSekolah);
-        PengaruhRIPekerjaanSekolah.setBounds(184, 150, 80, 23);
-
-        KeteranganPengaruhRIPekerjaanSekolah.setHighlighter(null);
-        KeteranganPengaruhRIPekerjaanSekolah.setName("KeteranganPengaruhRIPekerjaanSekolah"); // NOI18N
-        KeteranganPengaruhRIPekerjaanSekolah.addKeyListener(new java.awt.event.KeyAdapter() {
-            public void keyPressed(java.awt.event.KeyEvent evt) {
-                KeteranganPengaruhRIPekerjaanSekolahKeyPressed(evt);
-            }
-        });
-        FormInput.add(KeteranganPengaruhRIPekerjaanSekolah);
-        KeteranganPengaruhRIPekerjaanSekolah.setBounds(268, 150, 586, 23);
-
-        PengaruhRIKeuangan.setModel(new javax.swing.DefaultComboBoxModel(new String[] { "Tidak", "Ya" }));
-        PengaruhRIKeuangan.setName("PengaruhRIKeuangan"); // NOI18N
-        PengaruhRIKeuangan.addKeyListener(new java.awt.event.KeyAdapter() {
-            public void keyPressed(java.awt.event.KeyEvent evt) {
-                PengaruhRIKeuanganKeyPressed(evt);
-            }
-        });
-        FormInput.add(PengaruhRIKeuangan);
-        PengaruhRIKeuangan.setBounds(184, 180, 80, 23);
-
-        KeteranganPengaruhRIKeuangan.setHighlighter(null);
-        KeteranganPengaruhRIKeuangan.setName("KeteranganPengaruhRIKeuangan"); // NOI18N
-        KeteranganPengaruhRIKeuangan.addKeyListener(new java.awt.event.KeyAdapter() {
-            public void keyPressed(java.awt.event.KeyEvent evt) {
-                KeteranganPengaruhRIKeuanganKeyPressed(evt);
-            }
-        });
-        FormInput.add(KeteranganPengaruhRIKeuangan);
-        KeteranganPengaruhRIKeuangan.setBounds(270, 180, 586, 23);
-
-        AntisipasiMasalah.setModel(new javax.swing.DefaultComboBoxModel(new String[] { "Tidak", "Ya" }));
-        AntisipasiMasalah.setName("AntisipasiMasalah"); // NOI18N
-        AntisipasiMasalah.addKeyListener(new java.awt.event.KeyAdapter() {
-            public void keyPressed(java.awt.event.KeyEvent evt) {
-                AntisipasiMasalahKeyPressed(evt);
-            }
-        });
-        FormInput.add(AntisipasiMasalah);
-        AntisipasiMasalah.setBounds(30, 440, 80, 23);
-
-        KeteranganAntisipasiMasalah.setHighlighter(null);
-        KeteranganAntisipasiMasalah.setName("KeteranganAntisipasiMasalah"); // NOI18N
-        KeteranganAntisipasiMasalah.addKeyListener(new java.awt.event.KeyAdapter() {
-            public void keyPressed(java.awt.event.KeyEvent evt) {
-                KeteranganAntisipasiMasalahKeyPressed(evt);
-            }
-        });
-        FormInput.add(KeteranganAntisipasiMasalah);
-        KeteranganAntisipasiMasalah.setBounds(120, 440, 730, 23);
-
-        jLabel55.setHorizontalAlignment(javax.swing.SwingConstants.LEFT);
-        jLabel55.setText("4. Bantuan Diperlukan Dalam Hal ?");
-        jLabel55.setName("jLabel55"); // NOI18N
-        FormInput.add(jLabel55);
-        jLabel55.setBounds(10, 470, 590, 23);
-
-        BantuanDiperlukan.setModel(new javax.swing.DefaultComboBoxModel(new String[] { "Menyiapkan Makanan", "Edukasi Kesehatan", "Makan", "Mandi", "Diet", "Berpakaian", "Menyiapkan Obat", "Transportasi", "Minum Obat" }));
-        BantuanDiperlukan.setName("BantuanDiperlukan"); // NOI18N
-        BantuanDiperlukan.addKeyListener(new java.awt.event.KeyAdapter() {
-            public void keyPressed(java.awt.event.KeyEvent evt) {
-                BantuanDiperlukanKeyPressed(evt);
-            }
-        });
-        FormInput.add(BantuanDiperlukan);
-        BantuanDiperlukan.setBounds(30, 490, 160, 23);
-
-        KeteranganBantuanDiperlukan.setHighlighter(null);
-        KeteranganBantuanDiperlukan.setName("KeteranganBantuanDiperlukan"); // NOI18N
-        KeteranganBantuanDiperlukan.addKeyListener(new java.awt.event.KeyAdapter() {
-            public void keyPressed(java.awt.event.KeyEvent evt) {
-                KeteranganBantuanDiperlukanKeyPressed(evt);
-            }
-        });
-        FormInput.add(KeteranganBantuanDiperlukan);
-        KeteranganBantuanDiperlukan.setBounds(200, 490, 650, 23);
-
-        jLabel56.setHorizontalAlignment(javax.swing.SwingConstants.LEFT);
-        jLabel56.setText("6. Apakah Pasien Tinggal Sendiri Setelah Keluar Dari Rumah Sakit ?");
-        jLabel56.setName("jLabel56"); // NOI18N
-        FormInput.add(jLabel56);
-        jLabel56.setBounds(10, 570, 590, 23);
-
-        YangMembantuKeperluan.setModel(new javax.swing.DefaultComboBoxModel(new String[] { "Tidak", "Ada" }));
-        YangMembantuKeperluan.setName("YangMembantuKeperluan"); // NOI18N
-        YangMembantuKeperluan.addKeyListener(new java.awt.event.KeyAdapter() {
-            public void keyPressed(java.awt.event.KeyEvent evt) {
-                YangMembantuKeperluanKeyPressed(evt);
-            }
-        });
-        FormInput.add(YangMembantuKeperluan);
-        YangMembantuKeperluan.setBounds(30, 540, 80, 23);
-
-        KeteranganYangMembantuKeperluan.setHighlighter(null);
-        KeteranganYangMembantuKeperluan.setName("KeteranganYangMembantuKeperluan"); // NOI18N
-        KeteranganYangMembantuKeperluan.addKeyListener(new java.awt.event.KeyAdapter() {
-            public void keyPressed(java.awt.event.KeyEvent evt) {
-                KeteranganYangMembantuKeperluanKeyPressed(evt);
-            }
-        });
-        FormInput.add(KeteranganYangMembantuKeperluan);
-        KeteranganYangMembantuKeperluan.setBounds(120, 540, 730, 23);
-
-        jLabel57.setHorizontalAlignment(javax.swing.SwingConstants.LEFT);
-        jLabel57.setText("5. Adakah Yang Membantu Keperluan Di Atas ?");
-        jLabel57.setName("jLabel57"); // NOI18N
-        FormInput.add(jLabel57);
-        jLabel57.setBounds(10, 520, 590, 23);
-
-        jLabel58.setHorizontalAlignment(javax.swing.SwingConstants.LEFT);
-        jLabel58.setText("7. Apakah Pasien Menggunakan Peralatan Medis (Kateter, NGT, Oksigen, Dll) Di Rumah Setelah Keluar / Pulang ?");
-        jLabel58.setName("jLabel58"); // NOI18N
-        FormInput.add(jLabel58);
-        jLabel58.setBounds(10, 620, 820, 23);
-
-        PeralatanMedis.setModel(new javax.swing.DefaultComboBoxModel(new String[] { "Tidak", "Ya" }));
-        PeralatanMedis.setName("PeralatanMedis"); // NOI18N
-        PeralatanMedis.addKeyListener(new java.awt.event.KeyAdapter() {
-            public void keyPressed(java.awt.event.KeyEvent evt) {
-                PeralatanMedisKeyPressed(evt);
-            }
-        });
-        FormInput.add(PeralatanMedis);
-        PeralatanMedis.setBounds(30, 640, 80, 23);
-
-        KeteranganPeralatanMedis.setHighlighter(null);
-        KeteranganPeralatanMedis.setName("KeteranganPeralatanMedis"); // NOI18N
-        KeteranganPeralatanMedis.addKeyListener(new java.awt.event.KeyAdapter() {
-            public void keyPressed(java.awt.event.KeyEvent evt) {
-                KeteranganPeralatanMedisKeyPressed(evt);
-            }
-        });
-        FormInput.add(KeteranganPeralatanMedis);
-        KeteranganPeralatanMedis.setBounds(120, 640, 730, 23);
-
-        jLabel59.setHorizontalAlignment(javax.swing.SwingConstants.LEFT);
-        jLabel59.setText("8. Apakah Pasien Memerlukan Alat Bantu (Tongkat, Kursi Roda, Walker, Dll) Setelah Keluar Keluar / Pulang ?");
-        jLabel59.setName("jLabel59"); // NOI18N
-        FormInput.add(jLabel59);
-        jLabel59.setBounds(10, 670, 820, 23);
-
-        AlatBantu.setModel(new javax.swing.DefaultComboBoxModel(new String[] { "Tidak", "Ya" }));
-        AlatBantu.setName("AlatBantu"); // NOI18N
-        AlatBantu.addKeyListener(new java.awt.event.KeyAdapter() {
-            public void keyPressed(java.awt.event.KeyEvent evt) {
-                AlatBantuKeyPressed(evt);
-            }
-        });
-        FormInput.add(AlatBantu);
-        AlatBantu.setBounds(30, 690, 80, 23);
-
-        KeteranganAlatBantu.setHighlighter(null);
-        KeteranganAlatBantu.setName("KeteranganAlatBantu"); // NOI18N
-        KeteranganAlatBantu.addKeyListener(new java.awt.event.KeyAdapter() {
-            public void keyPressed(java.awt.event.KeyEvent evt) {
-                KeteranganAlatBantuKeyPressed(evt);
-            }
-        });
-        FormInput.add(KeteranganAlatBantu);
-        KeteranganAlatBantu.setBounds(120, 690, 730, 23);
-
-        jLabel60.setHorizontalAlignment(javax.swing.SwingConstants.LEFT);
-        jLabel60.setText("9. Apakah Memerlukan Bantuan / Perawatan Khusus (Homecare, Home Visit) Di Rumah Setelah Keluar / Pulang ?");
-        jLabel60.setName("jLabel60"); // NOI18N
-        FormInput.add(jLabel60);
-        jLabel60.setBounds(10, 720, 820, 23);
-
-        PerawatanKhusus.setModel(new javax.swing.DefaultComboBoxModel(new String[] { "Tidak", "Ya" }));
-        PerawatanKhusus.setName("PerawatanKhusus"); // NOI18N
-        PerawatanKhusus.addKeyListener(new java.awt.event.KeyAdapter() {
-            public void keyPressed(java.awt.event.KeyEvent evt) {
-                PerawatanKhususKeyPressed(evt);
-            }
-        });
-        FormInput.add(PerawatanKhusus);
-        PerawatanKhusus.setBounds(30, 740, 80, 23);
-
-        KeteranganPerawatanKhusus.setHighlighter(null);
-        KeteranganPerawatanKhusus.setName("KeteranganPerawatanKhusus"); // NOI18N
-        KeteranganPerawatanKhusus.addKeyListener(new java.awt.event.KeyAdapter() {
-            public void keyPressed(java.awt.event.KeyEvent evt) {
-                KeteranganPerawatanKhususKeyPressed(evt);
-            }
-        });
-        FormInput.add(KeteranganPerawatanKhusus);
-        KeteranganPerawatanKhusus.setBounds(120, 740, 730, 23);
-
-        jLabel61.setHorizontalAlignment(javax.swing.SwingConstants.LEFT);
-        jLabel61.setText("10. Apakah Pasien Bermasalah Dalam Memenuhi Kebutuhan Pribadinya (Makan, Minum, BAK, BAB, Dll) Setelah Keluar / Pulang ?");
-        jLabel61.setName("jLabel61"); // NOI18N
-        FormInput.add(jLabel61);
-        jLabel61.setBounds(10, 770, 820, 23);
-
-        MemenuhiKebutuhan.setModel(new javax.swing.DefaultComboBoxModel(new String[] { "Tidak", "Ya" }));
-        MemenuhiKebutuhan.setName("MemenuhiKebutuhan"); // NOI18N
-        MemenuhiKebutuhan.addKeyListener(new java.awt.event.KeyAdapter() {
-            public void keyPressed(java.awt.event.KeyEvent evt) {
-                MemenuhiKebutuhanKeyPressed(evt);
-            }
-        });
-        FormInput.add(MemenuhiKebutuhan);
-        MemenuhiKebutuhan.setBounds(30, 790, 80, 23);
-
-        KeteranganMemenuhiKebutuhan.setHighlighter(null);
-        KeteranganMemenuhiKebutuhan.setName("KeteranganMemenuhiKebutuhan"); // NOI18N
-        KeteranganMemenuhiKebutuhan.addKeyListener(new java.awt.event.KeyAdapter() {
-            public void keyPressed(java.awt.event.KeyEvent evt) {
-                KeteranganMemenuhiKebutuhanKeyPressed(evt);
-            }
-        });
-        FormInput.add(KeteranganMemenuhiKebutuhan);
-        KeteranganMemenuhiKebutuhan.setBounds(120, 790, 730, 23);
-
-        jLabel62.setHorizontalAlignment(javax.swing.SwingConstants.LEFT);
-        jLabel62.setText("11. Apakah Pasien Memiliki Nyeri Kronis Dan Kelelahan Setelah Keluar / Pulang ?");
-        jLabel62.setName("jLabel62"); // NOI18N
-        FormInput.add(jLabel62);
-        jLabel62.setBounds(10, 820, 820, 23);
-
-        NyeriKronis.setModel(new javax.swing.DefaultComboBoxModel(new String[] { "Tidak", "Ya" }));
-        NyeriKronis.setName("NyeriKronis"); // NOI18N
-        NyeriKronis.addKeyListener(new java.awt.event.KeyAdapter() {
-            public void keyPressed(java.awt.event.KeyEvent evt) {
-                NyeriKronisKeyPressed(evt);
-            }
-        });
-        FormInput.add(NyeriKronis);
-        NyeriKronis.setBounds(30, 840, 80, 23);
-
-        KeteranganNyeriKronis.setHighlighter(null);
-        KeteranganNyeriKronis.setName("KeteranganNyeriKronis"); // NOI18N
-        KeteranganNyeriKronis.addKeyListener(new java.awt.event.KeyAdapter() {
-            public void keyPressed(java.awt.event.KeyEvent evt) {
-                KeteranganNyeriKronisKeyPressed(evt);
-            }
-        });
-        FormInput.add(KeteranganNyeriKronis);
-        KeteranganNyeriKronis.setBounds(120, 840, 730, 23);
-
-        jLabel63.setHorizontalAlignment(javax.swing.SwingConstants.LEFT);
-        jLabel63.setText("12. Apakah Pasien & Keluarga Memerlukan Edukasi Kesehatan (Obatan-obatan, Efek Samping Obat, Nyeri Diit, Mencari Pertolongan, Follow Up, Dll) Setelah Keluar / Pulang ?");
-        jLabel63.setName("jLabel63"); // NOI18N
-        FormInput.add(jLabel63);
-        jLabel63.setBounds(10, 870, 850, 23);
-
-        EdukasiPasien.setModel(new javax.swing.DefaultComboBoxModel(new String[] { "Tidak", "Ya" }));
-        EdukasiPasien.setName("EdukasiPasien"); // NOI18N
-        EdukasiPasien.addKeyListener(new java.awt.event.KeyAdapter() {
-            public void keyPressed(java.awt.event.KeyEvent evt) {
-                EdukasiPasienKeyPressed(evt);
-            }
-        });
-        FormInput.add(EdukasiPasien);
-        EdukasiPasien.setBounds(30, 890, 80, 23);
-
-        KeteranganEdukasiPasien.setHighlighter(null);
-        KeteranganEdukasiPasien.setName("KeteranganEdukasiPasien"); // NOI18N
-        KeteranganEdukasiPasien.addKeyListener(new java.awt.event.KeyAdapter() {
-            public void keyPressed(java.awt.event.KeyEvent evt) {
-                KeteranganEdukasiPasienKeyPressed(evt);
-            }
-        });
-        FormInput.add(KeteranganEdukasiPasien);
-        KeteranganEdukasiPasien.setBounds(120, 890, 730, 23);
-
-        jLabel64.setHorizontalAlignment(javax.swing.SwingConstants.LEFT);
-        jLabel64.setText("16. Apakah Ada Obat - Obatan Yang Dibawa Pulang Pasien?");
-        jLabel64.setName("jLabel64"); // NOI18N
-        FormInput.add(jLabel64);
-        jLabel64.setBounds(10, 1070, 850, 23);
-
-        KeterampilanKhusus.setModel(new javax.swing.DefaultComboBoxModel(new String[] { "Tidak", "Ya" }));
-        KeterampilanKhusus.setName("KeterampilanKhusus"); // NOI18N
-        KeterampilanKhusus.addKeyListener(new java.awt.event.KeyAdapter() {
-            public void keyPressed(java.awt.event.KeyEvent evt) {
-                KeterampilanKhususKeyPressed(evt);
-            }
-        });
-        FormInput.add(KeterampilanKhusus);
-        KeterampilanKhusus.setBounds(30, 940, 80, 23);
-
-        KeteranganKeterampilanKhusus.setHighlighter(null);
-        KeteranganKeterampilanKhusus.setName("KeteranganKeterampilanKhusus"); // NOI18N
-        KeteranganKeterampilanKhusus.addKeyListener(new java.awt.event.KeyAdapter() {
-            public void keyPressed(java.awt.event.KeyEvent evt) {
-                KeteranganKeterampilanKhususKeyPressed(evt);
-            }
-        });
-        FormInput.add(KeteranganKeterampilanKhusus);
-        KeteranganKeterampilanKhusus.setBounds(120, 940, 730, 23);
-
-        jLabel65.setHorizontalAlignment(javax.swing.SwingConstants.LEFT);
-        jLabel65.setText("13. Apakah Pasien Dan Keluarga Memerlukan Keterampilan Khusus (Perawatan Luka, Injeksi, Perawatan Bayi, Dll) Setelah Keluar / Pulang ?");
-        jLabel65.setName("jLabel65"); // NOI18N
-        FormInput.add(jLabel65);
-        jLabel65.setBounds(10, 920, 850, 23);
-
-        JadwalKontrol.setModel(new javax.swing.DefaultComboBoxModel(new String[] { "Tidak", "Ya" }));
-        JadwalKontrol.setName("JadwalKontrol"); // NOI18N
-        JadwalKontrol.addKeyListener(new java.awt.event.KeyAdapter() {
-            public void keyPressed(java.awt.event.KeyEvent evt) {
-                JadwalKontrolKeyPressed(evt);
-            }
-        });
-        FormInput.add(JadwalKontrol);
-        JadwalKontrol.setBounds(30, 990, 80, 23);
-
-        KeteranganJadwalKontrol.setHighlighter(null);
-        KeteranganJadwalKontrol.setName("KeteranganJadwalKontrol"); // NOI18N
-        KeteranganJadwalKontrol.addKeyListener(new java.awt.event.KeyAdapter() {
-            public void keyPressed(java.awt.event.KeyEvent evt) {
-                KeteranganJadwalKontrolKeyPressed(evt);
-            }
-        });
-        FormInput.add(KeteranganJadwalKontrol);
-        KeteranganJadwalKontrol.setBounds(120, 990, 730, 23);
-
-        jLabel66.setHorizontalAlignment(javax.swing.SwingConstants.LEFT);
-        jLabel66.setText("14. Apakah Pasien & Keluarga Sudah diberi Edukasi Jadwal Kontrol ?");
-        jLabel66.setName("jLabel66"); // NOI18N
-        FormInput.add(jLabel66);
-        jLabel66.setBounds(10, 970, 850, 23);
-
-        Diberikan.setModel(new javax.swing.DefaultComboBoxModel(new String[] { "Tidak", "Ya" }));
-        Diberikan.setName("Diberikan"); // NOI18N
-        Diberikan.addKeyListener(new java.awt.event.KeyAdapter() {
-            public void keyPressed(java.awt.event.KeyEvent evt) {
-                DiberikanKeyPressed(evt);
-            }
-        });
-        FormInput.add(Diberikan);
-        Diberikan.setBounds(30, 1040, 80, 23);
-
-        KeteranganDiberikan.setHighlighter(null);
-        KeteranganDiberikan.setName("KeteranganDiberikan"); // NOI18N
-        KeteranganDiberikan.addKeyListener(new java.awt.event.KeyAdapter() {
-            public void keyPressed(java.awt.event.KeyEvent evt) {
-                KeteranganDiberikanKeyPressed(evt);
-            }
-        });
-        FormInput.add(KeteranganDiberikan);
-        KeteranganDiberikan.setBounds(120, 1040, 730, 23);
-
-        jLabel67.setHorizontalAlignment(javax.swing.SwingConstants.LEFT);
-        jLabel67.setText("15. Apakah Ada Yang diberikan Kepada Pasien & Keluarga Saat Pulang ?");
-        jLabel67.setName("jLabel67"); // NOI18N
-        FormInput.add(jLabel67);
-        jLabel67.setBounds(10, 1020, 850, 23);
-
-        ObatPulang.setModel(new javax.swing.DefaultComboBoxModel(new String[] { "Tidak", "Ya" }));
-        ObatPulang.setName("ObatPulang"); // NOI18N
-        ObatPulang.addKeyListener(new java.awt.event.KeyAdapter() {
-            public void keyPressed(java.awt.event.KeyEvent evt) {
-                ObatPulangKeyPressed(evt);
-            }
-        });
-        FormInput.add(ObatPulang);
-        ObatPulang.setBounds(30, 1100, 80, 23);
-
-        KeteranganObatPulang.setHighlighter(null);
-        KeteranganObatPulang.setName("KeteranganObatPulang"); // NOI18N
-        KeteranganObatPulang.addKeyListener(new java.awt.event.KeyAdapter() {
-            public void keyPressed(java.awt.event.KeyEvent evt) {
-                KeteranganObatPulangKeyPressed(evt);
-            }
-        });
-        FormInput.add(KeteranganObatPulang);
-        KeteranganObatPulang.setBounds(120, 1100, 730, 23);
-
-        jLabel68.setHorizontalAlignment(javax.swing.SwingConstants.LEFT);
-        jLabel68.setText("17. Apakah Pasien & Keluarga Memerlukan Edukasi Fasilitas Kesehatan Yang Bisa Dihubungi Saat Dirumah?");
-        jLabel68.setName("jLabel68"); // NOI18N
-        FormInput.add(jLabel68);
-        jLabel68.setBounds(10, 1130, 850, 23);
-
-        FaskesRumah.setModel(new javax.swing.DefaultComboBoxModel(new String[] { "Tidak", "Ya" }));
-        FaskesRumah.setName("FaskesRumah"); // NOI18N
-        FaskesRumah.addKeyListener(new java.awt.event.KeyAdapter() {
-            public void keyPressed(java.awt.event.KeyEvent evt) {
-                FaskesRumahKeyPressed(evt);
-            }
-        });
-        FormInput.add(FaskesRumah);
-        FaskesRumah.setBounds(30, 1160, 80, 23);
-
-        KeteranganFaskesRumah.setHighlighter(null);
-        KeteranganFaskesRumah.setName("KeteranganFaskesRumah"); // NOI18N
-        KeteranganFaskesRumah.addKeyListener(new java.awt.event.KeyAdapter() {
-            public void keyPressed(java.awt.event.KeyEvent evt) {
-                KeteranganFaskesRumahKeyPressed(evt);
-            }
-        });
-        FormInput.add(KeteranganFaskesRumah);
-        KeteranganFaskesRumah.setBounds(120, 1160, 730, 23);
-
-        jLabel70.setHorizontalAlignment(javax.swing.SwingConstants.LEFT);
-        jLabel70.setText("2. Pengelompokan Perawatan");
-        jLabel70.setName("jLabel70"); // NOI18N
-        FormInput.add(jLabel70);
-        jLabel70.setBounds(10, 210, 590, 23);
-
-        jLabel71.setHorizontalAlignment(javax.swing.SwingConstants.LEFT);
-        jLabel71.setText("3. Antisipasi Terhadap Masalah Saat Pulang ?");
-        jLabel71.setName("jLabel71"); // NOI18N
-        FormInput.add(jLabel71);
-        jLabel71.setBounds(10, 420, 590, 23);
-
-        jLabel73.setHorizontalAlignment(javax.swing.SwingConstants.LEFT);
-        jLabel73.setText("Membutuhkan Pelayanan Medis Dan Perawatan Berkelanjutan :");
-        jLabel73.setName("jLabel73"); // NOI18N
-        FormInput.add(jLabel73);
-        jLabel73.setBounds(30, 290, 310, 20);
-
-        jLabel46.setText("Keuangan :");
+        jLabel46.setText("Diagnosa Keluar :");
         jLabel46.setName("jLabel46"); // NOI18N
         FormInput.add(jLabel46);
-        jLabel46.setBounds(0, 180, 180, 23);
-
-        jLabel74.setHorizontalAlignment(javax.swing.SwingConstants.LEFT);
-        jLabel74.setText("( Bila Terdapat Salah Satu Kreteria Pengelompokan Perawatan, Maka Kordinasikan Dengan MPP )");
-        jLabel74.setName("jLabel74"); // NOI18N
-        FormInput.add(jLabel74);
-        jLabel74.setBounds(30, 380, 470, 20);
-
-        jLabel75.setHorizontalAlignment(javax.swing.SwingConstants.LEFT);
-        jLabel75.setText("Usia Lanjut ( 60 Tahun Lebih )  :");
-        jLabel75.setName("jLabel75"); // NOI18N
-        FormInput.add(jLabel75);
-        jLabel75.setBounds(30, 230, 160, 20);
-
-        Perawatan.setModel(new javax.swing.DefaultComboBoxModel(new String[] { "Tidak", "Ya" }));
-        Perawatan.setName("Perawatan"); // NOI18N
-        Perawatan.addKeyListener(new java.awt.event.KeyAdapter() {
-            public void keyPressed(java.awt.event.KeyEvent evt) {
-                PerawatanKeyPressed(evt);
-            }
-        });
-        FormInput.add(Perawatan);
-        Perawatan.setBounds(340, 290, 80, 23);
-
-        UsiaLanjut.setModel(new javax.swing.DefaultComboBoxModel(new String[] { "Tidak", "Ya" }));
-        UsiaLanjut.setName("UsiaLanjut"); // NOI18N
-        UsiaLanjut.addKeyListener(new java.awt.event.KeyAdapter() {
-            public void keyPressed(java.awt.event.KeyEvent evt) {
-                UsiaLanjutKeyPressed(evt);
-            }
-        });
-        FormInput.add(UsiaLanjut);
-        UsiaLanjut.setBounds(190, 230, 80, 23);
-
-        jLabel76.setHorizontalAlignment(javax.swing.SwingConstants.LEFT);
-        jLabel76.setText("Hambatan Mobilisasi :");
-        jLabel76.setName("jLabel76"); // NOI18N
-        FormInput.add(jLabel76);
-        jLabel76.setBounds(30, 260, 160, 20);
-
-        Hambatan.setModel(new javax.swing.DefaultComboBoxModel(new String[] { "Tidak", "Ya" }));
-        Hambatan.setName("Hambatan"); // NOI18N
-        Hambatan.addKeyListener(new java.awt.event.KeyAdapter() {
-            public void keyPressed(java.awt.event.KeyEvent evt) {
-                HambatanKeyPressed(evt);
-            }
-        });
-        FormInput.add(Hambatan);
-        Hambatan.setBounds(140, 260, 80, 23);
-
-        jLabel77.setHorizontalAlignment(javax.swing.SwingConstants.LEFT);
-        jLabel77.setText("Tergantung Dengan Orang Lain Dalam Aktifitas Harian :");
-        jLabel77.setName("jLabel77"); // NOI18N
-        FormInput.add(jLabel77);
-        jLabel77.setBounds(30, 320, 270, 20);
-
-        Aktifitas.setModel(new javax.swing.DefaultComboBoxModel(new String[] { "Tidak", "Ya" }));
-        Aktifitas.setName("Aktifitas"); // NOI18N
-        Aktifitas.addKeyListener(new java.awt.event.KeyAdapter() {
-            public void keyPressed(java.awt.event.KeyEvent evt) {
-                AktifitasKeyPressed(evt);
-            }
-        });
-        FormInput.add(Aktifitas);
-        Aktifitas.setBounds(300, 320, 80, 23);
-
-        jLabel78.setHorizontalAlignment(javax.swing.SwingConstants.LEFT);
-        jLabel78.setText("Pasien Dengan Perawatan Kritis :");
-        jLabel78.setName("jLabel78"); // NOI18N
-        FormInput.add(jLabel78);
-        jLabel78.setBounds(30, 350, 180, 20);
-
-        Kritis.setModel(new javax.swing.DefaultComboBoxModel(new String[] { "Tidak", "Ya" }));
-        Kritis.setName("Kritis"); // NOI18N
-        Kritis.addKeyListener(new java.awt.event.KeyAdapter() {
-            public void keyPressed(java.awt.event.KeyEvent evt) {
-                KritisKeyPressed(evt);
-            }
-        });
-        FormInput.add(Kritis);
-        Kritis.setBounds(200, 350, 80, 23);
+        jLabel46.setBounds(453, 70, 100, 23);
 
         scrollInput.setViewportView(FormInput);
 
@@ -1379,10 +1670,9 @@ public final class RMPerencanaanPemulangan extends javax.swing.JDialog {
         panelGlass9.add(jLabel19);
 
         DTPCari1.setForeground(new java.awt.Color(50, 70, 50));
-        DTPCari1.setModel(new javax.swing.DefaultComboBoxModel(new String[] { "02-05-2025" }));
+        DTPCari1.setModel(new javax.swing.DefaultComboBoxModel(new String[] { "16-10-2026" }));
         DTPCari1.setDisplayFormat("dd-MM-yyyy");
         DTPCari1.setName("DTPCari1"); // NOI18N
-        DTPCari1.setOpaque(false);
         DTPCari1.setPreferredSize(new java.awt.Dimension(90, 23));
         panelGlass9.add(DTPCari1);
 
@@ -1393,10 +1683,9 @@ public final class RMPerencanaanPemulangan extends javax.swing.JDialog {
         panelGlass9.add(jLabel21);
 
         DTPCari2.setForeground(new java.awt.Color(50, 70, 50));
-        DTPCari2.setModel(new javax.swing.DefaultComboBoxModel(new String[] { "02-05-2025" }));
+        DTPCari2.setModel(new javax.swing.DefaultComboBoxModel(new String[] { "16-10-2026" }));
         DTPCari2.setDisplayFormat("dd-MM-yyyy");
         DTPCari2.setName("DTPCari2"); // NOI18N
-        DTPCari2.setOpaque(false);
         DTPCari2.setPreferredSize(new java.awt.Dimension(90, 23));
         panelGlass9.add(DTPCari2);
 
@@ -1547,16 +1836,18 @@ public final class RMPerencanaanPemulangan extends javax.swing.JDialog {
         if(TNoRM.getText().trim().equals("")){
             Valid.textKosong(TNoRw,"Nama Pasien");
         }else if(NmPetugas.getText().trim().equals("")){
-            Valid.textKosong(BtnDokter,"Petugas");
+            Valid.textKosong(BtnPetugas,"Petugas");
         }else if(DiagnosaMedis.getText().trim().equals("")){
             Valid.textKosong(DiagnosaMedis,"Diagnosa Medis");
+        }else if(DiagnosaMedisKeluar.getText().trim().equals("")){ 
+            Valid.textKosong(DiagnosaMedisKeluar,"Diagnosa Keluar");
         }else if(AlasanMasuk.getText().trim().equals("")){
             Valid.textKosong(AlasanMasuk,"Alasan Masuk / Dirawat");
         }else if(SaksiKeluarga.getText().trim().equals("")){
             Valid.textKosong(SaksiKeluarga,"Pasien/Keluarga");
         }else{
-            if(Sequel.menyimpantf("perencanaan_pemulangan","?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?","No.Pernyataan",47,new String[]{
-                    TNoRw.getText(),Valid.SetTgl(RencanaPemulangan.getSelectedItem()+""),AlasanMasuk.getText(),DiagnosaMedis.getText(),PengaruhRIKeluarga.getSelectedItem().toString(),
+            if(Sequel.menyimpantf("perencanaan_pemulangan","?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?","No.Pernyataan",65,new String[]{
+                    TNoRw.getText(),Valid.SetTgl(RencanaPemulangan.getSelectedItem()+""),AlasanMasuk.getText(),DiagnosaMedis.getText(),DiagnosaMedisKeluar.getText(),PengaruhRIKeluarga.getSelectedItem().toString(),
                     KeteranganPengaruhRIKeluarga.getText(),PengaruhRIPekerjaanSekolah.getSelectedItem().toString(),KeteranganPengaruhRIPekerjaanSekolah.getText(),
                     PengaruhRIKeuangan.getSelectedItem().toString(),KeteranganPengaruhRIKeuangan.getText(),UsiaLanjut.getSelectedItem().toString(),Hambatan.getSelectedItem().toString(),Perawatan.getSelectedItem().toString(),Aktifitas.getSelectedItem().toString(),Kritis.getSelectedItem().toString(),
                     AntisipasiMasalah.getSelectedItem().toString(),KeteranganAntisipasiMasalah.getText(),BantuanDiperlukan.getSelectedItem().toString(),KeteranganBantuanDiperlukan.getText(),YangMembantuKeperluan.getSelectedItem().toString(),KeteranganYangMembantuKeperluan.getText(),
@@ -1566,9 +1857,18 @@ public final class RMPerencanaanPemulangan extends javax.swing.JDialog {
                     EdukasiPasien.getSelectedItem().toString(),KeteranganEdukasiPasien.getText(),KeterampilanKhusus.getSelectedItem().toString(),KeteranganKeterampilanKhusus.getText(),
                     JadwalKontrol.getSelectedItem().toString(),KeteranganJadwalKontrol.getText(),Diberikan.getSelectedItem().toString(),KeteranganDiberikan.getText(),
                     ObatPulang.getSelectedItem().toString(),KeteranganObatPulang.getText(),FaskesRumah.getSelectedItem().toString(),KeteranganFaskesRumah.getText(),
-                    SaksiKeluarga.getText(),KdPetugas.getText()
+                    
+                    // --- DIPINDAH KE SINI SEBELUM KRITERIA BARU ---
+                    SaksiKeluarga.getText(),KdPetugas.getText(), 
+                    
+                    Stroke.getSelectedItem().toString(),SeranganJantung.getSelectedItem().toString(),PPOK.getSelectedItem().toString(),GagalJantung.getSelectedItem().toString(),
+                    Emfisema.getSelectedItem().toString(),Demensia.getSelectedItem().toString(),Alzheimer.getSelectedItem().toString(),AIDS.getSelectedItem().toString(),
+                    Trauma.getSelectedItem().toString(),Kriminal.getSelectedItem().toString(),BunuhDiri.getSelectedItem().toString(),PasienKembali.getSelectedItem().toString(),
+                    PantiJompo.getSelectedItem().toString(),TanpaDukungan.getSelectedItem().toString(),LuarKota.getSelectedItem().toString(),Tunawisma.getSelectedItem().toString(),
+                    TidakAdaAsuransi.getSelectedItem().toString()
                 })==true){
-                tampil();
+                
+                runBackground(() ->tampil());
                 emptTeks();
             }
         }
@@ -1597,7 +1897,7 @@ public final class RMPerencanaanPemulangan extends javax.swing.JDialog {
             if(akses.getkode().equals("Admin Utama")){
                 hapus();
             }else{
-                if(KdPetugas.getText().equals(tbObat.getValueAt(tbObat.getSelectedRow(),51).toString())){
+                if(KdPetugas.getText().equals(tbObat.getValueAt(tbObat.getSelectedRow(),38).toString())){
                     hapus();
                 }else{
                     JOptionPane.showMessageDialog(null,"Hanya bisa dihapus oleh petugas yang bersangkutan..!!");
@@ -1621,9 +1921,11 @@ public final class RMPerencanaanPemulangan extends javax.swing.JDialog {
         if(TNoRM.getText().trim().equals("")){
             Valid.textKosong(TNoRw,"Nama Pasien");
         }else if(NmPetugas.getText().trim().equals("")){
-            Valid.textKosong(BtnDokter,"Petugas");
+            Valid.textKosong(BtnPetugas,"Petugas");
         }else if(DiagnosaMedis.getText().trim().equals("")){
-            Valid.textKosong(DiagnosaMedis,"Diagnosa Medis");
+            Valid.textKosong(DiagnosaMedis,"Diagnosa Masuk");
+        }else if(DiagnosaMedisKeluar.getText().trim().equals("")){
+            Valid.textKosong(DiagnosaMedisKeluar,"Diagnosa Keluar");
         }else if(AlasanMasuk.getText().trim().equals("")){
             Valid.textKosong(AlasanMasuk,"Alasan Masuk / Dirawat");
         }else if(SaksiKeluarga.getText().trim().equals("")){
@@ -1633,7 +1935,7 @@ public final class RMPerencanaanPemulangan extends javax.swing.JDialog {
                 if(akses.getkode().equals("Admin Utama")){
                     ganti();
                 }else{
-                    if(KdPetugas.getText().equals(tbObat.getValueAt(tbObat.getSelectedRow(),51).toString())){
+                    if(KdPetugas.getText().equals(tbObat.getValueAt(tbObat.getSelectedRow(),38).toString())){
                         ganti();
                     }else{
                         JOptionPane.showMessageDialog(null,"Hanya bisa diganti oleh dokter yang bersangkutan..!!");
@@ -1686,9 +1988,9 @@ public final class RMPerencanaanPemulangan extends javax.swing.JDialog {
                 if(TCari.getText().trim().equals("")){
                     ps=koneksi.prepareStatement(
                             "select reg_periksa.no_rawat,pasien.no_rkm_medis,pasien.nm_pasien,pasien.jk,pasien.tgl_lahir,reg_periksa.tgl_registrasi,reg_periksa.jam_reg,"+
-                            "perencanaan_pemulangan.rencana_pulang,perencanaan_pemulangan.alasan_masuk,perencanaan_pemulangan.diagnosa_medis,perencanaan_pemulangan.pengaruh_ri_pasien_dan_keluarga,"+
+                            "perencanaan_pemulangan.rencana_pulang,perencanaan_pemulangan.alasan_masuk,perencanaan_pemulangan.diagnosa_medis,perencanaan_pemulangan.diagnosa_medis_keluar,perencanaan_pemulangan.pengaruh_ri_pasien_dan_keluarga,"+
                             "perencanaan_pemulangan.keterangan_pengaruh_ri_pasien_dan_keluarga,perencanaan_pemulangan.pengaruh_ri_pekerjaan_sekolah,perencanaan_pemulangan.keterangan_pengaruh_ri_pekerjaan_sekolah,"+
-                            "perencanaan_pemulangan.pengaruh_ri_keuangan,perencanaan_pemulangan.keterangan_pengaruh_ri_keuangan,perencanaan_pemulangan.usia_lanjut,perencanaan_pemulangan.hambatan,perencanaan_pemulangan.perawatan,perencanaan_pemulangan.perawatan,perencanaan_pemulangan.aktifitas,perencanaan_pemulangan.kritis,"+
+                            "perencanaan_pemulangan.pengaruh_ri_keuangan,perencanaan_pemulangan.keterangan_pengaruh_ri_keuangan,perencanaan_pemulangan.usia_lanjut,perencanaan_pemulangan.hambatan,perencanaan_pemulangan.perawatan,perencanaan_pemulangan.aktifitas,perencanaan_pemulangan.kritis,"+
                             "perencanaan_pemulangan.antisipasi_masalah_saat_pulang,perencanaan_pemulangan.keterangan_antisipasi_masalah_saat_pulang,perencanaan_pemulangan.bantuan_diperlukan_dalam,perencanaan_pemulangan.keterangan_bantuan_diperlukan_dalam,"+
                             "perencanaan_pemulangan.adakah_yang_membantu_keperluan,perencanaan_pemulangan.keterangan_adakah_yang_membantu_keperluan,perencanaan_pemulangan.pasien_tinggal_sendiri,"+
                             "perencanaan_pemulangan.keterangan_pasien_tinggal_sendiri,perencanaan_pemulangan.pasien_menggunakan_peralatan_medis,perencanaan_pemulangan.keterangan_pasien_menggunakan_peralatan_medis,"+
@@ -1698,7 +2000,9 @@ public final class RMPerencanaanPemulangan extends javax.swing.JDialog {
                             "perencanaan_pemulangan.keterangan_memerlukan_edukasi_kesehatan,perencanaan_pemulangan.memerlukan_keterampilkan_khusus,perencanaan_pemulangan.keterangan_memerlukan_keterampilkan_khusus,"+
                             "perencanaan_pemulangan.jadwal_kontrol,perencanaan_pemulangan.keterangan_jadwal_kontrol,perencanaan_pemulangan.diberikan,perencanaan_pemulangan.keterangan_diberikan,perencanaan_pemulangan.obat_pulang,"+
                             "perencanaan_pemulangan.keterangan_obat_pulang,perencanaan_pemulangan.faskes_rumah,perencanaan_pemulangan.keterangan_faskes_rumah,"+        
-                            "perencanaan_pemulangan.nama_pasien_keluarga,perencanaan_pemulangan.nip,petugas.nama "+
+                            "perencanaan_pemulangan.stroke,perencanaan_pemulangan.serangan_jantung,perencanaan_pemulangan.ppok,perencanaan_pemulangan.gagal_jantung,perencanaan_pemulangan.emfisema,"+
+                            "perencanaan_pemulangan.demensia,perencanaan_pemulangan.alzheimer,perencanaan_pemulangan.aids,perencanaan_pemulangan.trauma,perencanaan_pemulangan.kriminal,perencanaan_pemulangan.bunuh_diri,perencanaan_pemulangan.pasien_kembali,"+
+                            "perencanaan_pemulangan.panti_jompo,perencanaan_pemulangan.tanpa_dukungan,perencanaan_pemulangan.luar_kota,perencanaan_pemulangan.tunawisma,perencanaan_pemulangan.tidak_ada_asuransi,perencanaan_pemulangan.nama_pasien_keluarga,perencanaan_pemulangan.nip,petugas.nama "+
                             "from perencanaan_pemulangan inner join reg_periksa on perencanaan_pemulangan.no_rawat=reg_periksa.no_rawat "+
                             "inner join pasien on pasien.no_rkm_medis=reg_periksa.no_rkm_medis "+
                             "inner join petugas on petugas.nip=perencanaan_pemulangan.nip where "+
@@ -1706,9 +2010,9 @@ public final class RMPerencanaanPemulangan extends javax.swing.JDialog {
                 }else{
                     ps=koneksi.prepareStatement(
                             "select reg_periksa.no_rawat,pasien.no_rkm_medis,pasien.nm_pasien,pasien.jk,pasien.tgl_lahir,reg_periksa.tgl_registrasi,reg_periksa.jam_reg,"+
-                            "perencanaan_pemulangan.rencana_pulang,perencanaan_pemulangan.alasan_masuk,perencanaan_pemulangan.diagnosa_medis,perencanaan_pemulangan.pengaruh_ri_pasien_dan_keluarga,"+
+                            "perencanaan_pemulangan.rencana_pulang,perencanaan_pemulangan.alasan_masuk,perencanaan_pemulangan.diagnosa_medis,perencanaan_pemulangan.diagnosa_medis_keluar,perencanaan_pemulangan.pengaruh_ri_pasien_dan_keluarga,"+
                             "perencanaan_pemulangan.keterangan_pengaruh_ri_pasien_dan_keluarga,perencanaan_pemulangan.pengaruh_ri_pekerjaan_sekolah,perencanaan_pemulangan.keterangan_pengaruh_ri_pekerjaan_sekolah,"+
-                            "perencanaan_pemulangan.pengaruh_ri_keuangan,perencanaan_pemulangan.keterangan_pengaruh_ri_keuangan,perencanaan_pemulangan.usia_lanjut,perencanaan_pemulangan.hambatan,perencanaan_pemulangan.perawatan,perencanaan_pemulangan.perawatan,perencanaan_pemulangan.aktifitas,perencanaan_pemulangan.kritis,"+
+                            "perencanaan_pemulangan.pengaruh_ri_keuangan,perencanaan_pemulangan.keterangan_pengaruh_ri_keuangan,perencanaan_pemulangan.usia_lanjut,perencanaan_pemulangan.hambatan,perencanaan_pemulangan.perawatan,perencanaan_pemulangan.aktifitas,perencanaan_pemulangan.kritis,"+
                             "perencanaan_pemulangan.antisipasi_masalah_saat_pulang,perencanaan_pemulangan.keterangan_antisipasi_masalah_saat_pulang,perencanaan_pemulangan.bantuan_diperlukan_dalam,perencanaan_pemulangan.keterangan_bantuan_diperlukan_dalam,"+
                             "perencanaan_pemulangan.adakah_yang_membantu_keperluan,perencanaan_pemulangan.keterangan_adakah_yang_membantu_keperluan,perencanaan_pemulangan.pasien_tinggal_sendiri,"+
                             "perencanaan_pemulangan.keterangan_pasien_tinggal_sendiri,perencanaan_pemulangan.pasien_menggunakan_peralatan_medis,perencanaan_pemulangan.keterangan_pasien_menggunakan_peralatan_medis,"+
@@ -1718,7 +2022,9 @@ public final class RMPerencanaanPemulangan extends javax.swing.JDialog {
                             "perencanaan_pemulangan.keterangan_memerlukan_edukasi_kesehatan,perencanaan_pemulangan.memerlukan_keterampilkan_khusus,perencanaan_pemulangan.keterangan_memerlukan_keterampilkan_khusus,"+
                             "perencanaan_pemulangan.jadwal_kontrol,perencanaan_pemulangan.keterangan_jadwal_kontrol,perencanaan_pemulangan.diberikan,perencanaan_pemulangan.keterangan_diberikan,perencanaan_pemulangan.obat_pulang,"+
                             "perencanaan_pemulangan.keterangan_obat_pulang,perencanaan_pemulangan.faskes_rumah,perencanaan_pemulangan.keterangan_faskes_rumah,"+        
-                            "perencanaan_pemulangan.nama_pasien_keluarga,perencanaan_pemulangan.nip,petugas.nama "+
+                            "perencanaan_pemulangan.stroke,perencanaan_pemulangan.serangan_jantung,perencanaan_pemulangan.ppok,perencanaan_pemulangan.gagal_jantung,perencanaan_pemulangan.emfisema,"+
+                            "perencanaan_pemulangan.demensia,perencanaan_pemulangan.alzheimer,perencanaan_pemulangan.aids,perencanaan_pemulangan.trauma,perencanaan_pemulangan.kriminal,perencanaan_pemulangan.bunuh_diri,perencanaan_pemulangan.pasien_kembali,"+
+                            "perencanaan_pemulangan.panti_jompo,perencanaan_pemulangan.tanpa_dukungan,perencanaan_pemulangan.luar_kota,perencanaan_pemulangan.tunawisma,perencanaan_pemulangan.tidak_ada_asuransi,perencanaan_pemulangan.nama_pasien_keluarga,perencanaan_pemulangan.nip,petugas.nama "+
                             "from perencanaan_pemulangan inner join reg_periksa on perencanaan_pemulangan.no_rawat=reg_periksa.no_rawat "+
                             "inner join pasien on pasien.no_rkm_medis=reg_periksa.no_rkm_medis "+
                             "inner join petugas on petugas.nip=perencanaan_pemulangan.nip where "+
@@ -1743,6 +2049,7 @@ public final class RMPerencanaanPemulangan extends javax.swing.JDialog {
                     pilihan = (String)JOptionPane.showInputDialog(null,"Silahkan pilih laporan..!","Pilihan Cetak",JOptionPane.QUESTION_MESSAGE,null,new Object[]{"Laporan 1 (HTML)","Laporan 2 (WPS)","Laporan 3 (CSV)"},"Laporan 1 (HTML)");
                     switch (pilihan) {
                         case "Laporan 1 (HTML)":
+                        //case "Laporan 2 (WPS)":
                                 htmlContent = new StringBuilder();
                                 htmlContent.append(                             
                                     "<tr class='isi'>"+
@@ -1753,27 +2060,28 @@ public final class RMPerencanaanPemulangan extends javax.swing.JDialog {
                                         "<td valign='middle' bgcolor='#FFFAF8' align='center'>J.K.</td>"+
                                         "<td valign='middle' bgcolor='#FFFAF8' align='center'>Masuk Dirawat</td>"+
                                         "<td valign='middle' bgcolor='#FFFAF8' align='center'>Rencana Pulang</td>"+
-                                        "<td valign='middle' bgcolor='#FFFAF8' align='center'>Diagnosa Medis</td>"+
+                                        "<td valign='middle' bgcolor='#FFFAF8' align='center'>Diagnosa Masuk</td>"+
+                                        "<td valign='middle' bgcolor='#FFFAF8' align='center'>Diagnosa Keluar</td>"+
                                         "<td valign='middle' bgcolor='#FFFAF8' align='center'>Alasan Masuk / Dirawat</td>"+
                                         "<td valign='middle' bgcolor='#FFFAF8' align='center'>Pengaruh RI Pasien & Keluarga</td>"+
-                                        "<td valign='middle' bgcolor='#FFFAF8' align='center'>Keterangan Pengaruh RI Pasien & Keluarga</td>"+
+                                        "<td valign='middle' bgcolor='#FFFAF8' align='center'>Ket. Pengaruh RI Pasien & Keluarga</td>"+
                                         "<td valign='middle' bgcolor='#FFFAF8' align='center'>Pengaruh RI Pekerjaan/Sekolah</td>"+
-                                        "<td valign='middle' bgcolor='#FFFAF8' align='center'>Keterangan Pengaruh RI Pekerjaan/Sekolah</td>"+
+                                        "<td valign='middle' bgcolor='#FFFAF8' align='center'>Ket. Pengaruh RI Pekerjaan/Sekolah</td>"+
                                         "<td valign='middle' bgcolor='#FFFAF8' align='center'>Pengaruh RI Keuangan</td>"+
-                                        "<td valign='middle' bgcolor='#FFFAF8' align='center'>Keterangan Pengaruh RI Keuangan</td>"+
+                                        "<td valign='middle' bgcolor='#FFFAF8' align='center'>Ket. Pengaruh RI Keuangan</td>"+
                                         "<td valign='middle' bgcolor='#FFFAF8' align='center'>Usia Lanjut</td>"+
                                         "<td valign='middle' bgcolor='#FFFAF8' align='center'>Hambatan</td>"+
                                         "<td valign='middle' bgcolor='#FFFAF8' align='center'>Perawatan</td>"+
                                         "<td valign='middle' bgcolor='#FFFAF8' align='center'>Aktifitas</td>"+
                                         "<td valign='middle' bgcolor='#FFFAF8' align='center'>Kritis</td>"+
                                         "<td valign='middle' bgcolor='#FFFAF8' align='center'>Antisipasi Masalah</td>"+
-                                        "<td valign='middle' bgcolor='#FFFAF8' align='center'>Keterangan Antisipasi Masalah</td>"+
+                                        "<td valign='middle' bgcolor='#FFFAF8' align='center'>Ket. Antisipasi Masalah</td>"+
                                         "<td valign='middle' bgcolor='#FFFAF8' align='center'>Bantuan Diperlukan</td>"+
-                                        "<td valign='middle' bgcolor='#FFFAF8' align='center'>Keterangan Bantuan Diperlukan</td>"+
+                                        "<td valign='middle' bgcolor='#FFFAF8' align='center'>Ket. Bantuan Diperlukan</td>"+
                                         "<td valign='middle' bgcolor='#FFFAF8' align='center'>Membantu Keperluan</td>"+
-                                        "<td valign='middle' bgcolor='#FFFAF8' align='center'>Keterangan Yang Membantu Keperluan</td>"+
+                                        "<td valign='middle' bgcolor='#FFFAF8' align='center'>Ket. Yang Membantu Keperluan</td>"+
                                         "<td valign='middle' bgcolor='#FFFAF8' align='center'>Tinggal Sendiri</td>"+
-                                        "<td valign='middle' bgcolor='#FFFAF8' align='center'>Keterangan Pasien Tinggal Sendiri</td>"+
+                                        "<td valign='middle' bgcolor='#FFFAF8' align='center'>Ket. Pasien Tinggal Sendiri</td>"+
                                         "<td valign='middle' bgcolor='#FFFAF8' align='center'>Peralatan Medis</td>"+
                                         "<td valign='middle' bgcolor='#FFFAF8' align='center'>Keterangan Peralatan Medis</td>"+
                                         "<td valign='middle' bgcolor='#FFFAF8' align='center'>Alat Bantu</td>"+
@@ -1787,15 +2095,32 @@ public final class RMPerencanaanPemulangan extends javax.swing.JDialog {
                                         "<td valign='middle' bgcolor='#FFFAF8' align='center'>Edukasi Kesehatan</td>"+
                                         "<td valign='middle' bgcolor='#FFFAF8' align='center'>Keterangan Edukasi Kesehatan</td>"+
                                         "<td valign='middle' bgcolor='#FFFAF8' align='center'>Keterampilkan Khusus</td>"+
-                                        "<td valign='middle' bgcolor='#FFFAF8' align='center'>Keterangan Keterampilkan Khusus</td>"+
+                                        "<td valign='middle' bgcolor='#FFFAF8' align='center'>Ket. Keterampilkan Khusus</td>"+
                                         "<td valign='middle' bgcolor='#FFFAF8' align='center'>Jadwal Kontrol</td>"+
-                                        "<td valign='middle' bgcolor='#FFFAF8' align='center'>Keterangan Jadwal Kontrol</td>"+
+                                        "<td valign='middle' bgcolor='#FFFAF8' align='center'>Ket. Jadwal Kontrol</td>"+
                                         "<td valign='middle' bgcolor='#FFFAF8' align='center'>Diberikan</td>"+
-                                        "<td valign='middle' bgcolor='#FFFAF8' align='center'>Keterangan Diberikan</td>"+
+                                        "<td valign='middle' bgcolor='#FFFAF8' align='center'>Ket. Diberikan</td>"+
                                         "<td valign='middle' bgcolor='#FFFAF8' align='center'>Obat Pulang</td>"+
-                                        "<td valign='middle' bgcolor='#FFFAF8' align='center'>Keterangan Obat Pulang</td>"+
+                                        "<td valign='middle' bgcolor='#FFFAF8' align='center'>Ket. Obat Pulang</td>"+
                                         "<td valign='middle' bgcolor='#FFFAF8' align='center'>Faskes Rumah</td>"+
-                                        "<td valign='middle' bgcolor='#FFFAF8' align='center'>Keterangan Faskes Rumah</td>"+
+                                        "<td valign='middle' bgcolor='#FFFAF8' align='center'>Ket. Faskes Rumah</td>"+
+                                        "<td valign='middle' bgcolor='#FFFAF8' align='center'>Stroke</td>"+
+                                        "<td valign='middle' bgcolor='#FFFAF8' align='center'>Serangan Jantung</td>"+
+                                        "<td valign='middle' bgcolor='#FFFAF8' align='center'>PPOK</td>"+
+                                        "<td valign='middle' bgcolor='#FFFAF8' align='center'>Gagal Jantung</td>"+
+                                        "<td valign='middle' bgcolor='#FFFAF8' align='center'>Emfisema</td>"+
+                                        "<td valign='middle' bgcolor='#FFFAF8' align='center'>Demensia</td>"+
+                                        "<td valign='middle' bgcolor='#FFFAF8' align='center'>Alzheimer</td>"+
+                                        "<td valign='middle' bgcolor='#FFFAF8' align='center'>AIDS</td>"+
+                                        "<td valign='middle' bgcolor='#FFFAF8' align='center'>Trauma</td>"+
+                                        "<td valign='middle' bgcolor='#FFFAF8' align='center'>Kriminal</td>"+
+                                        "<td valign='middle' bgcolor='#FFFAF8' align='center'>Bunuh Diri</td>"+
+                                        "<td valign='middle' bgcolor='#FFFAF8' align='center'>Pasien Kembali</td>"+
+                                        "<td valign='middle' bgcolor='#FFFAF8' align='center'>Panti Jompo</td>"+
+                                        "<td valign='middle' bgcolor='#FFFAF8' align='center'>Tanpa Dukungan</td>"+
+                                        "<td valign='middle' bgcolor='#FFFAF8' align='center'>Luar Kota</td>"+
+                                        "<td valign='middle' bgcolor='#FFFAF8' align='center'>Tunawisma</td>"+
+                                        "<td valign='middle' bgcolor='#FFFAF8' align='center'>Tidak Ada Asuransi</td>"+
                                         "<td valign='middle' bgcolor='#FFFAF8' align='center'>Pasien/Keluarga</td>"+
                                         "<td valign='middle' bgcolor='#FFFAF8' align='center'>NIP</td>"+
                                         "<td valign='middle' bgcolor='#FFFAF8' align='center'>Nama Petugas</td>"+
@@ -1812,6 +2137,7 @@ public final class RMPerencanaanPemulangan extends javax.swing.JDialog {
                                             "<td valign='top'>"+rs.getString("tgl_registrasi")+" "+rs.getString("jam_reg")+"</td>"+
                                             "<td valign='top'>"+rs.getString("rencana_pulang")+"</td>"+
                                             "<td valign='top'>"+rs.getString("diagnosa_medis")+"</td>"+
+                                            "<td valign='top'>"+rs.getString("diagnosa_medis_keluar")+"</td>"+
                                             "<td valign='top'>"+rs.getString("alasan_masuk")+"</td>"+
                                             "<td valign='top'>"+rs.getString("pengaruh_ri_pasien_dan_keluarga")+"</td>"+
                                             "<td valign='top'>"+rs.getString("keterangan_pengaruh_ri_pasien_dan_keluarga")+"</td>"+
@@ -1821,7 +2147,6 @@ public final class RMPerencanaanPemulangan extends javax.swing.JDialog {
                                             "<td valign='top'>"+rs.getString("keterangan_pengaruh_ri_keuangan")+"</td>"+
                                             "<td valign='top'>"+rs.getString("usia_lanjut")+"</td>"+
                                             "<td valign='top'>"+rs.getString("hambatan")+"</td>"+
-                                            "<td valign='top'>"+rs.getString("perawatan")+"</td>"+
                                             "<td valign='top'>"+rs.getString("perawatan")+"</td>"+
                                             "<td valign='top'>"+rs.getString("aktifitas")+"</td>"+
                                             "<td valign='top'>"+rs.getString("kritis")+"</td>"+
@@ -1850,11 +2175,28 @@ public final class RMPerencanaanPemulangan extends javax.swing.JDialog {
                                             "<td valign='top'>"+rs.getString("jadwal_kontrol")+"</td>"+
                                             "<td valign='top'>"+rs.getString("keterangan_jadwal_kontrol")+"</td>"+
                                             "<td valign='top'>"+rs.getString("diberikan")+"</td>"+
-                                            "<td valign='top'>"+rs.getString("keteranga_diberikan")+"</td>"+
+                                            "<td valign='top'>"+rs.getString("keterangan_diberikan")+"</td>"+
                                             "<td valign='top'>"+rs.getString("obat_pulang")+"</td>"+
                                             "<td valign='top'>"+rs.getString("keterangan_obat_pulang")+"</td>"+
                                             "<td valign='top'>"+rs.getString("faskes_rumah")+"</td>"+
                                             "<td valign='top'>"+rs.getString("keterangan_faskes_rumah")+"</td>"+
+                                            "<td valign='top'>"+rs.getString("stroke")+"</td>"+
+                                            "<td valign='top'>"+rs.getString("serangan_jantung")+"</td>"+
+                                            "<td valign='top'>"+rs.getString("ppok")+"</td>"+
+                                            "<td valign='top'>"+rs.getString("gagal_jantung")+"</td>"+
+                                            "<td valign='top'>"+rs.getString("emfisema")+"</td>"+
+                                            "<td valign='top'>"+rs.getString("demensia")+"</td>"+
+                                            "<td valign='top'>"+rs.getString("alzheimer")+"</td>"+
+                                            "<td valign='top'>"+rs.getString("aids")+"</td>"+
+                                            "<td valign='top'>"+rs.getString("trauma")+"</td>"+
+                                            "<td valign='top'>"+rs.getString("kriminal")+"</td>"+
+                                            "<td valign='top'>"+rs.getString("bunuh_diri")+"</td>"+
+                                            "<td valign='top'>"+rs.getString("pasien_kembali")+"</td>"+
+                                            "<td valign='top'>"+rs.getString("panti_jompo")+"</td>"+
+                                            "<td valign='top'>"+rs.getString("tanpa_dukungan")+"</td>"+
+                                            "<td valign='top'>"+rs.getString("luar_kota")+"</td>"+
+                                            "<td valign='top'>"+rs.getString("tunawisma")+"</td>"+
+                                            "<td valign='top'>"+rs.getString("tidak_ada_asuransi")+"</td>"+
                                             "<td valign='top'>"+rs.getString("nama_pasien_keluarga")+"</td>"+
                                             "<td valign='top'>"+rs.getString("nip")+"</td>"+
                                             "<td valign='top'>"+rs.getString("nama")+"</td>"+
@@ -1895,11 +2237,6 @@ public final class RMPerencanaanPemulangan extends javax.swing.JDialog {
                                         "<td valign='middle' bgcolor='#FFFAF8' align='center'>Keterangan Pengaruh RI Pekerjaan/Sekolah</td>"+
                                         "<td valign='middle' bgcolor='#FFFAF8' align='center'>Pengaruh RI Keuangan</td>"+
                                         "<td valign='middle' bgcolor='#FFFAF8' align='center'>Keterangan Pengaruh RI Keuangan</td>"+
-                                        "<td valign='middle' bgcolor='#FFFAF8' align='center'>Usia Lanjut</td>"+
-                                        "<td valign='middle' bgcolor='#FFFAF8' align='center'>Hambatan</td>"+
-                                        "<td valign='middle' bgcolor='#FFFAF8' align='center'>Perawatan</td>"+
-                                        "<td valign='middle' bgcolor='#FFFAF8' align='center'>Aktifitas</td>"+
-                                        "<td valign='middle' bgcolor='#FFFAF8' align='center'>Kritis</td>"+
                                         "<td valign='middle' bgcolor='#FFFAF8' align='center'>Antisipasi Masalah</td>"+
                                         "<td valign='middle' bgcolor='#FFFAF8' align='center'>Keterangan Antisipasi Masalah</td>"+
                                         "<td valign='middle' bgcolor='#FFFAF8' align='center'>Bantuan Diperlukan</td>"+
@@ -1922,14 +2259,6 @@ public final class RMPerencanaanPemulangan extends javax.swing.JDialog {
                                         "<td valign='middle' bgcolor='#FFFAF8' align='center'>Keterangan Edukasi Kesehatan</td>"+
                                         "<td valign='middle' bgcolor='#FFFAF8' align='center'>Keterampilkan Khusus</td>"+
                                         "<td valign='middle' bgcolor='#FFFAF8' align='center'>Keterangan Keterampilkan Khusus</td>"+
-                                        "<td valign='middle' bgcolor='#FFFAF8' align='center'>Jadwal Kontrol</td>"+
-                                        "<td valign='middle' bgcolor='#FFFAF8' align='center'>Keterangan Jadwal Kontrol</td>"+
-                                        "<td valign='middle' bgcolor='#FFFAF8' align='center'>Diberikan</td>"+
-                                        "<td valign='middle' bgcolor='#FFFAF8' align='center'>Keterangan Diberikan</td>"+
-                                        "<td valign='middle' bgcolor='#FFFAF8' align='center'>Obat Pulang</td>"+
-                                        "<td valign='middle' bgcolor='#FFFAF8' align='center'>Keterangan Obat Pulang</td>"+
-                                        "<td valign='middle' bgcolor='#FFFAF8' align='center'>Faskes Rumah</td>"+
-                                        "<td valign='middle' bgcolor='#FFFAF8' align='center'>Keterangan Faskes Rumah</td>"+
                                         "<td valign='middle' bgcolor='#FFFAF8' align='center'>Pasien/Keluarga</td>"+
                                         "<td valign='middle' bgcolor='#FFFAF8' align='center'>NIP</td>"+
                                         "<td valign='middle' bgcolor='#FFFAF8' align='center'>Nama Petugas</td>"+
@@ -1953,11 +2282,6 @@ public final class RMPerencanaanPemulangan extends javax.swing.JDialog {
                                             "<td valign='top'>"+rs.getString("keterangan_pengaruh_ri_pekerjaan_sekolah")+"</td>"+
                                             "<td valign='top'>"+rs.getString("pengaruh_ri_keuangan")+"</td>"+
                                             "<td valign='top'>"+rs.getString("keterangan_pengaruh_ri_keuangan")+"</td>"+
-                                            "<td valign='top'>"+rs.getString("usia_lanjut")+"</td>"+
-                                            "<td valign='top'>"+rs.getString("hambatan")+"</td>"+
-                                            "<td valign='top'>"+rs.getString("perawatan")+"</td>"+
-                                            "<td valign='top'>"+rs.getString("aktifitas")+"</td>"+
-                                            "<td valign='top'>"+rs.getString("kritis")+"</td>"+
                                             "<td valign='top'>"+rs.getString("antisipasi_masalah_saat_pulang")+"</td>"+
                                             "<td valign='top'>"+rs.getString("keterangan_antisipasi_masalah_saat_pulang")+"</td>"+
                                             "<td valign='top'>"+rs.getString("bantuan_diperlukan_dalam")+"</td>"+
@@ -1980,14 +2304,6 @@ public final class RMPerencanaanPemulangan extends javax.swing.JDialog {
                                             "<td valign='top'>"+rs.getString("keterangan_memerlukan_edukasi_kesehatan")+"</td>"+
                                             "<td valign='top'>"+rs.getString("memerlukan_keterampilkan_khusus")+"</td>"+
                                             "<td valign='top'>"+rs.getString("keterangan_memerlukan_keterampilkan_khusus")+"</td>"+
-                                            "<td valign='top'>"+rs.getString("jadwal_kontrol")+"</td>"+
-                                            "<td valign='top'>"+rs.getString("keterangan_jadwal_kontrol")+"</td>"+
-                                            "<td valign='top'>"+rs.getString("diberikan")+"</td>"+
-                                            "<td valign='top'>"+rs.getString("keteranga_diberikan")+"</td>"+
-                                            "<td valign='top'>"+rs.getString("obat_pulang")+"</td>"+
-                                            "<td valign='top'>"+rs.getString("keterangan_obat_pulang")+"</td>"+
-                                            "<td valign='top'>"+rs.getString("faskes_rumah")+"</td>"+
-                                            "<td valign='top'>"+rs.getString("keterangan_faskes_rumah")+"</td>"+
                                             "<td valign='top'>"+rs.getString("nama_pasien_keluarga")+"</td>"+
                                             "<td valign='top'>"+rs.getString("nip")+"</td>"+
                                             "<td valign='top'>"+rs.getString("nama")+"</td>"+
@@ -2012,11 +2328,11 @@ public final class RMPerencanaanPemulangan extends javax.swing.JDialog {
                         case "Laporan 3 (CSV)":
                                 htmlContent = new StringBuilder();
                                 htmlContent.append(                             
-                                    "\"No.Rawat\";\"No.RM\";\"Nama Pasien\";\"Tgl.Lahir\";\"J.K.\";\"Masuk Dirawat\";\"Rencana Pulang\";\"Diagnosa Medis\";\"Alasan Masuk / Dirawat\";\"Pengaruh RI Pasien & Keluarga\";\"Keterangan Pengaruh RI Pasien & Keluarga\";\"Pengaruh RI Pekerjaan/Sekolah\";\"Keterangan Pengaruh RI Pekerjaan/Sekolah\";\"Pengaruh RI Keuangan\";\"Keterangan Pengaruh RI Keuangan\";\"Antisipasi Masalah\";\"Keterangan Antisipasi Masalah\";\"Bantuan Diperlukan\";\"Keterangan Bantuan Diperlukan\";\"Membantu Keperluan\";\"Keterangan Yang Membantu Keperluan\";\"Tinggal Sendiri\";\"Keterangan Pasien Tinggal Sendiri\";\"Peralatan Medis\";\"Keterangan Peralatan Medis\";\"Alat Bantu\";\"Keterangan Memerlukan Alat Bantu\";\"Perawatan Khusus\";\"Keterangan Perawatan Khusus\";\"Memenuhi Kebutuhan\";\"Keterangan Memenuhi Kebutuhan\";\"Nyeri Kronis\";\"Keterangan Nyeri Kronis\";\"Edukasi Kesehatan\";\"Keterangan Edukasi Kesehatan\";\"Keterampilkan Khusus\";\"Keterangan Keterampilkan Khusus\";\"Pasien/Keluarga\";\"NIP\";\"Nama Petugas\"\n"
+                                    "\"No.Rawat\";\"No.RM\";\"Nama Pasien\";\"Tgl.Lahir\";\"J.K.\";\"Masuk Dirawat\";\"Rencana Pulang\";\"Diagnosa Medis\";\"Diagnosa Keluar\";\"Alasan Masuk / Dirawat\";\"Pengaruh RI Pasien & Keluarga\";\"Keterangan Pengaruh RI Pasien & Keluarga\";\"Pengaruh RI Pekerjaan/Sekolah\";\"Keterangan Pengaruh RI Pekerjaan/Sekolah\";\"Pengaruh RI Keuangan\";\"Keterangan Pengaruh RI Keuangan\";\"Antisipasi Masalah\";\"Keterangan Antisipasi Masalah\";\"Bantuan Diperlukan\";\"Keterangan Bantuan Diperlukan\";\"Membantu Keperluan\";\"Keterangan Yang Membantu Keperluan\";\"Tinggal Sendiri\";\"Keterangan Pasien Tinggal Sendiri\";\"Peralatan Medis\";\"Keterangan Peralatan Medis\";\"Alat Bantu\";\"Keterangan Memerlukan Alat Bantu\";\"Perawatan Khusus\";\"Keterangan Perawatan Khusus\";\"Memenuhi Kebutuhan\";\"Keterangan Memenuhi Kebutuhan\";\"Nyeri Kronis\";\"Keterangan Nyeri Kronis\";\"Edukasi Kesehatan\";\"Keterangan Edukasi Kesehatan\";\"Keterampilkan Khusus\";\"Keterangan Keterampilkan Khusus\";\"Stroke\";\"Serangan Jantung\";\"PPOK\";\"Gagal Jantung\";\"Emfisema\";\"Demensia\";\"Alzheimer\";\"AIDS\";\"Trauma\";\"Kriminal\";\"Bunuh Diri\";\"Pasien Kembali\";\"Panti Jompo\";\"Tanpa Dukungan\";\"Luar Kota\";\"Tunawisma\";\"Tidak Ada Asuransi\";\"Pasien/Keluarga\";\"NIP\";\"Nama Petugas\"\n"
                                 ); 
                                 while(rs.next()){
                                     htmlContent.append(
-                                        "\""+rs.getString("no_rawat")+"\";\""+rs.getString("no_rkm_medis")+"\";\""+rs.getString("nm_pasien")+"\";\""+rs.getString("tgl_lahir")+"\";\""+rs.getString("jk")+"\";\""+rs.getString("tgl_registrasi")+" "+rs.getString("jam_reg")+"\";\""+rs.getString("rencana_pulang")+"\";\""+rs.getString("diagnosa_medis")+"\";\""+rs.getString("alasan_masuk")+"\";\""+rs.getString("pengaruh_ri_pasien_dan_keluarga")+"\";\""+rs.getString("keterangan_pengaruh_ri_pasien_dan_keluarga")+"\";\""+rs.getString("pengaruh_ri_pekerjaan_sekolah")+"\";\""+rs.getString("keterangan_pengaruh_ri_pekerjaan_sekolah")+"\";\""+rs.getString("pengaruh_ri_keuangan")+"\";\""+rs.getString("keterangan_pengaruh_ri_keuangan")+"\";\""+rs.getString("antisipasi_masalah_saat_pulang")+"\";\""+rs.getString("keterangan_antisipasi_masalah_saat_pulang")+"\";\""+rs.getString("bantuan_diperlukan_dalam")+"\";\""+rs.getString("keterangan_bantuan_diperlukan_dalam")+"\";\""+rs.getString("adakah_yang_membantu_keperluan")+"\";\""+rs.getString("keterangan_adakah_yang_membantu_keperluan")+"\";\""+rs.getString("pasien_tinggal_sendiri")+"\";\""+rs.getString("keterangan_pasien_tinggal_sendiri")+"\";\""+rs.getString("pasien_menggunakan_peralatan_medis")+"\";\""+rs.getString("keterangan_pasien_menggunakan_peralatan_medis")+"\";\""+rs.getString("pasien_memerlukan_alat_bantu")+"\";\""+rs.getString("keterangan_pasien_memerlukan_alat_bantu")+"\";\""+rs.getString("memerlukan_perawatan_khusus")+"\";\""+rs.getString("keterangan_memerlukan_perawatan_khusus")+"\";\""+rs.getString("bermasalah_memenuhi_kebutuhan")+"\";\""+rs.getString("keterangan_bermasalah_memenuhi_kebutuhan")+"\";\""+rs.getString("memiliki_nyeri_kronis")+"\";\""+rs.getString("keterangan_memiliki_nyeri_kronis")+"\";\""+rs.getString("memerlukan_edukasi_kesehatan")+"\";\""+rs.getString("keterangan_memerlukan_edukasi_kesehatan")+"\";\""+rs.getString("memerlukan_keterampilkan_khusus")+"\";\""+rs.getString("keterangan_memerlukan_keterampilkan_khusus")+"\";\""+rs.getString("nama_pasien_keluarga")+"\";\""+rs.getString("nip")+"\";\""+rs.getString("nama")+"\"\n"
+                                        "\""+rs.getString("no_rawat")+"\";\""+rs.getString("no_rkm_medis")+"\";\""+rs.getString("nm_pasien")+"\";\""+rs.getString("tgl_lahir")+"\";\""+rs.getString("jk")+"\";\""+rs.getString("tgl_registrasi")+" "+rs.getString("jam_reg")+"\";\""+rs.getString("rencana_pulang")+"\";\""+rs.getString("diagnosa_medis")+"\";\""+rs.getString("diagnosa_medis_keluar")+"\";\""+rs.getString("alasan_masuk")+"\";\""+rs.getString("pengaruh_ri_pasien_dan_keluarga")+"\";\""+rs.getString("keterangan_pengaruh_ri_pasien_dan_keluarga")+"\";\""+rs.getString("pengaruh_ri_pekerjaan_sekolah")+"\";\""+rs.getString("keterangan_pengaruh_ri_pekerjaan_sekolah")+"\";\""+rs.getString("pengaruh_ri_keuangan")+"\";\""+rs.getString("keterangan_pengaruh_ri_keuangan")+"\";\""+rs.getString("antisipasi_masalah_saat_pulang")+"\";\""+rs.getString("keterangan_antisipasi_masalah_saat_pulang")+"\";\""+rs.getString("bantuan_diperlukan_dalam")+"\";\""+rs.getString("keterangan_bantuan_diperlukan_dalam")+"\";\""+rs.getString("adakah_yang_membantu_keperluan")+"\";\""+rs.getString("keterangan_adakah_yang_membantu_keperluan")+"\";\""+rs.getString("pasien_tinggal_sendiri")+"\";\""+rs.getString("keterangan_pasien_tinggal_sendiri")+"\";\""+rs.getString("pasien_menggunakan_peralatan_medis")+"\";\""+rs.getString("keterangan_pasien_menggunakan_peralatan_medis")+"\";\""+rs.getString("pasien_memerlukan_alat_bantu")+"\";\""+rs.getString("keterangan_pasien_memerlukan_alat_bantu")+"\";\""+rs.getString("memerlukan_perawatan_khusus")+"\";\""+rs.getString("keterangan_memerlukan_perawatan_khusus")+"\";\""+rs.getString("bermasalah_memenuhi_kebutuhan")+"\";\""+rs.getString("keterangan_bermasalah_memenuhi_kebutuhan")+"\";\""+rs.getString("memiliki_nyeri_kronis")+"\";\""+rs.getString("keterangan_memiliki_nyeri_kronis")+"\";\""+rs.getString("memerlukan_edukasi_kesehatan")+"\";\""+rs.getString("keterangan_memerlukan_edukasi_kesehatan")+"\";\""+rs.getString("memerlukan_keterampilkan_khusus")+"\";\""+rs.getString("keterangan_memerlukan_keterampilkan_khusus")+"\";\""+rs.getString("stroke")+"\";\""+rs.getString("serangan_jantung")+"\";\""+rs.getString("ppok")+"\";\""+rs.getString("gagal_jantung")+"\";\""+rs.getString("emfisema")+"\";\""+rs.getString("demensia")+"\";\""+rs.getString("alzheimer")+"\";\""+rs.getString("aids")+"\";\""+rs.getString("trauma")+"\";\""+rs.getString("kriminal")+"\";\""+rs.getString("bunuh_diri")+"\";\""+rs.getString("pasien_kembali")+"\";\""+rs.getString("panti_jompo")+"\";\""+rs.getString("tanpa_dukungan")+"\";\""+rs.getString("luar_kota")+"\";\""+rs.getString("tunawisma")+"\";\""+rs.getString("tidak_ada_asuransi")+"\";\""+rs.getString("nama_pasien_keluarga")+"\";\""+rs.getString("nip")+"\";\""+rs.getString("nama")+"\"\n"
                                     );
                                 }
                                 f = new File("RencanaPemulangan.csv");            
@@ -2063,7 +2379,7 @@ public final class RMPerencanaanPemulangan extends javax.swing.JDialog {
 }//GEN-LAST:event_TCariKeyPressed
 
     private void BtnCariActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_BtnCariActionPerformed
-        tampil();
+        runBackground(() ->tampil());
 }//GEN-LAST:event_BtnCariActionPerformed
 
     private void BtnCariKeyPressed(java.awt.event.KeyEvent evt) {//GEN-FIRST:event_BtnCariKeyPressed
@@ -2076,13 +2392,13 @@ public final class RMPerencanaanPemulangan extends javax.swing.JDialog {
 
     private void BtnAllActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_BtnAllActionPerformed
         TCari.setText("");
-        tampil();
+        runBackground(() ->tampil());
 }//GEN-LAST:event_BtnAllActionPerformed
 
     private void BtnAllKeyPressed(java.awt.event.KeyEvent evt) {//GEN-FIRST:event_BtnAllKeyPressed
         if(evt.getKeyCode()==KeyEvent.VK_SPACE){
             TCari.setText("");
-            tampil();
+            runBackground(() ->tampil());
         }else{
             Valid.pindah(evt, BtnCari, TPasien);
         }
@@ -2120,7 +2436,7 @@ public final class RMPerencanaanPemulangan extends javax.swing.JDialog {
 
     private void TabRawatMouseClicked(java.awt.event.MouseEvent evt) {//GEN-FIRST:event_TabRawatMouseClicked
         if(TabRawat.getSelectedIndex()==1){
-            tampil();
+            runBackground(() ->tampil());
         }
     }//GEN-LAST:event_TabRawatMouseClicked
 
@@ -2136,17 +2452,41 @@ public final class RMPerencanaanPemulangan extends javax.swing.JDialog {
         Valid.pindah(evt,SaksiKeluarga,DiagnosaMedis);
     }//GEN-LAST:event_RencanaPemulanganKeyPressed
 
-    private void BtnDokterActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_BtnDokterActionPerformed
-        petugas.isCek();
-        petugas.setSize(internalFrame1.getWidth()-20,internalFrame1.getHeight()-20);
-        petugas.setLocationRelativeTo(internalFrame1);
-        petugas.setAlwaysOnTop(false);
-        petugas.setVisible(true);
-    }//GEN-LAST:event_BtnDokterActionPerformed
+    private void BtnPetugasActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_BtnPetugasActionPerformed
+        if (petugas == null || !petugas.isDisplayable()) {
+            petugas=new DlgCariPetugas(null,false);
+            petugas.setDefaultCloseOperation(WindowConstants.DISPOSE_ON_CLOSE);
+            petugas.addWindowListener(new WindowAdapter() {
+                @Override
+                public void windowClosed(WindowEvent e) {
+                    if(petugas.getTable().getSelectedRow()!= -1){                   
+                        KdPetugas.setText(petugas.getTable().getValueAt(petugas.getTable().getSelectedRow(),0).toString());
+                        NmPetugas.setText(petugas.getTable().getValueAt(petugas.getTable().getSelectedRow(),1).toString());
+                    }  
+                    BtnPetugas.requestFocus();
+                    petugas=null;
+                }
+            });
 
-    private void BtnDokterKeyPressed(java.awt.event.KeyEvent evt) {//GEN-FIRST:event_BtnDokterKeyPressed
+            petugas.setSize(internalFrame1.getWidth()-20,internalFrame1.getHeight()-20);
+            petugas.setLocationRelativeTo(internalFrame1);
+        }
+        if (petugas == null) return;
+        if (!petugas.isVisible()) {
+            petugas.isCek();    
+            petugas.emptTeks();
+        }
+        
+        if (petugas.isVisible()) {
+            petugas.toFront();
+            return;
+        }
+        petugas.setVisible(true); 
+    }//GEN-LAST:event_BtnPetugasActionPerformed
+
+    private void BtnPetugasKeyPressed(java.awt.event.KeyEvent evt) {//GEN-FIRST:event_BtnPetugasKeyPressed
         Valid.pindah(evt,KeteranganKeterampilanKhusus,SaksiKeluarga);
-    }//GEN-LAST:event_BtnDokterKeyPressed
+    }//GEN-LAST:event_BtnPetugasKeyPressed
 
     private void SaksiKeluargaKeyPressed(java.awt.event.KeyEvent evt) {//GEN-FIRST:event_SaksiKeluargaKeyPressed
         Valid.pindah(evt,KeteranganKeterampilanKhusus,BtnSimpan);
@@ -2192,10 +2532,6 @@ public final class RMPerencanaanPemulangan extends javax.swing.JDialog {
     private void TinggalSendiriKeyPressed(java.awt.event.KeyEvent evt) {//GEN-FIRST:event_TinggalSendiriKeyPressed
         Valid.pindah(evt,KeteranganYangMembantuKeperluan,KeteranganTinggalSendiri);
     }//GEN-LAST:event_TinggalSendiriKeyPressed
-
-    private void DiagnosaMedisKeyPressed(java.awt.event.KeyEvent evt) {//GEN-FIRST:event_DiagnosaMedisKeyPressed
-        Valid.pindah(evt,RencanaPemulangan,AlasanMasuk);
-    }//GEN-LAST:event_DiagnosaMedisKeyPressed
 
     private void AlasanMasukKeyPressed(java.awt.event.KeyEvent evt) {//GEN-FIRST:event_AlasanMasukKeyPressed
         Valid.pindah(evt,DiagnosaMedis,PengaruhRIKeluarga);
@@ -2297,6 +2633,155 @@ public final class RMPerencanaanPemulangan extends javax.swing.JDialog {
         Valid.pindah(evt,EdukasiPasien,KeterampilanKhusus);
     }//GEN-LAST:event_KeteranganEdukasiPasienKeyPressed
 
+    private void BtnPrint1ActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_BtnPrint1ActionPerformed
+        if(tbObat.getSelectedRow()>-1){
+            //if(lokasifile.equals("")){
+            //    JOptionPane.showMessageDialog(null,"Maaf, Silahkan ambil photo bukti penolakan anjuran medis terlebih dahulu..!!!!");
+            //}else{
+                Map<String, Object> param = new HashMap<>();
+                param.put("namars",akses.getnamars());
+                param.put("alamatrs",akses.getalamatrs());
+                param.put("kotars",akses.getkabupatenrs());
+                param.put("propinsirs",akses.getpropinsirs());
+                param.put("kontakrs",akses.getkontakrs());
+                param.put("emailrs",akses.getemailrs());
+                param.put("logo",Sequel.cariGambar("select setting.logo from setting"));
+                //param.put("photo","http://"+koneksiDB.HOSTHYBRIDWEB()+":"+koneksiDB.PORTWEB()+"/"+koneksiDB.HYBRIDWEB()+"/perencanaanpemulangan/"+lokasifile);
+                finger=Sequel.cariIsi("select sha1(sidikjari.sidikjari) from sidikjari inner join pegawai on pegawai.id=sidikjari.id where pegawai.nik=?",tbObat.getValueAt(tbObat.getSelectedRow(),38).toString());
+                param.put("finger","Dikeluarkan di "+akses.getnamars()+", Kabupaten/Kota "+akses.getkabupatenrs()+"\nDitandatangani secara elektronik oleh "+tbObat.getValueAt(tbObat.getSelectedRow(),39).toString()+"\nID "+(finger.equals("")?tbObat.getValueAt(tbObat.getSelectedRow(),38).toString():finger)+"\n"+Valid.SetTgl3(tbObat.getValueAt(tbObat.getSelectedRow(),6).toString()));
+                Valid.MyReportqry("rptSuratPerencanaanPulang.jasper","report","::[ Surat Perencanaan Pulang ]::",
+                "select reg_periksa.no_rawat,pasien.no_rkm_medis,pasien.nm_pasien,pasien.jk,pasien.tgl_lahir,pasien.pekerjaan,reg_periksa.umurdaftar,reg_periksa.tgl_registrasi,reg_periksa.jam_reg,reg_periksa.sttsumur,pasien.tmp_lahir,concat(pasien.alamat,', ',kelurahan.nm_kel,', ',kecamatan.nm_kec,', ',kabupaten.nm_kab,', ',propinsi.nm_prop) as alamat_pasien,"+
+                "perencanaan_pemulangan.rencana_pulang,perencanaan_pemulangan.alasan_masuk,perencanaan_pemulangan.diagnosa_medis,perencanaan_pemulangan.diagnosa_medis_keluar,perencanaan_pemulangan.pengaruh_ri_pasien_dan_keluarga,perencanaan_pemulangan.keterangan_pengaruh_ri_pasien_dan_keluarga,perencanaan_pemulangan.pengaruh_ri_pekerjaan_sekolah,perencanaan_pemulangan.keterangan_pengaruh_ri_pekerjaan_sekolah,"+
+                "perencanaan_pemulangan.pengaruh_ri_keuangan,perencanaan_pemulangan.keterangan_pengaruh_ri_keuangan,perencanaan_pemulangan.usia_lanjut,perencanaan_pemulangan.hambatan,perencanaan_pemulangan.perawatan,perencanaan_pemulangan.aktifitas,perencanaan_pemulangan.kritis,"+
+                "perencanaan_pemulangan.antisipasi_masalah_saat_pulang,perencanaan_pemulangan.keterangan_antisipasi_masalah_saat_pulang,perencanaan_pemulangan.bantuan_diperlukan_dalam,perencanaan_pemulangan.keterangan_bantuan_diperlukan_dalam,perencanaan_pemulangan.adakah_yang_membantu_keperluan,"+
+                "perencanaan_pemulangan.keterangan_adakah_yang_membantu_keperluan,perencanaan_pemulangan.pasien_tinggal_sendiri,perencanaan_pemulangan.keterangan_pasien_tinggal_sendiri,perencanaan_pemulangan.pasien_menggunakan_peralatan_medis,perencanaan_pemulangan.keterangan_pasien_menggunakan_peralatan_medis,perencanaan_pemulangan.pasien_memerlukan_alat_bantu,"+
+                 "perencanaan_pemulangan.keterangan_pasien_memerlukan_alat_bantu,perencanaan_pemulangan.memerlukan_perawatan_khusus,perencanaan_pemulangan.keterangan_memerlukan_perawatan_khusus,perencanaan_pemulangan.bermasalah_memenuhi_kebutuhan,perencanaan_pemulangan.keterangan_bermasalah_memenuhi_kebutuhan,perencanaan_pemulangan.memiliki_nyeri_kronis,"+
+                "perencanaan_pemulangan.keterangan_memiliki_nyeri_kronis,perencanaan_pemulangan.memerlukan_edukasi_kesehatan,perencanaan_pemulangan.keterangan_memerlukan_edukasi_kesehatan,perencanaan_pemulangan.memerlukan_keterampilkan_khusus,perencanaan_pemulangan.keterangan_memerlukan_keterampilkan_khusus,perencanaan_pemulangan.jadwal_kontrol,"+
+                "perencanaan_pemulangan.keterangan_jadwal_kontrol,perencanaan_pemulangan.diberikan,perencanaan_pemulangan.keterangan_diberikan,perencanaan_pemulangan.obat_pulang,perencanaan_pemulangan.keterangan_obat_pulang,perencanaan_pemulangan.faskes_rumah,perencanaan_pemulangan.keterangan_faskes_rumah,"+        
+                "perencanaan_pemulangan.stroke,perencanaan_pemulangan.serangan_jantung,perencanaan_pemulangan.ppok,perencanaan_pemulangan.gagal_jantung,perencanaan_pemulangan.emfisema,"+
+                "perencanaan_pemulangan.demensia,perencanaan_pemulangan.alzheimer,perencanaan_pemulangan.aids,perencanaan_pemulangan.trauma,perencanaan_pemulangan.kriminal,perencanaan_pemulangan.bunuh_diri,perencanaan_pemulangan.pasien_kembali,"+
+                "perencanaan_pemulangan.panti_jompo,perencanaan_pemulangan.tanpa_dukungan,perencanaan_pemulangan.luar_kota,perencanaan_pemulangan.tunawisma,perencanaan_pemulangan.tidak_ada_asuransi,perencanaan_pemulangan.nama_pasien_keluarga,perencanaan_pemulangan.nip,petugas.nama "+
+		    "from perencanaan_pemulangan inner join reg_periksa on perencanaan_pemulangan.no_rawat=reg_periksa.no_rawat inner join pasien on pasien.no_rkm_medis=reg_periksa.no_rkm_medis inner join petugas on petugas.nip=perencanaan_pemulangan.nip inner join kelurahan on pasien.kd_kel=kelurahan.kd_kel inner join kecamatan on pasien.kd_kec=kecamatan.kd_kec "+
+                    "inner join kabupaten on pasien.kd_kab=kabupaten.kd_kab inner join propinsi on pasien.kd_prop=propinsi.kd_prop where reg_periksa.no_rawat='"+tbObat.getValueAt(tbObat.getSelectedRow(),0).toString()+"'",param);
+            //}
+        }else{
+            JOptionPane.showMessageDialog(null,"Maaf, silahkan pilih data terlebih dahulu..!!!!");
+        }
+    }//GEN-LAST:event_BtnPrint1ActionPerformed
+
+    private void formWindowOpened(java.awt.event.WindowEvent evt) {//GEN-FIRST:event_formWindowOpened
+        if(koneksiDB.CARICEPAT().equals("aktif")){
+            TCari.getDocument().addDocumentListener(new javax.swing.event.DocumentListener(){
+                @Override
+                public void insertUpdate(DocumentEvent e) {
+                    if(TCari.getText().length()>2){
+                        runBackground(() ->tampil());
+                    }
+                }
+                @Override
+                public void removeUpdate(DocumentEvent e) {
+                    if(TCari.getText().length()>2){
+                        runBackground(() ->tampil());
+                    }
+                }
+                @Override
+                public void changedUpdate(DocumentEvent e) {
+                    if(TCari.getText().length()>2){
+                        runBackground(() ->tampil());
+                    }
+                }
+            });
+        }
+    }//GEN-LAST:event_formWindowOpened
+
+    private void PerawatanKeyPressed(java.awt.event.KeyEvent evt) {//GEN-FIRST:event_PerawatanKeyPressed
+        Valid.pindah(evt,Hambatan,Aktifitas);
+    }//GEN-LAST:event_PerawatanKeyPressed
+
+    private void UsiaLanjutKeyPressed(java.awt.event.KeyEvent evt) {//GEN-FIRST:event_UsiaLanjutKeyPressed
+        Valid.pindah(evt,KeteranganPengaruhRIKeuangan,Hambatan);
+    }//GEN-LAST:event_UsiaLanjutKeyPressed
+
+    private void HambatanKeyPressed(java.awt.event.KeyEvent evt) {//GEN-FIRST:event_HambatanKeyPressed
+        Valid.pindah(evt,UsiaLanjut,Perawatan);
+    }//GEN-LAST:event_HambatanKeyPressed
+
+    private void AktifitasKeyPressed(java.awt.event.KeyEvent evt) {//GEN-FIRST:event_AktifitasKeyPressed
+        Valid.pindah(evt,Perawatan,Kritis);
+    }//GEN-LAST:event_AktifitasKeyPressed
+
+    private void KritisKeyPressed(java.awt.event.KeyEvent evt) {//GEN-FIRST:event_KritisKeyPressed
+        Valid.pindah(evt,Aktifitas,AntisipasiMasalah);
+    }//GEN-LAST:event_KritisKeyPressed
+
+    private void PPOKKeyPressed(java.awt.event.KeyEvent evt) {//GEN-FIRST:event_PPOKKeyPressed
+        // TODO add your handling code here:
+    }//GEN-LAST:event_PPOKKeyPressed
+
+    private void StrokeKeyPressed(java.awt.event.KeyEvent evt) {//GEN-FIRST:event_StrokeKeyPressed
+        // TODO add your handling code here:
+    }//GEN-LAST:event_StrokeKeyPressed
+
+    private void SeranganJantungKeyPressed(java.awt.event.KeyEvent evt) {//GEN-FIRST:event_SeranganJantungKeyPressed
+        // TODO add your handling code here:
+    }//GEN-LAST:event_SeranganJantungKeyPressed
+
+    private void GagalJantungKeyPressed(java.awt.event.KeyEvent evt) {//GEN-FIRST:event_GagalJantungKeyPressed
+        // TODO add your handling code here:
+    }//GEN-LAST:event_GagalJantungKeyPressed
+
+    private void EmfisemaKeyPressed(java.awt.event.KeyEvent evt) {//GEN-FIRST:event_EmfisemaKeyPressed
+        // TODO add your handling code here:
+    }//GEN-LAST:event_EmfisemaKeyPressed
+
+    private void AIDSKeyPressed(java.awt.event.KeyEvent evt) {//GEN-FIRST:event_AIDSKeyPressed
+        // TODO add your handling code here:
+    }//GEN-LAST:event_AIDSKeyPressed
+
+    private void DemensiaKeyPressed(java.awt.event.KeyEvent evt) {//GEN-FIRST:event_DemensiaKeyPressed
+        // TODO add your handling code here:
+    }//GEN-LAST:event_DemensiaKeyPressed
+
+    private void AlzheimerKeyPressed(java.awt.event.KeyEvent evt) {//GEN-FIRST:event_AlzheimerKeyPressed
+        // TODO add your handling code here:
+    }//GEN-LAST:event_AlzheimerKeyPressed
+
+    private void TraumaKeyPressed(java.awt.event.KeyEvent evt) {//GEN-FIRST:event_TraumaKeyPressed
+        // TODO add your handling code here:
+    }//GEN-LAST:event_TraumaKeyPressed
+
+    private void TanpaDukunganKeyPressed(java.awt.event.KeyEvent evt) {//GEN-FIRST:event_TanpaDukunganKeyPressed
+        // TODO add your handling code here:
+    }//GEN-LAST:event_TanpaDukunganKeyPressed
+
+    private void PasienKembaliKeyPressed(java.awt.event.KeyEvent evt) {//GEN-FIRST:event_PasienKembaliKeyPressed
+        // TODO add your handling code here:
+    }//GEN-LAST:event_PasienKembaliKeyPressed
+
+    private void PantiJompoKeyPressed(java.awt.event.KeyEvent evt) {//GEN-FIRST:event_PantiJompoKeyPressed
+        // TODO add your handling code here:
+    }//GEN-LAST:event_PantiJompoKeyPressed
+
+    private void LuarKotaKeyPressed(java.awt.event.KeyEvent evt) {//GEN-FIRST:event_LuarKotaKeyPressed
+        // TODO add your handling code here:
+    }//GEN-LAST:event_LuarKotaKeyPressed
+
+    private void TunawismaKeyPressed(java.awt.event.KeyEvent evt) {//GEN-FIRST:event_TunawismaKeyPressed
+        // TODO add your handling code here:
+    }//GEN-LAST:event_TunawismaKeyPressed
+
+    private void TidakAdaAsuransiKeyPressed(java.awt.event.KeyEvent evt) {//GEN-FIRST:event_TidakAdaAsuransiKeyPressed
+        // TODO add your handling code here:
+    }//GEN-LAST:event_TidakAdaAsuransiKeyPressed
+
+    private void BunuhDiriKeyPressed(java.awt.event.KeyEvent evt) {//GEN-FIRST:event_BunuhDiriKeyPressed
+        // TODO add your handling code here:
+    }//GEN-LAST:event_BunuhDiriKeyPressed
+
+    private void KriminalKeyPressed(java.awt.event.KeyEvent evt) {//GEN-FIRST:event_KriminalKeyPressed
+        // TODO add your handling code here:
+    }//GEN-LAST:event_KriminalKeyPressed
+
     private void KeterampilanKhususKeyPressed(java.awt.event.KeyEvent evt) {//GEN-FIRST:event_KeterampilanKhususKeyPressed
         Valid.pindah(evt,KeteranganEdukasiPasien,KeteranganKeterampilanKhusus);
     }//GEN-LAST:event_KeterampilanKhususKeyPressed
@@ -2322,7 +2807,7 @@ public final class RMPerencanaanPemulangan extends javax.swing.JDialog {
     }//GEN-LAST:event_KeteranganDiberikanKeyPressed
 
     private void ObatPulangKeyPressed(java.awt.event.KeyEvent evt) {//GEN-FIRST:event_ObatPulangKeyPressed
-        Valid.pindah(evt,KeteranganDiberikan,KeteranganObatPulang);// TODO add your handling code here:
+        Valid.pindah(evt,KeteranganDiberikan,KeteranganObatPulang);
     }//GEN-LAST:event_ObatPulangKeyPressed
 
     private void KeteranganObatPulangKeyPressed(java.awt.event.KeyEvent evt) {//GEN-FIRST:event_KeteranganObatPulangKeyPressed
@@ -2330,66 +2815,20 @@ public final class RMPerencanaanPemulangan extends javax.swing.JDialog {
     }//GEN-LAST:event_KeteranganObatPulangKeyPressed
 
     private void FaskesRumahKeyPressed(java.awt.event.KeyEvent evt) {//GEN-FIRST:event_FaskesRumahKeyPressed
-        Valid.pindah(evt,KeteranganObatPulang,KeteranganFaskesRumah);// TODO add your handling code here:
+        Valid.pindah(evt,KeteranganObatPulang,KeteranganFaskesRumah);
     }//GEN-LAST:event_FaskesRumahKeyPressed
 
     private void KeteranganFaskesRumahKeyPressed(java.awt.event.KeyEvent evt) {//GEN-FIRST:event_KeteranganFaskesRumahKeyPressed
-        Valid.pindah(evt,FaskesRumah,SaksiKeluarga);// TODO add your handling code here:
+        Valid.pindah(evt,FaskesRumah,SaksiKeluarga);
     }//GEN-LAST:event_KeteranganFaskesRumahKeyPressed
 
-    private void PerawatanKeyPressed(java.awt.event.KeyEvent evt) {//GEN-FIRST:event_PerawatanKeyPressed
-        Valid.pindah(evt,Hambatan,Aktifitas);// TODO add your handling code here:
-    }//GEN-LAST:event_PerawatanKeyPressed
+    private void DiagnosaMedisKeyPressed(java.awt.event.KeyEvent evt) {//GEN-FIRST:event_DiagnosaMedisKeyPressed
+        // TODO add your handling code here:
+    }//GEN-LAST:event_DiagnosaMedisKeyPressed
 
-    private void UsiaLanjutKeyPressed(java.awt.event.KeyEvent evt) {//GEN-FIRST:event_UsiaLanjutKeyPressed
-        Valid.pindah(evt,KeteranganPengaruhRIKeuangan,Hambatan);// TODO add your handling code here:
-    }//GEN-LAST:event_UsiaLanjutKeyPressed
-
-    private void HambatanKeyPressed(java.awt.event.KeyEvent evt) {//GEN-FIRST:event_HambatanKeyPressed
-        Valid.pindah(evt,UsiaLanjut,Perawatan);// TODO add your handling code here:
-    }//GEN-LAST:event_HambatanKeyPressed
-
-    private void AktifitasKeyPressed(java.awt.event.KeyEvent evt) {//GEN-FIRST:event_AktifitasKeyPressed
-        Valid.pindah(evt,Perawatan,Kritis);// TODO add your handling code here:
-    }//GEN-LAST:event_AktifitasKeyPressed
-
-    private void KritisKeyPressed(java.awt.event.KeyEvent evt) {//GEN-FIRST:event_KritisKeyPressed
-        Valid.pindah(evt,Aktifitas,AntisipasiMasalah);// TODO add your handling code here:
-    }//GEN-LAST:event_KritisKeyPressed
-
-    private void BtnPrint1ActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_BtnPrint1ActionPerformed
-        if(tbObat.getSelectedRow()>-1){
-            //if(lokasifile.equals("")){
-            //    JOptionPane.showMessageDialog(null,"Maaf, Silahkan ambil photo bukti penolakan anjuran medis terlebih dahulu..!!!!");
-            //}else{
-                Map<String, Object> param = new HashMap<>();
-                param.put("namars",akses.getnamars());
-                param.put("alamatrs",akses.getalamatrs());
-                param.put("kotars",akses.getkabupatenrs());
-                param.put("propinsirs",akses.getpropinsirs());
-                param.put("kontakrs",akses.getkontakrs());
-                param.put("emailrs",akses.getemailrs());
-                param.put("logo",Sequel.cariGambar("select setting.logo from setting"));
-                //param.put("photo","http://"+koneksiDB.HOSTHYBRIDWEB()+":"+koneksiDB.PORTWEB()+"/"+koneksiDB.HYBRIDWEB()+"/perencanaanpemulangan/"+lokasifile);
-                finger=Sequel.cariIsi("select sha1(sidikjari.sidikjari) from sidikjari inner join pegawai on pegawai.id=sidikjari.id where pegawai.nik=?",tbObat.getValueAt(tbObat.getSelectedRow(),38).toString());
-                param.put("finger","Dikeluarkan di "+akses.getnamars()+", Kabupaten/Kota "+akses.getkabupatenrs()+"\nDitandatangani secara elektronik oleh "+tbObat.getValueAt(tbObat.getSelectedRow(),39).toString()+"\nID "+(finger.equals("")?tbObat.getValueAt(tbObat.getSelectedRow(),38).toString():finger)+"\n"+Valid.SetTgl3(tbObat.getValueAt(tbObat.getSelectedRow(),6).toString()));
-                Valid.MyReportqry("rptSuratPerencanaanPulang.jasper","report","::[ Surat Perencanaan Pulang ]::",
-                    "select reg_periksa.no_rawat,pasien.no_rkm_medis,pasien.nm_pasien,pasien.jk,pasien.tgl_lahir,pasien.pekerjaan,reg_periksa.umurdaftar,reg_periksa.tgl_registrasi,reg_periksa.jam_reg,reg_periksa.sttsumur,pasien.tmp_lahir,concat(pasien.alamat,', ',kelurahan.nm_kel,', ',kecamatan.nm_kec,', ',kabupaten.nm_kab,', ',propinsi.nm_prop) as alamat_pasien,"+
-                    "perencanaan_pemulangan.rencana_pulang,perencanaan_pemulangan.alasan_masuk,perencanaan_pemulangan.diagnosa_medis,perencanaan_pemulangan.pengaruh_ri_pasien_dan_keluarga,perencanaan_pemulangan.keterangan_pengaruh_ri_pasien_dan_keluarga,perencanaan_pemulangan.pengaruh_ri_pekerjaan_sekolah,perencanaan_pemulangan.keterangan_pengaruh_ri_pekerjaan_sekolah,"+
-                    "perencanaan_pemulangan.pengaruh_ri_keuangan,perencanaan_pemulangan.keterangan_pengaruh_ri_keuangan,perencanaan_pemulangan.usia_lanjut,perencanaan_pemulangan.hambatan,perencanaan_pemulangan.perawatan,perencanaan_pemulangan.aktifitas,perencanaan_pemulangan.kritis,"+
-                    "perencanaan_pemulangan.antisipasi_masalah_saat_pulang,perencanaan_pemulangan.keterangan_antisipasi_masalah_saat_pulang,perencanaan_pemulangan.bantuan_diperlukan_dalam,perencanaan_pemulangan.keterangan_bantuan_diperlukan_dalam,perencanaan_pemulangan.adakah_yang_membantu_keperluan,"+
-                    "perencanaan_pemulangan.keterangan_adakah_yang_membantu_keperluan,perencanaan_pemulangan.pasien_tinggal_sendiri,perencanaan_pemulangan.keterangan_pasien_tinggal_sendiri,perencanaan_pemulangan.pasien_menggunakan_peralatan_medis,perencanaan_pemulangan.keterangan_pasien_menggunakan_peralatan_medis,perencanaan_pemulangan.pasien_memerlukan_alat_bantu,"+
-                    "perencanaan_pemulangan.keterangan_pasien_memerlukan_alat_bantu,perencanaan_pemulangan.memerlukan_perawatan_khusus,perencanaan_pemulangan.keterangan_memerlukan_perawatan_khusus,perencanaan_pemulangan.bermasalah_memenuhi_kebutuhan,perencanaan_pemulangan.keterangan_bermasalah_memenuhi_kebutuhan,perencanaan_pemulangan.memiliki_nyeri_kronis,"+
-                    "perencanaan_pemulangan.keterangan_memiliki_nyeri_kronis,perencanaan_pemulangan.memerlukan_edukasi_kesehatan,perencanaan_pemulangan.keterangan_memerlukan_edukasi_kesehatan,perencanaan_pemulangan.memerlukan_keterampilkan_khusus,perencanaan_pemulangan.keterangan_memerlukan_keterampilkan_khusus,perencanaan_pemulangan.jadwal_kontrol,"+
-                    "perencanaan_pemulangan.keterangan_jadwal_kontrol,perencanaan_pemulangan.diberikan,perencanaan_pemulangan.keterangan_diberikan,perencanaan_pemulangan.obat_pulang,perencanaan_pemulangan.keterangan_obat_pulang,perencanaan_pemulangan.faskes_rumah,perencanaan_pemulangan.keterangan_faskes_rumah,"+        
-                    "perencanaan_pemulangan.nama_pasien_keluarga,perencanaan_pemulangan.nip,petugas.nama "+
-                    "from perencanaan_pemulangan inner join reg_periksa on perencanaan_pemulangan.no_rawat=reg_periksa.no_rawat inner join pasien on pasien.no_rkm_medis=reg_periksa.no_rkm_medis inner join petugas on petugas.nip=perencanaan_pemulangan.nip inner join kelurahan on pasien.kd_kel=kelurahan.kd_kel inner join kecamatan on pasien.kd_kec=kecamatan.kd_kec "+
-                    "inner join kabupaten on pasien.kd_kab=kabupaten.kd_kab inner join propinsi on pasien.kd_prop=propinsi.kd_prop where reg_periksa.no_rawat='"+tbObat.getValueAt(tbObat.getSelectedRow(),0).toString()+"'",param);
-            //}
-        }else{
-            JOptionPane.showMessageDialog(null,"Maaf, silahkan pilih data terlebih dahulu..!!!!");
-        }
-    }//GEN-LAST:event_BtnPrint1ActionPerformed
+    private void DiagnosaMedisKeluarKeyPressed(java.awt.event.KeyEvent evt) {//GEN-FIRST:event_DiagnosaMedisKeluarKeyPressed
+        // TODO add your handling code here:
+    }//GEN-LAST:event_DiagnosaMedisKeluarKeyPressed
 
     /**
     * @param args the command line arguments
@@ -2408,32 +2847,39 @@ public final class RMPerencanaanPemulangan extends javax.swing.JDialog {
     }
 
     // Variables declaration - do not modify//GEN-BEGIN:variables
+    private widget.ComboBox AIDS;
     private widget.ComboBox Aktifitas;
     private widget.TextBox AlasanMasuk;
     private widget.ComboBox AlatBantu;
+    private widget.ComboBox Alzheimer;
     private widget.ComboBox AntisipasiMasalah;
     private widget.ComboBox BantuanDiperlukan;
     private widget.Button BtnAll;
     private widget.Button BtnBatal;
     private widget.Button BtnCari;
-    private widget.Button BtnDokter;
     private widget.Button BtnEdit;
     private widget.Button BtnHapus;
     private widget.Button BtnKeluar;
+    private widget.Button BtnPetugas;
     private widget.Button BtnPrint;
     private widget.Button BtnPrint1;
     private widget.Button BtnRefreshPhoto1;
     private widget.Button BtnSimpan;
+    private widget.ComboBox BunuhDiri;
     private widget.CekBox ChkAccor;
     private widget.Tanggal DTPCari1;
     private widget.Tanggal DTPCari2;
+    private widget.ComboBox Demensia;
     private widget.TextBox DiagnosaMedis;
+    private widget.TextBox DiagnosaMedisKeluar;
     private widget.ComboBox Diberikan;
     private widget.ComboBox EdukasiPasien;
+    private widget.ComboBox Emfisema;
     private widget.ComboBox FaskesRumah;
     private widget.PanelBiasa FormInput;
     private widget.PanelBiasa FormPass3;
     private widget.PanelBiasa FormPhoto;
+    private widget.ComboBox GagalJantung;
     private widget.ComboBox Hambatan;
     private widget.ComboBox JadwalKontrol;
     private widget.TextBox Jk;
@@ -2457,15 +2903,20 @@ public final class RMPerencanaanPemulangan extends javax.swing.JDialog {
     private widget.TextBox KeteranganPerawatanKhusus;
     private widget.TextBox KeteranganTinggalSendiri;
     private widget.TextBox KeteranganYangMembantuKeperluan;
+    private widget.ComboBox Kriminal;
     private widget.ComboBox Kritis;
     private widget.Label LCount;
     private widget.editorpane LoadHTML2;
+    private widget.ComboBox LuarKota;
     private widget.TextBox MasukDirawat;
     private widget.ComboBox MemenuhiKebutuhan;
     private widget.TextBox NmPetugas;
     private widget.ComboBox NyeriKronis;
     private widget.ComboBox ObatPulang;
+    private widget.ComboBox PPOK;
     private widget.PanelBiasa PanelAccor;
+    private widget.ComboBox PantiJompo;
+    private widget.ComboBox PasienKembali;
     private widget.ComboBox PengaruhRIKeluarga;
     private widget.ComboBox PengaruhRIKeuangan;
     private widget.ComboBox PengaruhRIPekerjaanSekolah;
@@ -2476,13 +2927,19 @@ public final class RMPerencanaanPemulangan extends javax.swing.JDialog {
     private widget.TextBox SaksiKeluarga;
     private widget.ScrollPane Scroll;
     private widget.ScrollPane Scroll5;
+    private widget.ComboBox SeranganJantung;
+    private widget.ComboBox Stroke;
     private widget.TextBox TCari;
     private widget.TextBox TNoRM;
     private widget.TextBox TNoRw;
     private widget.TextBox TPasien;
-    private javax.swing.JTabbedPane TabRawat;
+    private widget.TabPane TabRawat;
+    private widget.ComboBox TanpaDukungan;
     private widget.TextBox TglLahir;
+    private widget.ComboBox TidakAdaAsuransi;
     private widget.ComboBox TinggalSendiri;
+    private widget.ComboBox Trauma;
+    private widget.ComboBox Tunawisma;
     private widget.ComboBox UsiaLanjut;
     private widget.ComboBox YangMembantuKeperluan;
     private widget.Button btnAmbil;
@@ -2499,8 +2956,10 @@ public final class RMPerencanaanPemulangan extends javax.swing.JDialog {
     private widget.Label jLabel42;
     private widget.Label jLabel43;
     private widget.Label jLabel44;
+    private widget.Label jLabel45;
     private widget.Label jLabel46;
     private widget.Label jLabel53;
+    private widget.Label jLabel54;
     private widget.Label jLabel55;
     private widget.Label jLabel56;
     private widget.Label jLabel57;
@@ -2511,21 +2970,37 @@ public final class RMPerencanaanPemulangan extends javax.swing.JDialog {
     private widget.Label jLabel61;
     private widget.Label jLabel62;
     private widget.Label jLabel63;
-    private widget.Label jLabel64;
     private widget.Label jLabel65;
     private widget.Label jLabel66;
     private widget.Label jLabel67;
     private widget.Label jLabel68;
+    private widget.Label jLabel69;
     private widget.Label jLabel7;
     private widget.Label jLabel70;
-    private widget.Label jLabel71;
     private widget.Label jLabel73;
     private widget.Label jLabel74;
     private widget.Label jLabel75;
     private widget.Label jLabel76;
     private widget.Label jLabel77;
     private widget.Label jLabel78;
+    private widget.Label jLabel79;
     private widget.Label jLabel8;
+    private widget.Label jLabel80;
+    private widget.Label jLabel81;
+    private widget.Label jLabel82;
+    private widget.Label jLabel83;
+    private widget.Label jLabel84;
+    private widget.Label jLabel85;
+    private widget.Label jLabel86;
+    private widget.Label jLabel87;
+    private widget.Label jLabel89;
+    private widget.Label jLabel90;
+    private widget.Label jLabel91;
+    private widget.Label jLabel92;
+    private widget.Label jLabel93;
+    private widget.Label jLabel94;
+    private widget.Label jLabel95;
+    private widget.Label jLabel96;
     private javax.swing.JSeparator jSeparator1;
     private javax.swing.JSeparator jSeparator14;
     private javax.swing.JSeparator jSeparator3;
@@ -2538,13 +3013,13 @@ public final class RMPerencanaanPemulangan extends javax.swing.JDialog {
     private widget.Table tbObat;
     // End of variables declaration//GEN-END:variables
 
-    public void tampil() {
+    private void tampil() {
         Valid.tabelKosong(tabMode);
         try{
             if(TCari.getText().trim().equals("")){
                 ps=koneksi.prepareStatement(
                         "select reg_periksa.no_rawat,pasien.no_rkm_medis,pasien.nm_pasien,pasien.jk,pasien.tgl_lahir,reg_periksa.tgl_registrasi,reg_periksa.jam_reg,"+
-                        "perencanaan_pemulangan.rencana_pulang,perencanaan_pemulangan.alasan_masuk,perencanaan_pemulangan.diagnosa_medis,perencanaan_pemulangan.pengaruh_ri_pasien_dan_keluarga,"+
+                        "perencanaan_pemulangan.rencana_pulang,perencanaan_pemulangan.alasan_masuk,perencanaan_pemulangan.diagnosa_medis,perencanaan_pemulangan.diagnosa_medis_keluar,perencanaan_pemulangan.pengaruh_ri_pasien_dan_keluarga,"+
                         "perencanaan_pemulangan.keterangan_pengaruh_ri_pasien_dan_keluarga,perencanaan_pemulangan.pengaruh_ri_pekerjaan_sekolah,perencanaan_pemulangan.keterangan_pengaruh_ri_pekerjaan_sekolah,"+
                         "perencanaan_pemulangan.pengaruh_ri_keuangan,perencanaan_pemulangan.keterangan_pengaruh_ri_keuangan,perencanaan_pemulangan.usia_lanjut,perencanaan_pemulangan.hambatan,perencanaan_pemulangan.perawatan,perencanaan_pemulangan.aktifitas,perencanaan_pemulangan.kritis,"+
                         "perencanaan_pemulangan.antisipasi_masalah_saat_pulang,perencanaan_pemulangan.keterangan_antisipasi_masalah_saat_pulang,perencanaan_pemulangan.bantuan_diperlukan_dalam,perencanaan_pemulangan.keterangan_bantuan_diperlukan_dalam,"+
@@ -2555,7 +3030,9 @@ public final class RMPerencanaanPemulangan extends javax.swing.JDialog {
                         "perencanaan_pemulangan.memiliki_nyeri_kronis,perencanaan_pemulangan.keterangan_memiliki_nyeri_kronis,perencanaan_pemulangan.memerlukan_edukasi_kesehatan,"+
                         "perencanaan_pemulangan.keterangan_memerlukan_edukasi_kesehatan,perencanaan_pemulangan.memerlukan_keterampilkan_khusus,perencanaan_pemulangan.keterangan_memerlukan_keterampilkan_khusus,"+
                         "perencanaan_pemulangan.jadwal_kontrol,perencanaan_pemulangan.keterangan_jadwal_kontrol,perencanaan_pemulangan.diberikan,perencanaan_pemulangan.keterangan_diberikan,perencanaan_pemulangan.obat_pulang,perencanaan_pemulangan.keterangan_obat_pulang,"+        
-                        "perencanaan_pemulangan.faskes_rumah,perencanaan_pemulangan.keterangan_faskes_rumah,perencanaan_pemulangan.nama_pasien_keluarga,perencanaan_pemulangan.nip,petugas.nama "+
+                        "perencanaan_pemulangan.faskes_rumah,perencanaan_pemulangan.keterangan_faskes_rumah,perencanaan_pemulangan.stroke,perencanaan_pemulangan.serangan_jantung,perencanaan_pemulangan.ppok,perencanaan_pemulangan.gagal_jantung,perencanaan_pemulangan.emfisema,"+
+                        "perencanaan_pemulangan.demensia,perencanaan_pemulangan.alzheimer,perencanaan_pemulangan.aids,perencanaan_pemulangan.trauma,perencanaan_pemulangan.kriminal,perencanaan_pemulangan.bunuh_diri,perencanaan_pemulangan.pasien_kembali,"+
+                        "perencanaan_pemulangan.panti_jompo,perencanaan_pemulangan.tanpa_dukungan,perencanaan_pemulangan.luar_kota,perencanaan_pemulangan.tunawisma,perencanaan_pemulangan.tidak_ada_asuransi,perencanaan_pemulangan.nama_pasien_keluarga,perencanaan_pemulangan.nip,petugas.nama "+
                         "from perencanaan_pemulangan inner join reg_periksa on perencanaan_pemulangan.no_rawat=reg_periksa.no_rawat "+
                         "inner join pasien on pasien.no_rkm_medis=reg_periksa.no_rkm_medis "+
                         "inner join petugas on petugas.nip=perencanaan_pemulangan.nip where "+
@@ -2563,7 +3040,7 @@ public final class RMPerencanaanPemulangan extends javax.swing.JDialog {
             }else{
                 ps=koneksi.prepareStatement(
                         "select reg_periksa.no_rawat,pasien.no_rkm_medis,pasien.nm_pasien,pasien.jk,pasien.tgl_lahir,reg_periksa.tgl_registrasi,reg_periksa.jam_reg,"+
-                        "perencanaan_pemulangan.rencana_pulang,perencanaan_pemulangan.alasan_masuk,perencanaan_pemulangan.diagnosa_medis,perencanaan_pemulangan.pengaruh_ri_pasien_dan_keluarga,"+
+                        "perencanaan_pemulangan.rencana_pulang,perencanaan_pemulangan.alasan_masuk,perencanaan_pemulangan.diagnosa_medis,perencanaan_pemulangan.diagnosa_medis_keluar,perencanaan_pemulangan.pengaruh_ri_pasien_dan_keluarga,"+
                         "perencanaan_pemulangan.keterangan_pengaruh_ri_pasien_dan_keluarga,perencanaan_pemulangan.pengaruh_ri_pekerjaan_sekolah,perencanaan_pemulangan.keterangan_pengaruh_ri_pekerjaan_sekolah,"+
                         "perencanaan_pemulangan.pengaruh_ri_keuangan,perencanaan_pemulangan.keterangan_pengaruh_ri_keuangan,perencanaan_pemulangan.usia_lanjut,perencanaan_pemulangan.hambatan,perencanaan_pemulangan.perawatan,perencanaan_pemulangan.aktifitas,perencanaan_pemulangan.kritis,"+
                         "perencanaan_pemulangan.antisipasi_masalah_saat_pulang,perencanaan_pemulangan.keterangan_antisipasi_masalah_saat_pulang,perencanaan_pemulangan.bantuan_diperlukan_dalam,perencanaan_pemulangan.keterangan_bantuan_diperlukan_dalam,"+
@@ -2574,7 +3051,9 @@ public final class RMPerencanaanPemulangan extends javax.swing.JDialog {
                         "perencanaan_pemulangan.memiliki_nyeri_kronis,perencanaan_pemulangan.keterangan_memiliki_nyeri_kronis,perencanaan_pemulangan.memerlukan_edukasi_kesehatan,"+
                         "perencanaan_pemulangan.keterangan_memerlukan_edukasi_kesehatan,perencanaan_pemulangan.memerlukan_keterampilkan_khusus,perencanaan_pemulangan.keterangan_memerlukan_keterampilkan_khusus,"+
                         "perencanaan_pemulangan.jadwal_kontrol,perencanaan_pemulangan.keterangan_jadwal_kontrol,perencanaan_pemulangan.diberikan,perencanaan_pemulangan.keterangan_diberikan,perencanaan_pemulangan.obat_pulang,perencanaan_pemulangan.keterangan_obat_pulang,"+        
-                        "perencanaan_pemulangan.faskes_rumah,perencanaan_pemulangan.keterangan_faskes_rumah,perencanaan_pemulangan.nama_pasien_keluarga,perencanaan_pemulangan.nip,petugas.nama "+
+                        "perencanaan_pemulangan.faskes_rumah,perencanaan_pemulangan.keterangan_faskes_rumah,perencanaan_pemulangan.stroke,perencanaan_pemulangan.serangan_jantung,perencanaan_pemulangan.ppok,perencanaan_pemulangan.gagal_jantung,perencanaan_pemulangan.emfisema,"+
+                        "perencanaan_pemulangan.demensia,perencanaan_pemulangan.alzheimer,perencanaan_pemulangan.aids,perencanaan_pemulangan.trauma,perencanaan_pemulangan.kriminal,perencanaan_pemulangan.bunuh_diri,perencanaan_pemulangan.pasien_kembali,"+
+                        "perencanaan_pemulangan.panti_jompo,perencanaan_pemulangan.tanpa_dukungan,perencanaan_pemulangan.luar_kota,perencanaan_pemulangan.tunawisma,perencanaan_pemulangan.tidak_ada_asuransi,perencanaan_pemulangan.nama_pasien_keluarga,perencanaan_pemulangan.nip,petugas.nama "+
                         "from perencanaan_pemulangan inner join reg_periksa on perencanaan_pemulangan.no_rawat=reg_periksa.no_rawat "+
                         "inner join pasien on pasien.no_rkm_medis=reg_periksa.no_rkm_medis "+
                         "inner join petugas on petugas.nip=perencanaan_pemulangan.nip where "+
@@ -2599,7 +3078,7 @@ public final class RMPerencanaanPemulangan extends javax.swing.JDialog {
                 while(rs.next()){
                     tabMode.addRow(new Object[]{
                         rs.getString("no_rawat"),rs.getString("no_rkm_medis"),rs.getString("nm_pasien"),rs.getString("tgl_lahir"),rs.getString("jk"),rs.getString("tgl_registrasi")+" "+rs.getString("jam_reg"),
-                        rs.getString("rencana_pulang"),rs.getString("diagnosa_medis"),rs.getString("alasan_masuk"),rs.getString("pengaruh_ri_pasien_dan_keluarga"),rs.getString("keterangan_pengaruh_ri_pasien_dan_keluarga"),
+                        rs.getString("rencana_pulang"),rs.getString("diagnosa_medis"),rs.getString("diagnosa_medis_keluar"),rs.getString("alasan_masuk"),rs.getString("pengaruh_ri_pasien_dan_keluarga"),rs.getString("keterangan_pengaruh_ri_pasien_dan_keluarga"),
                         rs.getString("pengaruh_ri_pekerjaan_sekolah"),rs.getString("keterangan_pengaruh_ri_pekerjaan_sekolah"),rs.getString("pengaruh_ri_keuangan"),rs.getString("keterangan_pengaruh_ri_keuangan"),
                         rs.getString("usia_lanjut"),rs.getString("hambatan"),rs.getString("perawatan"),rs.getString("aktifitas"),rs.getString("kritis"),
                         rs.getString("antisipasi_masalah_saat_pulang"),rs.getString("keterangan_antisipasi_masalah_saat_pulang"),rs.getString("bantuan_diperlukan_dalam"),rs.getString("keterangan_bantuan_diperlukan_dalam"),
@@ -2609,8 +3088,10 @@ public final class RMPerencanaanPemulangan extends javax.swing.JDialog {
                         rs.getString("keterangan_bermasalah_memenuhi_kebutuhan"),rs.getString("memiliki_nyeri_kronis"),rs.getString("keterangan_memiliki_nyeri_kronis"),rs.getString("memerlukan_edukasi_kesehatan"),
                         rs.getString("keterangan_memerlukan_edukasi_kesehatan"),rs.getString("memerlukan_keterampilkan_khusus"),rs.getString("keterangan_memerlukan_keterampilkan_khusus"),rs.getString("jadwal_kontrol"),
                         rs.getString("keterangan_jadwal_kontrol"),rs.getString("diberikan"),rs.getString("keterangan_diberikan"),rs.getString("obat_pulang"),rs.getString("keterangan_obat_pulang"),
-                        rs.getString("faskes_rumah"),rs.getString("keterangan_faskes_rumah"),rs.getString("nama_pasien_keluarga"),
-                        rs.getString("nip"),rs.getString("nama")             
+                        rs.getString("faskes_rumah"),rs.getString("keterangan_faskes_rumah"),rs.getString("stroke"),rs.getString("serangan_jantung"),rs.getString("ppok"),rs.getString("gagal_jantung"),rs.getString("emfisema"),
+                        rs.getString("demensia"),rs.getString("alzheimer"),rs.getString("aids"),rs.getString("trauma"),rs.getString("kriminal"),rs.getString("bunuh_diri"),rs.getString("pasien_kembali"),
+                        rs.getString("panti_jompo"),rs.getString("tanpa_dukungan"),rs.getString("luar_kota"),rs.getString("tunawisma"),rs.getString("tidak_ada_asuransi"),
+                        rs.getString("nama_pasien_keluarga"),rs.getString("nip"),rs.getString("nama")             
                     });
                 }
             } catch (Exception e) {
@@ -2634,6 +3115,7 @@ public final class RMPerencanaanPemulangan extends javax.swing.JDialog {
         TinggalSendiri.setSelectedIndex(0);
         RencanaPemulangan.setDate(new Date());
         DiagnosaMedis.setText("");
+        DiagnosaMedisKeluar.setText("");
         AlasanMasuk.setText("");
         PengaruhRIKeluarga.setSelectedIndex(0);
         KeteranganPengaruhRIKeluarga.setText("");
@@ -2678,6 +3160,23 @@ public final class RMPerencanaanPemulangan extends javax.swing.JDialog {
         FaskesRumah.setSelectedIndex(0);
         KeteranganFaskesRumah.setText("");
         SaksiKeluarga.setText("");
+        Stroke.setSelectedIndex(0);
+        SeranganJantung.setSelectedIndex(0);
+        PPOK.setSelectedIndex(0);
+        GagalJantung.setSelectedIndex(0);
+        Emfisema.setSelectedIndex(0);
+        Demensia.setSelectedIndex(0);
+        Alzheimer.setSelectedIndex(0);
+        AIDS.setSelectedIndex(0);
+        Trauma.setSelectedIndex(0);
+        Kriminal.setSelectedIndex(0);
+        BunuhDiri.setSelectedIndex(0);
+        PasienKembali.setSelectedIndex(0);
+        PantiJompo.setSelectedIndex(0);
+        TanpaDukungan.setSelectedIndex(0);
+        LuarKota.setSelectedIndex(0);
+        Tunawisma.setSelectedIndex(0);
+        TidakAdaAsuransi.setSelectedIndex(0);
         TabRawat.setSelectedIndex(0);
         DiagnosaMedis.requestFocus();
     } 
@@ -2691,49 +3190,71 @@ public final class RMPerencanaanPemulangan extends javax.swing.JDialog {
             Jk.setText(tbObat.getValueAt(tbObat.getSelectedRow(),4).toString().replaceAll("L","Laki-laki").replaceAll("P","Perempuan")); 
             MasukDirawat.setText(tbObat.getValueAt(tbObat.getSelectedRow(),5).toString());
             DiagnosaMedis.setText(tbObat.getValueAt(tbObat.getSelectedRow(),7).toString());
-            AlasanMasuk.setText(tbObat.getValueAt(tbObat.getSelectedRow(),8).toString());
-            PengaruhRIKeluarga.setSelectedItem(tbObat.getValueAt(tbObat.getSelectedRow(),9).toString());
-            KeteranganPengaruhRIKeluarga.setText(tbObat.getValueAt(tbObat.getSelectedRow(),10).toString());
-            PengaruhRIPekerjaanSekolah.setSelectedItem(tbObat.getValueAt(tbObat.getSelectedRow(),11).toString());
-            KeteranganPengaruhRIPekerjaanSekolah.setText(tbObat.getValueAt(tbObat.getSelectedRow(),12).toString());
-            PengaruhRIKeuangan.setSelectedItem(tbObat.getValueAt(tbObat.getSelectedRow(),13).toString());
-            KeteranganPengaruhRIKeuangan.setText(tbObat.getValueAt(tbObat.getSelectedRow(),14).toString());
-            UsiaLanjut.setSelectedItem(tbObat.getValueAt(tbObat.getSelectedRow(),15).toString());
-            Hambatan.setSelectedItem(tbObat.getValueAt(tbObat.getSelectedRow(),16).toString());
-            Perawatan.setSelectedItem(tbObat.getValueAt(tbObat.getSelectedRow(),17).toString());
-            Aktifitas.setSelectedItem(tbObat.getValueAt(tbObat.getSelectedRow(),18).toString());
-            Kritis.setSelectedItem(tbObat.getValueAt(tbObat.getSelectedRow(),19).toString());
-            AntisipasiMasalah.setSelectedItem(tbObat.getValueAt(tbObat.getSelectedRow(),20).toString());
-            KeteranganAntisipasiMasalah.setText(tbObat.getValueAt(tbObat.getSelectedRow(),21).toString());
-            BantuanDiperlukan.setSelectedItem(tbObat.getValueAt(tbObat.getSelectedRow(),22).toString());
-            KeteranganBantuanDiperlukan.setText(tbObat.getValueAt(tbObat.getSelectedRow(),23).toString());
-            YangMembantuKeperluan.setSelectedItem(tbObat.getValueAt(tbObat.getSelectedRow(),24).toString());
-            KeteranganYangMembantuKeperluan.setText(tbObat.getValueAt(tbObat.getSelectedRow(),25).toString());
-            TinggalSendiri.setSelectedItem(tbObat.getValueAt(tbObat.getSelectedRow(),26).toString());
-            KeteranganTinggalSendiri.setText(tbObat.getValueAt(tbObat.getSelectedRow(),27).toString());
-            PeralatanMedis.setSelectedItem(tbObat.getValueAt(tbObat.getSelectedRow(),28).toString());
-            KeteranganPeralatanMedis.setText(tbObat.getValueAt(tbObat.getSelectedRow(),29).toString());
-            AlatBantu.setSelectedItem(tbObat.getValueAt(tbObat.getSelectedRow(),30).toString());
-            KeteranganAlatBantu.setText(tbObat.getValueAt(tbObat.getSelectedRow(),31).toString());
-            PerawatanKhusus.setSelectedItem(tbObat.getValueAt(tbObat.getSelectedRow(),32).toString());
-            KeteranganPerawatanKhusus.setText(tbObat.getValueAt(tbObat.getSelectedRow(),33).toString());
-            MemenuhiKebutuhan.setSelectedItem(tbObat.getValueAt(tbObat.getSelectedRow(),34).toString());
-            KeteranganMemenuhiKebutuhan.setText(tbObat.getValueAt(tbObat.getSelectedRow(),35).toString());
-            NyeriKronis.setSelectedItem(tbObat.getValueAt(tbObat.getSelectedRow(),36).toString());
-            KeteranganNyeriKronis.setText(tbObat.getValueAt(tbObat.getSelectedRow(),37).toString());
-            EdukasiPasien.setSelectedItem(tbObat.getValueAt(tbObat.getSelectedRow(),38).toString());
-            KeteranganEdukasiPasien.setText(tbObat.getValueAt(tbObat.getSelectedRow(),39).toString());
-            KeterampilanKhusus.setSelectedItem(tbObat.getValueAt(tbObat.getSelectedRow(),40).toString());
-            KeteranganKeterampilanKhusus.setText(tbObat.getValueAt(tbObat.getSelectedRow(),41).toString());
-            JadwalKontrol.setSelectedItem(tbObat.getValueAt(tbObat.getSelectedRow(),42).toString());
-            KeteranganJadwalKontrol.setText(tbObat.getValueAt(tbObat.getSelectedRow(),43).toString());
-            Diberikan.setSelectedItem(tbObat.getValueAt(tbObat.getSelectedRow(),44).toString());
-            KeteranganDiberikan.setText(tbObat.getValueAt(tbObat.getSelectedRow(),45).toString());
-            ObatPulang.setSelectedItem(tbObat.getValueAt(tbObat.getSelectedRow(),46).toString());
-            KeteranganObatPulang.setText(tbObat.getValueAt(tbObat.getSelectedRow(),47).toString());
-            FaskesRumah.setSelectedItem(tbObat.getValueAt(tbObat.getSelectedRow(),48).toString());
-            KeteranganFaskesRumah.setText(tbObat.getValueAt(tbObat.getSelectedRow(),49).toString());
-            SaksiKeluarga.setText(tbObat.getValueAt(tbObat.getSelectedRow(),50).toString());
+            DiagnosaMedisKeluar.setText(tbObat.getValueAt(tbObat.getSelectedRow(),8).toString());
+            AlasanMasuk.setText(tbObat.getValueAt(tbObat.getSelectedRow(),9).toString());
+            PengaruhRIKeluarga.setSelectedItem(tbObat.getValueAt(tbObat.getSelectedRow(),10).toString());
+            KeteranganPengaruhRIKeluarga.setText(tbObat.getValueAt(tbObat.getSelectedRow(),11).toString());
+            PengaruhRIPekerjaanSekolah.setSelectedItem(tbObat.getValueAt(tbObat.getSelectedRow(),12).toString());
+            KeteranganPengaruhRIPekerjaanSekolah.setText(tbObat.getValueAt(tbObat.getSelectedRow(),13).toString());
+            PengaruhRIKeuangan.setSelectedItem(tbObat.getValueAt(tbObat.getSelectedRow(),14).toString());
+            KeteranganPengaruhRIKeuangan.setText(tbObat.getValueAt(tbObat.getSelectedRow(),15).toString());
+            UsiaLanjut.setSelectedItem(tbObat.getValueAt(tbObat.getSelectedRow(),16).toString());
+            Hambatan.setSelectedItem(tbObat.getValueAt(tbObat.getSelectedRow(),17).toString());
+            Perawatan.setSelectedItem(tbObat.getValueAt(tbObat.getSelectedRow(),18).toString());
+            Aktifitas.setSelectedItem(tbObat.getValueAt(tbObat.getSelectedRow(),19).toString());
+            Kritis.setSelectedItem(tbObat.getValueAt(tbObat.getSelectedRow(),20).toString());
+            AntisipasiMasalah.setSelectedItem(tbObat.getValueAt(tbObat.getSelectedRow(),21).toString());
+            KeteranganAntisipasiMasalah.setText(tbObat.getValueAt(tbObat.getSelectedRow(),22).toString());
+            BantuanDiperlukan.setSelectedItem(tbObat.getValueAt(tbObat.getSelectedRow(),23).toString());
+            KeteranganBantuanDiperlukan.setText(tbObat.getValueAt(tbObat.getSelectedRow(),24).toString());
+            YangMembantuKeperluan.setSelectedItem(tbObat.getValueAt(tbObat.getSelectedRow(),25).toString());
+            KeteranganYangMembantuKeperluan.setText(tbObat.getValueAt(tbObat.getSelectedRow(),26).toString());
+            TinggalSendiri.setSelectedItem(tbObat.getValueAt(tbObat.getSelectedRow(),27).toString());
+            KeteranganTinggalSendiri.setText(tbObat.getValueAt(tbObat.getSelectedRow(),28).toString());
+            PeralatanMedis.setSelectedItem(tbObat.getValueAt(tbObat.getSelectedRow(),29).toString());
+            KeteranganPeralatanMedis.setText(tbObat.getValueAt(tbObat.getSelectedRow(),30).toString());
+            AlatBantu.setSelectedItem(tbObat.getValueAt(tbObat.getSelectedRow(),31).toString());
+            KeteranganAlatBantu.setText(tbObat.getValueAt(tbObat.getSelectedRow(),32).toString());
+            PerawatanKhusus.setSelectedItem(tbObat.getValueAt(tbObat.getSelectedRow(),33).toString());
+            KeteranganPerawatanKhusus.setText(tbObat.getValueAt(tbObat.getSelectedRow(),34).toString());
+            MemenuhiKebutuhan.setSelectedItem(tbObat.getValueAt(tbObat.getSelectedRow(),35).toString());
+            KeteranganMemenuhiKebutuhan.setText(tbObat.getValueAt(tbObat.getSelectedRow(),36).toString());
+            NyeriKronis.setSelectedItem(tbObat.getValueAt(tbObat.getSelectedRow(),37).toString());
+            KeteranganNyeriKronis.setText(tbObat.getValueAt(tbObat.getSelectedRow(),38).toString());
+            EdukasiPasien.setSelectedItem(tbObat.getValueAt(tbObat.getSelectedRow(),39).toString());
+            KeteranganEdukasiPasien.setText(tbObat.getValueAt(tbObat.getSelectedRow(),40).toString());
+            KeterampilanKhusus.setSelectedItem(tbObat.getValueAt(tbObat.getSelectedRow(),41).toString());
+            KeteranganKeterampilanKhusus.setText(tbObat.getValueAt(tbObat.getSelectedRow(),42).toString());
+            JadwalKontrol.setSelectedItem(tbObat.getValueAt(tbObat.getSelectedRow(),43).toString());
+            KeteranganJadwalKontrol.setText(tbObat.getValueAt(tbObat.getSelectedRow(),44).toString());
+            Diberikan.setSelectedItem(tbObat.getValueAt(tbObat.getSelectedRow(),45).toString());
+            KeteranganDiberikan.setText(tbObat.getValueAt(tbObat.getSelectedRow(),46).toString());
+            ObatPulang.setSelectedItem(tbObat.getValueAt(tbObat.getSelectedRow(),47).toString());
+            KeteranganObatPulang.setText(tbObat.getValueAt(tbObat.getSelectedRow(),48).toString());
+            FaskesRumah.setSelectedItem(tbObat.getValueAt(tbObat.getSelectedRow(),49).toString());
+            KeteranganFaskesRumah.setText(tbObat.getValueAt(tbObat.getSelectedRow(),50).toString());
+            
+            // Mengambil field-field baru (Index 51 hingga 67)
+            Stroke.setSelectedItem(tbObat.getValueAt(tbObat.getSelectedRow(),51).toString());
+            SeranganJantung.setSelectedItem(tbObat.getValueAt(tbObat.getSelectedRow(),52).toString());
+            PPOK.setSelectedItem(tbObat.getValueAt(tbObat.getSelectedRow(),53).toString());
+            GagalJantung.setSelectedItem(tbObat.getValueAt(tbObat.getSelectedRow(),54).toString());
+            Emfisema.setSelectedItem(tbObat.getValueAt(tbObat.getSelectedRow(),55).toString());
+            Demensia.setSelectedItem(tbObat.getValueAt(tbObat.getSelectedRow(),56).toString());
+            Alzheimer.setSelectedItem(tbObat.getValueAt(tbObat.getSelectedRow(),57).toString());
+            AIDS.setSelectedItem(tbObat.getValueAt(tbObat.getSelectedRow(),58).toString());
+            Trauma.setSelectedItem(tbObat.getValueAt(tbObat.getSelectedRow(),59).toString());
+            Kriminal.setSelectedItem(tbObat.getValueAt(tbObat.getSelectedRow(),60).toString());
+            BunuhDiri.setSelectedItem(tbObat.getValueAt(tbObat.getSelectedRow(),61).toString());
+            PasienKembali.setSelectedItem(tbObat.getValueAt(tbObat.getSelectedRow(),62).toString());
+            PantiJompo.setSelectedItem(tbObat.getValueAt(tbObat.getSelectedRow(),63).toString());
+            TanpaDukungan.setSelectedItem(tbObat.getValueAt(tbObat.getSelectedRow(),64).toString());
+            LuarKota.setSelectedItem(tbObat.getValueAt(tbObat.getSelectedRow(),65).toString());
+            Tunawisma.setSelectedItem(tbObat.getValueAt(tbObat.getSelectedRow(),66).toString());
+            TidakAdaAsuransi.setSelectedItem(tbObat.getValueAt(tbObat.getSelectedRow(),67).toString());
+
+            // Field yang bergeser ke bawah (Index 68)
+            SaksiKeluarga.setText(tbObat.getValueAt(tbObat.getSelectedRow(),68).toString());
             Valid.SetTgl(RencanaPemulangan,tbObat.getValueAt(tbObat.getSelectedRow(),6).toString());
         }
     }
@@ -2782,14 +3303,6 @@ public final class RMPerencanaanPemulangan extends javax.swing.JDialog {
         isRawat(); 
     }
     
-    void setNoRm2(String norwt) {
-        TNoRw.setText(norwt);
-        TCari.setText(norwt);
-        isRawat();
-        //isPsien();
-        tampil();
-    }
-    
     public void isCek(){
         BtnSimpan.setEnabled(akses.getperencanaan_pemulangan());
         BtnHapus.setEnabled(akses.getperencanaan_pemulangan());
@@ -2797,9 +3310,9 @@ public final class RMPerencanaanPemulangan extends javax.swing.JDialog {
         BtnEdit.setEnabled(akses.getperencanaan_pemulangan());
         if(akses.getjml2()>=1){
             KdPetugas.setEditable(false);
-            BtnDokter.setEnabled(false);
+            BtnPetugas.setEnabled(false);
             KdPetugas.setText(akses.getkode());
-            NmPetugas.setText(petugas.tampil3(KdPetugas.getText()));
+            NmPetugas.setText(Sequel.CariPetugas(KdPetugas.getText()));
             if(NmPetugas.getText().equals("")){
                 KdPetugas.setText("");
                 JOptionPane.showMessageDialog(null,"User login bukan petugas...!!");
@@ -2824,15 +3337,15 @@ public final class RMPerencanaanPemulangan extends javax.swing.JDialog {
     }
 
     private void ganti() {
-        if(Sequel.mengedittf("perencanaan_pemulangan","no_rawat=?","no_rawat=?,rencana_pulang=?,alasan_masuk=?,diagnosa_medis=?,pengaruh_ri_pasien_dan_keluarga=?,keterangan_pengaruh_ri_pasien_dan_keluarga=?,"+
+        if(Sequel.mengedittf("perencanaan_pemulangan","no_rawat=?","no_rawat=?,rencana_pulang=?,alasan_masuk=?,diagnosa_medis=?,diagnosa_medis_keluar=?,pengaruh_ri_pasien_dan_keluarga=?,keterangan_pengaruh_ri_pasien_dan_keluarga=?,"+
                 "pengaruh_ri_pekerjaan_sekolah=?,keterangan_pengaruh_ri_pekerjaan_sekolah=?,pengaruh_ri_keuangan=?,keterangan_pengaruh_ri_keuangan=?,usia_lanjut=?,hambatan=?,perawatan=?,aktifitas=?,kritis=?,"+
                 "antisipasi_masalah_saat_pulang=?,keterangan_antisipasi_masalah_saat_pulang=?,bantuan_diperlukan_dalam=?,keterangan_bantuan_diperlukan_dalam=?,adakah_yang_membantu_keperluan=?,keterangan_adakah_yang_membantu_keperluan=?,"+
                 "pasien_tinggal_sendiri=?,keterangan_pasien_tinggal_sendiri=?,pasien_menggunakan_peralatan_medis=?,keterangan_pasien_menggunakan_peralatan_medis=?,pasien_memerlukan_alat_bantu=?,"+
                 "keterangan_pasien_memerlukan_alat_bantu=?,memerlukan_perawatan_khusus=?,keterangan_memerlukan_perawatan_khusus=?,bermasalah_memenuhi_kebutuhan=?,keterangan_bermasalah_memenuhi_kebutuhan=?,"+
                 "memiliki_nyeri_kronis=?,keterangan_memiliki_nyeri_kronis=?,memerlukan_edukasi_kesehatan=?,keterangan_memerlukan_edukasi_kesehatan=?,memerlukan_keterampilkan_khusus=?,"+
                 "keterangan_memerlukan_keterampilkan_khusus=?,jadwal_kontrol=?,keterangan_jadwal_kontrol=?,diberikan=?,keterangan_diberikan=?,obat_pulang=?,keterangan_obat_pulang=?,"+
-                "faskes_rumah=?,keterangan_faskes_rumah=?,nama_pasien_keluarga=?,nip=?",48,new String[]{
-                TNoRw.getText(),Valid.SetTgl(RencanaPemulangan.getSelectedItem()+""),AlasanMasuk.getText(),DiagnosaMedis.getText(),PengaruhRIKeluarga.getSelectedItem().toString(),
+                "faskes_rumah=?,keterangan_faskes_rumah=?,nama_pasien_keluarga=?,nip=?,stroke=?,serangan_jantung=?,ppok=?,gagal_jantung=?,emfisema=?,demensia=?,alzheimer=?,aids=?,trauma=?,kriminal=?,bunuh_diri=?,pasien_kembali=?,panti_jompo=?,tanpa_dukungan=?,luar_kota=?,tunawisma=?,tidak_ada_asuransi=?",66,new String[]{
+                TNoRw.getText(),Valid.SetTgl(RencanaPemulangan.getSelectedItem()+""),AlasanMasuk.getText(),DiagnosaMedis.getText(),DiagnosaMedisKeluar.getText(),PengaruhRIKeluarga.getSelectedItem().toString(),
                 KeteranganPengaruhRIKeluarga.getText(),PengaruhRIPekerjaanSekolah.getSelectedItem().toString(),KeteranganPengaruhRIPekerjaanSekolah.getText(),
                 PengaruhRIKeuangan.getSelectedItem().toString(),KeteranganPengaruhRIKeuangan.getText(),UsiaLanjut.getSelectedItem().toString(),Hambatan.getSelectedItem().toString(),
                 Perawatan.getSelectedItem().toString(),Aktifitas.getSelectedItem().toString(),Kritis.getSelectedItem().toString(),AntisipasiMasalah.getSelectedItem().toString(),KeteranganAntisipasiMasalah.getText(),
@@ -2842,9 +3355,14 @@ public final class RMPerencanaanPemulangan extends javax.swing.JDialog {
                 MemenuhiKebutuhan.getSelectedItem().toString(),KeteranganMemenuhiKebutuhan.getText(),NyeriKronis.getSelectedItem().toString(),KeteranganNyeriKronis.getText(),
                 EdukasiPasien.getSelectedItem().toString(),KeteranganEdukasiPasien.getText(),KeterampilanKhusus.getSelectedItem().toString(),KeteranganKeterampilanKhusus.getText(),
                 JadwalKontrol.getSelectedItem().toString(),KeteranganJadwalKontrol.getText(),Diberikan.getSelectedItem().toString(),KeteranganDiberikan.getText(),ObatPulang.getSelectedItem().toString(),
-                KeteranganObatPulang.getText(),FaskesRumah.getSelectedItem().toString(),KeteranganFaskesRumah.getText(),SaksiKeluarga.getText(),KdPetugas.getText(),tbObat.getValueAt(tbObat.getSelectedRow(),0).toString()
+                KeteranganObatPulang.getText(),FaskesRumah.getSelectedItem().toString(),KeteranganFaskesRumah.getText(),SaksiKeluarga.getText(),KdPetugas.getText(),
+                Stroke.getSelectedItem().toString(),SeranganJantung.getSelectedItem().toString(),PPOK.getSelectedItem().toString(),
+                GagalJantung.getSelectedItem().toString(),Emfisema.getSelectedItem().toString(),Demensia.getSelectedItem().toString(),Alzheimer.getSelectedItem().toString(),
+                AIDS.getSelectedItem().toString(),Trauma.getSelectedItem().toString(),Kriminal.getSelectedItem().toString(),BunuhDiri.getSelectedItem().toString(),PasienKembali.getSelectedItem().toString(),
+                PantiJompo.getSelectedItem().toString(),TanpaDukungan.getSelectedItem().toString(),LuarKota.getSelectedItem().toString(),Tunawisma.getSelectedItem().toString(),
+                TidakAdaAsuransi.getSelectedItem().toString(),tbObat.getValueAt(tbObat.getSelectedRow(),0).toString()
             })==true){
-               tampil();
+               runBackground(() ->tampil());
                emptTeks();
                TabRawat.setSelectedIndex(1);
         }
@@ -2866,6 +3384,7 @@ public final class RMPerencanaanPemulangan extends javax.swing.JDialog {
 
     private void panggilPhoto() {
         if(FormPhoto.isVisible()==true){
+            lokasifile="";
             try {
                 ps=koneksi.prepareStatement("select bukti_perencanaan_pemulangan_saksikeluarga.photo from bukti_perencanaan_pemulangan_saksikeluarga where bukti_perencanaan_pemulangan_saksikeluarga.no_rawat=?");
                 try {
@@ -2873,14 +3392,18 @@ public final class RMPerencanaanPemulangan extends javax.swing.JDialog {
                     rs=ps.executeQuery();
                     if(rs.next()){
                         if(rs.getString("photo").equals("")||rs.getString("photo").equals("-")){
+                            lokasifile="";
                             LoadHTML2.setText("<html><body><center><br><br><font face='tahoma' size='2' color='#434343'>Kosong</font></center></body></html>");
                         }else{
+                            lokasifile=rs.getString("photo");
                             LoadHTML2.setText("<html><body><center><img src='http://"+koneksiDB.HOSTHYBRIDWEB()+":"+koneksiDB.PORTWEB()+"/"+koneksiDB.HYBRIDWEB()+"/perencanaanpemulangan/"+rs.getString("photo")+"' alt='photo' width='450' height='500'/></center></body></html>");
                         }  
                     }else{
+                        lokasifile="";
                         LoadHTML2.setText("<html><body><center><br><br><font face='tahoma' size='2' color='#434343'>Kosong</font></center></body></html>");
                     }
                 } catch (Exception e) {
+                    lokasifile="";
                     System.out.println("Notif : "+e);
                 } finally{
                     if(rs!=null){
@@ -2896,5 +3419,42 @@ public final class RMPerencanaanPemulangan extends javax.swing.JDialog {
         }
     }
     
+    private void runBackground(Runnable task) {
+        if (ceksukses) return;
+        if (executor.isShutdown() || executor.isTerminated()) return;
+        if (!isDisplayable()) return;
+
+        ceksukses = true;
+        setCursor(Cursor.getPredefinedCursor(Cursor.WAIT_CURSOR));
+
+        try {
+            executor.submit(() -> {
+                try {
+                    task.run();
+                } finally {
+                    ceksukses = false;
+                    SwingUtilities.invokeLater(() -> {
+                        if (isDisplayable()) {
+                            setCursor(Cursor.getDefaultCursor());
+                        }
+                    });
+                }
+            });
+        } catch (RejectedExecutionException ex) {
+            ceksukses = false;
+        }
+    }
     
+    @Override
+    public void dispose() {
+        executor.shutdownNow();
+        super.dispose();
+    }
+    
+    void setNoRm2(String norwt) {
+        TNoRw.setText(norwt);
+        TCari.setText(norwt);
+        isRawat();
+        tampil();
+    }
 }

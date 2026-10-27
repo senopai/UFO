@@ -25,8 +25,12 @@ import java.util.Calendar;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.RejectedExecutionException;
 import javax.swing.JOptionPane;
 import javax.swing.JTable;
+import javax.swing.SwingUtilities;
 import javax.swing.Timer;
 import javax.swing.event.DocumentEvent;
 import javax.swing.table.DefaultTableModel;
@@ -45,11 +49,14 @@ public final class DlgAuditPembuanganBendaTajam extends javax.swing.JDialog {
     private PreparedStatement ps;
     private ResultSet rs;
     private int i=0;    
-    private DlgCariRuangAuditKepatuhan ruang=new DlgCariRuangAuditKepatuhan(null,false);
+    private final ExecutorService executor = Executors.newSingleThreadExecutor();
+    private volatile boolean ceksukses = false;
     private double setiap_injeksi_needle_langsung_dimasukkan_safety_box=0,setiap_pemasangan_iv_canula_langsung_dimasukkan_safety_box=0,setiap_benda_tajam_jarum_dimasukkan_safety_box=0,
-                safety_box_tigaperempat_diganti=0,safety_box_keadaan_bersih=0,ttlsetiap_injeksi_needle_langsung_dimasukkan_safety_box=0,saftey_box_tertutup_setelah_digunakan=0,
-                ttlsetiap_pemasangan_iv_canula_langsung_dimasukkan_safety_box=0,ttlsetiap_benda_tajam_jarum_dimasukkan_safety_box=0,ttlsafety_box_tigaperempat_diganti=0,ttlsafety_box_keadaan_bersih=0,
-                ttlsaftey_box_tertutup_setelah_digunakan=0,ttlpenilaian=0;
+                safety_box_tigaperempat_diganti=0,safety_box_keadaan_bersih=0,nasetiap_injeksi_needle_langsung_dimasukkan_safety_box=0,nasetiap_pemasangan_iv_canula_langsung_dimasukkan_safety_box=0,
+                nasetiap_benda_tajam_jarum_dimasukkan_safety_box=0,nasafety_box_tigaperempat_diganti=0,nasafety_box_keadaan_bersih=0,nasaftey_box_tertutup_setelah_digunakan,
+                ttlsetiap_injeksi_needle_langsung_dimasukkan_safety_box=0,saftey_box_tertutup_setelah_digunakan=0,ttlsetiap_pemasangan_iv_canula_langsung_dimasukkan_safety_box=0,
+                ttlsetiap_benda_tajam_jarum_dimasukkan_safety_box=0,ttlsafety_box_tigaperempat_diganti=0,ttlsafety_box_keadaan_bersih=0,
+                ttlsaftey_box_tertutup_setelah_digunakan=0,ttlpenilaian=0,pembagi=0;
     
     /** Creates new form DlgRujuk
      * @param parent
@@ -103,54 +110,8 @@ public final class DlgAuditPembuanganBendaTajam extends javax.swing.JDialog {
         KdRuang.setDocument(new batasInput((byte)20).getKata(KdRuang));
         TCari.setDocument(new batasInput((int)100).getKata(TCari));
         
-        if(koneksiDB.CARICEPAT().equals("aktif")){
-            TCari.getDocument().addDocumentListener(new javax.swing.event.DocumentListener(){
-                @Override
-                public void insertUpdate(DocumentEvent e) {
-                    if(TCari.getText().length()>2){
-                        tampil();
-                    }
-                }
-                @Override
-                public void removeUpdate(DocumentEvent e) {
-                    if(TCari.getText().length()>2){
-                        tampil();
-                    }
-                }
-                @Override
-                public void changedUpdate(DocumentEvent e) {
-                    if(TCari.getText().length()>2){
-                        tampil();
-                    }
-                }
-            });
-        }
-        
-        ruang.addWindowListener(new WindowListener() {
-            @Override
-            public void windowOpened(WindowEvent e) {}
-            @Override
-            public void windowClosing(WindowEvent e) {}
-            @Override
-            public void windowClosed(WindowEvent e) {
-                if(ruang.getTable().getSelectedRow()!= -1){                   
-                    KdRuang.setText(ruang.getTable().getValueAt(ruang.getTable().getSelectedRow(),0).toString());
-                    NmRuang.setText(ruang.getTable().getValueAt(ruang.getTable().getSelectedRow(),1).toString());
-                }  
-                KdRuang.requestFocus();
-            }
-            @Override
-            public void windowIconified(WindowEvent e) {}
-            @Override
-            public void windowDeiconified(WindowEvent e) {}
-            @Override
-            public void windowActivated(WindowEvent e) {}
-            @Override
-            public void windowDeactivated(WindowEvent e) {}
-        }); 
         ChkInput.setSelected(false);
         isForm();
-        
         jam();
     }
 
@@ -215,6 +176,11 @@ public final class DlgAuditPembuanganBendaTajam extends javax.swing.JDialog {
         setDefaultCloseOperation(javax.swing.WindowConstants.DISPOSE_ON_CLOSE);
         setUndecorated(true);
         setResizable(false);
+        addWindowListener(new java.awt.event.WindowAdapter() {
+            public void windowOpened(java.awt.event.WindowEvent evt) {
+                formWindowOpened(evt);
+            }
+        });
 
         internalFrame1.setBorder(javax.swing.BorderFactory.createTitledBorder(javax.swing.BorderFactory.createLineBorder(new java.awt.Color(240, 245, 235)), "::[ Audit Pembuangan Benda Tajam & Jarum ]::", javax.swing.border.TitledBorder.DEFAULT_JUSTIFICATION, javax.swing.border.TitledBorder.DEFAULT_POSITION, new java.awt.Font("Tahoma", 0, 11), new java.awt.Color(50, 50, 50))); // NOI18N
         internalFrame1.setFont(new java.awt.Font("Tahoma", 2, 12)); // NOI18N
@@ -381,7 +347,7 @@ public final class DlgAuditPembuanganBendaTajam extends javax.swing.JDialog {
         panelGlass9.add(jLabel19);
 
         DTPCari1.setForeground(new java.awt.Color(50, 70, 50));
-        DTPCari1.setModel(new javax.swing.DefaultComboBoxModel(new String[] { "15-06-2022" }));
+        DTPCari1.setModel(new javax.swing.DefaultComboBoxModel(new String[] { "10-02-2026" }));
         DTPCari1.setDisplayFormat("dd-MM-yyyy");
         DTPCari1.setName("DTPCari1"); // NOI18N
         DTPCari1.setOpaque(false);
@@ -395,7 +361,7 @@ public final class DlgAuditPembuanganBendaTajam extends javax.swing.JDialog {
         panelGlass9.add(jLabel21);
 
         DTPCari2.setForeground(new java.awt.Color(50, 70, 50));
-        DTPCari2.setModel(new javax.swing.DefaultComboBoxModel(new String[] { "15-06-2022" }));
+        DTPCari2.setModel(new javax.swing.DefaultComboBoxModel(new String[] { "10-02-2026" }));
         DTPCari2.setDisplayFormat("dd-MM-yyyy");
         DTPCari2.setName("DTPCari2"); // NOI18N
         DTPCari2.setOpaque(false);
@@ -465,7 +431,7 @@ public final class DlgAuditPembuanganBendaTajam extends javax.swing.JDialog {
         FormInput.setLayout(null);
 
         Tanggal.setForeground(new java.awt.Color(50, 70, 50));
-        Tanggal.setModel(new javax.swing.DefaultComboBoxModel(new String[] { "15-06-2022" }));
+        Tanggal.setModel(new javax.swing.DefaultComboBoxModel(new String[] { "10-02-2026" }));
         Tanggal.setDisplayFormat("dd-MM-yyyy");
         Tanggal.setName("Tanggal"); // NOI18N
         Tanggal.setOpaque(false);
@@ -561,7 +527,7 @@ public final class DlgAuditPembuanganBendaTajam extends javax.swing.JDialog {
         FormInput.add(jLabel14);
         jLabel14.setBounds(14, 40, 355, 23);
 
-        SetiapInjeksiNeedleLangsungDimasukkanSafetyBox.setModel(new javax.swing.DefaultComboBoxModel(new String[] { "Ya", "Tidak" }));
+        SetiapInjeksiNeedleLangsungDimasukkanSafetyBox.setModel(new javax.swing.DefaultComboBoxModel(new String[] { "Ya", "Tidak", "NA" }));
         SetiapInjeksiNeedleLangsungDimasukkanSafetyBox.setName("SetiapInjeksiNeedleLangsungDimasukkanSafetyBox"); // NOI18N
         SetiapInjeksiNeedleLangsungDimasukkanSafetyBox.addKeyListener(new java.awt.event.KeyAdapter() {
             public void keyPressed(java.awt.event.KeyEvent evt) {
@@ -577,7 +543,7 @@ public final class DlgAuditPembuanganBendaTajam extends javax.swing.JDialog {
         FormInput.add(jLabel17);
         jLabel17.setBounds(460, 40, 340, 23);
 
-        SetiapPemasanganIvCanulaLangsungDimasukkanSafetyBox.setModel(new javax.swing.DefaultComboBoxModel(new String[] { "Ya", "Tidak" }));
+        SetiapPemasanganIvCanulaLangsungDimasukkanSafetyBox.setModel(new javax.swing.DefaultComboBoxModel(new String[] { "Ya", "Tidak", "NA" }));
         SetiapPemasanganIvCanulaLangsungDimasukkanSafetyBox.setName("SetiapPemasanganIvCanulaLangsungDimasukkanSafetyBox"); // NOI18N
         SetiapPemasanganIvCanulaLangsungDimasukkanSafetyBox.addKeyListener(new java.awt.event.KeyAdapter() {
             public void keyPressed(java.awt.event.KeyEvent evt) {
@@ -593,7 +559,7 @@ public final class DlgAuditPembuanganBendaTajam extends javax.swing.JDialog {
         FormInput.add(jLabel23);
         jLabel23.setBounds(14, 70, 355, 23);
 
-        SetiapBendaTajamJarumDimasukkanSafetyXox.setModel(new javax.swing.DefaultComboBoxModel(new String[] { "Ya", "Tidak" }));
+        SetiapBendaTajamJarumDimasukkanSafetyXox.setModel(new javax.swing.DefaultComboBoxModel(new String[] { "Ya", "Tidak", "NA" }));
         SetiapBendaTajamJarumDimasukkanSafetyXox.setName("SetiapBendaTajamJarumDimasukkanSafetyXox"); // NOI18N
         SetiapBendaTajamJarumDimasukkanSafetyXox.addKeyListener(new java.awt.event.KeyAdapter() {
             public void keyPressed(java.awt.event.KeyEvent evt) {
@@ -608,7 +574,7 @@ public final class DlgAuditPembuanganBendaTajam extends javax.swing.JDialog {
         FormInput.add(NmRuang);
         NmRuang.setBounds(647, 10, 200, 23);
 
-        SafetyBoxTigaperempatDiganti.setModel(new javax.swing.DefaultComboBoxModel(new String[] { "Ya", "Tidak" }));
+        SafetyBoxTigaperempatDiganti.setModel(new javax.swing.DefaultComboBoxModel(new String[] { "Ya", "Tidak", "NA" }));
         SafetyBoxTigaperempatDiganti.setName("SafetyBoxTigaperempatDiganti"); // NOI18N
         SafetyBoxTigaperempatDiganti.addKeyListener(new java.awt.event.KeyAdapter() {
             public void keyPressed(java.awt.event.KeyEvent evt) {
@@ -618,7 +584,7 @@ public final class DlgAuditPembuanganBendaTajam extends javax.swing.JDialog {
         FormInput.add(SafetyBoxTigaperempatDiganti);
         SafetyBoxTigaperempatDiganti.setBounds(800, 70, 78, 23);
 
-        SafetyBoxKeadaanBersih.setModel(new javax.swing.DefaultComboBoxModel(new String[] { "Ya", "Tidak" }));
+        SafetyBoxKeadaanBersih.setModel(new javax.swing.DefaultComboBoxModel(new String[] { "Ya", "Tidak", "NA" }));
         SafetyBoxKeadaanBersih.setName("SafetyBoxKeadaanBersih"); // NOI18N
         SafetyBoxKeadaanBersih.addKeyListener(new java.awt.event.KeyAdapter() {
             public void keyPressed(java.awt.event.KeyEvent evt) {
@@ -646,7 +612,7 @@ public final class DlgAuditPembuanganBendaTajam extends javax.swing.JDialog {
         FormInput.add(jLabel25);
         jLabel25.setBounds(460, 100, 340, 23);
 
-        SafteyBoxTertutupSetelahDigunakan.setModel(new javax.swing.DefaultComboBoxModel(new String[] { "Ya", "Tidak" }));
+        SafteyBoxTertutupSetelahDigunakan.setModel(new javax.swing.DefaultComboBoxModel(new String[] { "Ya", "Tidak", "NA" }));
         SafteyBoxTertutupSetelahDigunakan.setName("SafteyBoxTertutupSetelahDigunakan"); // NOI18N
         SafteyBoxTertutupSetelahDigunakan.addKeyListener(new java.awt.event.KeyAdapter() {
             public void keyPressed(java.awt.event.KeyEvent evt) {
@@ -695,7 +661,7 @@ public final class DlgAuditPembuanganBendaTajam extends javax.swing.JDialog {
                 SetiapPemasanganIvCanulaLangsungDimasukkanSafetyBox.getSelectedItem().toString(),SetiapBendaTajamJarumDimasukkanSafetyXox.getSelectedItem().toString(),SafetyBoxTigaperempatDiganti.getSelectedItem().toString(),
                 SafetyBoxKeadaanBersih.getSelectedItem().toString(),SafteyBoxTertutupSetelahDigunakan.getSelectedItem().toString()
             })==true){
-                tampil();
+                runBackground(() ->tampil());
                 emptTeks();
             }  
         }
@@ -726,7 +692,7 @@ public final class DlgAuditPembuanganBendaTajam extends javax.swing.JDialog {
             if(Sequel.queryu2tf("delete from audit_pembuangan_benda_tajam where id_ruang=? and tanggal=?",2,new String[]{
                 tbObat.getValueAt(tbObat.getSelectedRow(),1).toString(),tbObat.getValueAt(tbObat.getSelectedRow(),0).toString()
             })==true){
-                tampil();
+                runBackground(() ->tampil());
                 emptTeks();
             }else{
                 JOptionPane.showMessageDialog(null,"Gagal menghapus..!!");
@@ -753,7 +719,7 @@ public final class DlgAuditPembuanganBendaTajam extends javax.swing.JDialog {
                 SetiapPemasanganIvCanulaLangsungDimasukkanSafetyBox.getSelectedItem().toString(),SetiapBendaTajamJarumDimasukkanSafetyXox.getSelectedItem().toString(),SafetyBoxTigaperempatDiganti.getSelectedItem().toString(),
                 SafetyBoxKeadaanBersih.getSelectedItem().toString(),SafteyBoxTertutupSetelahDigunakan.getSelectedItem().toString(),tbObat.getValueAt(tbObat.getSelectedRow(),1).toString(),tbObat.getValueAt(tbObat.getSelectedRow(),0).toString()
             });
-            if(tabMode.getRowCount()!=0){tampil();}
+            if(tabMode.getRowCount()!=0){runBackground(() ->tampil());}
             emptTeks();
         }
 }//GEN-LAST:event_BtnEditActionPerformed
@@ -767,7 +733,6 @@ public final class DlgAuditPembuanganBendaTajam extends javax.swing.JDialog {
 }//GEN-LAST:event_BtnEditKeyPressed
 
     private void BtnKeluarActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_BtnKeluarActionPerformed
-        ruang.dispose();
         dispose();
 }//GEN-LAST:event_BtnKeluarActionPerformed
 
@@ -833,7 +798,7 @@ public final class DlgAuditPembuanganBendaTajam extends javax.swing.JDialog {
 }//GEN-LAST:event_TCariKeyPressed
 
     private void BtnCariActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_BtnCariActionPerformed
-        tampil();
+        runBackground(() ->tampil());
 }//GEN-LAST:event_BtnCariActionPerformed
 
     private void BtnCariKeyPressed(java.awt.event.KeyEvent evt) {//GEN-FIRST:event_BtnCariKeyPressed
@@ -846,13 +811,13 @@ public final class DlgAuditPembuanganBendaTajam extends javax.swing.JDialog {
 
     private void BtnAllActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_BtnAllActionPerformed
         TCari.setText("");
-        tampil();
+        runBackground(() ->tampil());
 }//GEN-LAST:event_BtnAllActionPerformed
 
     private void BtnAllKeyPressed(java.awt.event.KeyEvent evt) {//GEN-FIRST:event_BtnAllKeyPressed
         if(evt.getKeyCode()==KeyEvent.VK_SPACE){
             TCari.setText("");
-            tampil();
+            runBackground(() ->tampil());
         }else{
             //Valid.pindah(evt, BtnCari, TPasien);
         }
@@ -909,6 +874,29 @@ public final class DlgAuditPembuanganBendaTajam extends javax.swing.JDialog {
     }//GEN-LAST:event_KdRuangKeyPressed
 
     private void btnPetugasActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_btnPetugasActionPerformed
+        DlgCariRuangAuditKepatuhan ruang=new DlgCariRuangAuditKepatuhan(null,false);
+        ruang.addWindowListener(new WindowListener() {
+            @Override
+            public void windowOpened(WindowEvent e) {}
+            @Override
+            public void windowClosing(WindowEvent e) {}
+            @Override
+            public void windowClosed(WindowEvent e) {
+                if(ruang.getTable().getSelectedRow()!= -1){                   
+                    KdRuang.setText(ruang.getTable().getValueAt(ruang.getTable().getSelectedRow(),0).toString());
+                    NmRuang.setText(ruang.getTable().getValueAt(ruang.getTable().getSelectedRow(),1).toString());
+                }  
+                KdRuang.requestFocus();
+            }
+            @Override
+            public void windowIconified(WindowEvent e) {}
+            @Override
+            public void windowDeiconified(WindowEvent e) {}
+            @Override
+            public void windowActivated(WindowEvent e) {}
+            @Override
+            public void windowDeactivated(WindowEvent e) {}
+        }); 
         ruang.emptTeks();
         ruang.setSize(internalFrame1.getWidth()-20,internalFrame1.getHeight()-20);
         ruang.setLocationRelativeTo(internalFrame1);
@@ -942,6 +930,31 @@ public final class DlgAuditPembuanganBendaTajam extends javax.swing.JDialog {
     private void SafteyBoxTertutupSetelahDigunakanKeyPressed(java.awt.event.KeyEvent evt) {//GEN-FIRST:event_SafteyBoxTertutupSetelahDigunakanKeyPressed
         Valid.pindah(evt, SafetyBoxKeadaanBersih,BtnSimpan);
     }//GEN-LAST:event_SafteyBoxTertutupSetelahDigunakanKeyPressed
+
+    private void formWindowOpened(java.awt.event.WindowEvent evt) {//GEN-FIRST:event_formWindowOpened
+        if(koneksiDB.CARICEPAT().equals("aktif")){
+            TCari.getDocument().addDocumentListener(new javax.swing.event.DocumentListener(){
+                @Override
+                public void insertUpdate(DocumentEvent e) {
+                    if(TCari.getText().length()>2){
+                        runBackground(() ->tampil());
+                    }
+                }
+                @Override
+                public void removeUpdate(DocumentEvent e) {
+                    if(TCari.getText().length()>2){
+                        runBackground(() ->tampil());
+                    }
+                }
+                @Override
+                public void changedUpdate(DocumentEvent e) {
+                    if(TCari.getText().length()>2){
+                        runBackground(() ->tampil());
+                    }
+                }
+            });
+        }
+    }//GEN-LAST:event_formWindowOpened
 
     /**
     * @param args the command line arguments
@@ -1012,7 +1025,7 @@ public final class DlgAuditPembuanganBendaTajam extends javax.swing.JDialog {
     private void tampil() {
         Valid.tabelKosong(tabMode);
         try{
-            if(TCari.getText().toString().trim().equals("")){
+            if(TCari.getText().trim().equals("")){
                 ps=koneksi.prepareStatement(
                     "select audit_pembuangan_benda_tajam.id_ruang,ruang_audit_kepatuhan.nama_ruang,audit_pembuangan_benda_tajam.tanggal,audit_pembuangan_benda_tajam.setiap_injeksi_needle_langsung_dimasukkan_safety_box,"+
                     "audit_pembuangan_benda_tajam.setiap_pemasangan_iv_canula_langsung_dimasukkan_safety_box,audit_pembuangan_benda_tajam.setiap_benda_tajam_jarum_dimasukkan_safety_box,"+
@@ -1030,9 +1043,9 @@ public final class DlgAuditPembuanganBendaTajam extends javax.swing.JDialog {
                     "where audit_pembuangan_benda_tajam.tanggal between ? and ? "+
                     "and (audit_pembuangan_benda_tajam.id_ruang like ? or ruang_audit_kepatuhan.nama_ruang like ?) order by audit_pembuangan_benda_tajam.tanggal");
             }
-                
+
             try {
-                if(TCari.getText().toString().trim().equals("")){
+                if(TCari.getText().trim().equals("")){
                     ps.setString(1,Valid.SetTgl(DTPCari1.getSelectedItem()+"")+" 00:00:00");
                     ps.setString(2,Valid.SetTgl(DTPCari2.getSelectedItem()+"")+" 23:59:59");
                 }else{
@@ -1041,49 +1054,96 @@ public final class DlgAuditPembuanganBendaTajam extends javax.swing.JDialog {
                     ps.setString(3,"%"+TCari.getText()+"%");
                     ps.setString(4,"%"+TCari.getText()+"%");
                 }
-                    
+
                 rs=ps.executeQuery();
                 ttlsetiap_injeksi_needle_langsung_dimasukkan_safety_box=0;ttlsetiap_pemasangan_iv_canula_langsung_dimasukkan_safety_box=0;ttlsetiap_benda_tajam_jarum_dimasukkan_safety_box=0;ttlsafety_box_tigaperempat_diganti=0;ttlsafety_box_keadaan_bersih=0;
                 ttlsaftey_box_tertutup_setelah_digunakan=0;ttlpenilaian=0;
+                nasetiap_injeksi_needle_langsung_dimasukkan_safety_box=0;nasetiap_pemasangan_iv_canula_langsung_dimasukkan_safety_box=0;nasetiap_benda_tajam_jarum_dimasukkan_safety_box=0;nasafety_box_tigaperempat_diganti=0;nasafety_box_keadaan_bersih=0;
+                nasaftey_box_tertutup_setelah_digunakan=0;
                 i=1;
                 while(rs.next()){
-                    setiap_injeksi_needle_langsung_dimasukkan_safety_box=Double.parseDouble(rs.getString("setiap_injeksi_needle_langsung_dimasukkan_safety_box").replaceAll("Ya","1").replaceAll("Tidak","0"));
-                    ttlsetiap_injeksi_needle_langsung_dimasukkan_safety_box=ttlsetiap_injeksi_needle_langsung_dimasukkan_safety_box+setiap_injeksi_needle_langsung_dimasukkan_safety_box;
-                    setiap_pemasangan_iv_canula_langsung_dimasukkan_safety_box=Double.parseDouble(rs.getString("setiap_pemasangan_iv_canula_langsung_dimasukkan_safety_box").replaceAll("Ya","1").replaceAll("Tidak","0"));
-                    ttlsetiap_pemasangan_iv_canula_langsung_dimasukkan_safety_box=ttlsetiap_pemasangan_iv_canula_langsung_dimasukkan_safety_box+setiap_pemasangan_iv_canula_langsung_dimasukkan_safety_box;
-                    setiap_benda_tajam_jarum_dimasukkan_safety_box=Double.parseDouble(rs.getString("setiap_benda_tajam_jarum_dimasukkan_safety_box").replaceAll("Ya","1").replaceAll("Tidak","0"));
-                    ttlsetiap_benda_tajam_jarum_dimasukkan_safety_box=ttlsetiap_benda_tajam_jarum_dimasukkan_safety_box+setiap_benda_tajam_jarum_dimasukkan_safety_box;
-                    safety_box_tigaperempat_diganti=Double.parseDouble(rs.getString("safety_box_tigaperempat_diganti").replaceAll("Ya","1").replaceAll("Tidak","0"));
-                    ttlsafety_box_tigaperempat_diganti=ttlsafety_box_tigaperempat_diganti+safety_box_tigaperempat_diganti;
-                    safety_box_keadaan_bersih=Double.parseDouble(rs.getString("safety_box_keadaan_bersih").replaceAll("Ya","1").replaceAll("Tidak","0"));
-                    ttlsafety_box_keadaan_bersih=ttlsafety_box_keadaan_bersih+safety_box_keadaan_bersih;
-                    saftey_box_tertutup_setelah_digunakan=Double.parseDouble(rs.getString("saftey_box_tertutup_setelah_digunakan").replaceAll("Ya","1").replaceAll("Tidak","0"));;
-                    ttlsaftey_box_tertutup_setelah_digunakan=ttlsaftey_box_tertutup_setelah_digunakan+saftey_box_tertutup_setelah_digunakan;
+                    pembagi=0;
+                    setiap_injeksi_needle_langsung_dimasukkan_safety_box=0;setiap_pemasangan_iv_canula_langsung_dimasukkan_safety_box=0;setiap_benda_tajam_jarum_dimasukkan_safety_box=0;
+                    safety_box_tigaperempat_diganti=0;safety_box_keadaan_bersih=0;saftey_box_tertutup_setelah_digunakan=0;
+
+                    if(!rs.getString("setiap_injeksi_needle_langsung_dimasukkan_safety_box").equals("NA")){
+                        setiap_injeksi_needle_langsung_dimasukkan_safety_box=Double.parseDouble(rs.getString("setiap_injeksi_needle_langsung_dimasukkan_safety_box").replaceAll("Ya","1").replaceAll("Tidak","0"));
+                        ttlsetiap_injeksi_needle_langsung_dimasukkan_safety_box=ttlsetiap_injeksi_needle_langsung_dimasukkan_safety_box+setiap_injeksi_needle_langsung_dimasukkan_safety_box;
+                        pembagi++;
+                    }else{
+                        nasetiap_injeksi_needle_langsung_dimasukkan_safety_box++;
+                    }
+
+                    if(!rs.getString("setiap_pemasangan_iv_canula_langsung_dimasukkan_safety_box").equals("NA")){
+                        setiap_pemasangan_iv_canula_langsung_dimasukkan_safety_box=Double.parseDouble(rs.getString("setiap_pemasangan_iv_canula_langsung_dimasukkan_safety_box").replaceAll("Ya","1").replaceAll("Tidak","0"));
+                        ttlsetiap_pemasangan_iv_canula_langsung_dimasukkan_safety_box=ttlsetiap_pemasangan_iv_canula_langsung_dimasukkan_safety_box+setiap_pemasangan_iv_canula_langsung_dimasukkan_safety_box;
+                        pembagi++;
+                    }else{
+                        nasetiap_pemasangan_iv_canula_langsung_dimasukkan_safety_box++;
+                    }
+
+                    if(!rs.getString("setiap_benda_tajam_jarum_dimasukkan_safety_box").equals("NA")){
+                        setiap_benda_tajam_jarum_dimasukkan_safety_box=Double.parseDouble(rs.getString("setiap_benda_tajam_jarum_dimasukkan_safety_box").replaceAll("Ya","1").replaceAll("Tidak","0"));
+                        ttlsetiap_benda_tajam_jarum_dimasukkan_safety_box=ttlsetiap_benda_tajam_jarum_dimasukkan_safety_box+setiap_benda_tajam_jarum_dimasukkan_safety_box;
+                        pembagi++;
+                    }else{
+                        nasetiap_benda_tajam_jarum_dimasukkan_safety_box++;
+                    }
+
+                    if(!rs.getString("safety_box_tigaperempat_diganti").equals("NA")){
+                        safety_box_tigaperempat_diganti=Double.parseDouble(rs.getString("safety_box_tigaperempat_diganti").replaceAll("Ya","1").replaceAll("Tidak","0"));
+                        ttlsafety_box_tigaperempat_diganti=ttlsafety_box_tigaperempat_diganti+safety_box_tigaperempat_diganti;
+                        pembagi++;
+                    }else{
+                        nasafety_box_tigaperempat_diganti++;
+                    }
+
+                    if(!rs.getString("safety_box_keadaan_bersih").equals("NA")){
+                        safety_box_keadaan_bersih=Double.parseDouble(rs.getString("safety_box_keadaan_bersih").replaceAll("Ya","1").replaceAll("Tidak","0"));
+                        ttlsafety_box_keadaan_bersih=ttlsafety_box_keadaan_bersih+safety_box_keadaan_bersih;
+                        pembagi++;
+                    }else{
+                        nasafety_box_keadaan_bersih++;
+                    }
+
+                    if(!rs.getString("saftey_box_tertutup_setelah_digunakan").equals("NA")){
+                        saftey_box_tertutup_setelah_digunakan=Double.parseDouble(rs.getString("saftey_box_tertutup_setelah_digunakan").replaceAll("Ya","1").replaceAll("Tidak","0"));
+                        ttlsaftey_box_tertutup_setelah_digunakan=ttlsaftey_box_tertutup_setelah_digunakan+saftey_box_tertutup_setelah_digunakan;
+                        pembagi++;
+                    }else{
+                        nasaftey_box_tertutup_setelah_digunakan++;
+                    }
+
                     ttlpenilaian=ttlpenilaian+(((setiap_injeksi_needle_langsung_dimasukkan_safety_box+setiap_pemasangan_iv_canula_langsung_dimasukkan_safety_box+setiap_benda_tajam_jarum_dimasukkan_safety_box+
-                            safety_box_tigaperempat_diganti+safety_box_keadaan_bersih+saftey_box_tertutup_setelah_digunakan)/6)*100);
+                            safety_box_tigaperempat_diganti+safety_box_keadaan_bersih+saftey_box_tertutup_setelah_digunakan)/pembagi)*100);
                     tabMode.addRow(new Object[]{
                         rs.getString("tanggal"),rs.getString("id_ruang"),rs.getString("nama_ruang"),rs.getString("setiap_injeksi_needle_langsung_dimasukkan_safety_box"),rs.getString("setiap_pemasangan_iv_canula_langsung_dimasukkan_safety_box"),
                         rs.getString("setiap_benda_tajam_jarum_dimasukkan_safety_box"),rs.getString("safety_box_tigaperempat_diganti"),rs.getString("safety_box_keadaan_bersih"),
                         rs.getString("saftey_box_tertutup_setelah_digunakan"),Math.round(((setiap_injeksi_needle_langsung_dimasukkan_safety_box+setiap_pemasangan_iv_canula_langsung_dimasukkan_safety_box+
-                        setiap_benda_tajam_jarum_dimasukkan_safety_box+safety_box_tigaperempat_diganti+safety_box_keadaan_bersih+saftey_box_tertutup_setelah_digunakan)/6)*100)+" %"
+                        setiap_benda_tajam_jarum_dimasukkan_safety_box+safety_box_tigaperempat_diganti+safety_box_keadaan_bersih+saftey_box_tertutup_setelah_digunakan)/pembagi)*100)+" %"
                     });
                     i++;
                 }
                 i=i-1;
                 if(i>0){
                     tabMode.addRow(new Object[]{
+                        "","NA",":",""+nasetiap_injeksi_needle_langsung_dimasukkan_safety_box,""+nasetiap_pemasangan_iv_canula_langsung_dimasukkan_safety_box,""+nasetiap_benda_tajam_jarum_dimasukkan_safety_box,
+                        ""+nasafety_box_tigaperempat_diganti,""+nasafety_box_keadaan_bersih,""+nasaftey_box_tertutup_setelah_digunakan,""+(nasetiap_injeksi_needle_langsung_dimasukkan_safety_box+
+                        nasetiap_pemasangan_iv_canula_langsung_dimasukkan_safety_box+nasetiap_benda_tajam_jarum_dimasukkan_safety_box+nasafety_box_tigaperempat_diganti+nasafety_box_keadaan_bersih+nasaftey_box_tertutup_setelah_digunakan)
+                    });
+                    tabMode.addRow(new Object[]{
                         "","Ya",":",""+ttlsetiap_injeksi_needle_langsung_dimasukkan_safety_box,""+ttlsetiap_pemasangan_iv_canula_langsung_dimasukkan_safety_box,""+ttlsetiap_benda_tajam_jarum_dimasukkan_safety_box,
                         ""+ttlsafety_box_tigaperempat_diganti,""+ttlsafety_box_keadaan_bersih,""+ttlsaftey_box_tertutup_setelah_digunakan,""+(ttlsetiap_injeksi_needle_langsung_dimasukkan_safety_box+
                         ttlsetiap_pemasangan_iv_canula_langsung_dimasukkan_safety_box+ttlsetiap_benda_tajam_jarum_dimasukkan_safety_box+ttlsafety_box_tigaperempat_diganti+ttlsafety_box_keadaan_bersih+ttlsaftey_box_tertutup_setelah_digunakan)
                     });
                     tabMode.addRow(new Object[]{
-                        "","Tidak",":",""+(i-ttlsetiap_injeksi_needle_langsung_dimasukkan_safety_box),""+(i-ttlsetiap_pemasangan_iv_canula_langsung_dimasukkan_safety_box),""+(i-ttlsetiap_benda_tajam_jarum_dimasukkan_safety_box),
-                        ""+(i-ttlsafety_box_tigaperempat_diganti),""+(i-ttlsafety_box_keadaan_bersih),""+(i-ttlsaftey_box_tertutup_setelah_digunakan),""+((i-ttlsetiap_injeksi_needle_langsung_dimasukkan_safety_box)+
-                        (i-ttlsetiap_pemasangan_iv_canula_langsung_dimasukkan_safety_box)+(i-ttlsetiap_benda_tajam_jarum_dimasukkan_safety_box)+(i-ttlsafety_box_tigaperempat_diganti)+(i-ttlsafety_box_keadaan_bersih)+(i-ttlsaftey_box_tertutup_setelah_digunakan))
+                        "","Tidak",":",""+(i-ttlsetiap_injeksi_needle_langsung_dimasukkan_safety_box-nasetiap_injeksi_needle_langsung_dimasukkan_safety_box),""+(i-ttlsetiap_pemasangan_iv_canula_langsung_dimasukkan_safety_box-nasetiap_pemasangan_iv_canula_langsung_dimasukkan_safety_box),""+(i-ttlsetiap_benda_tajam_jarum_dimasukkan_safety_box-nasetiap_benda_tajam_jarum_dimasukkan_safety_box),
+                        ""+(i-ttlsafety_box_tigaperempat_diganti-nasafety_box_tigaperempat_diganti),""+(i-ttlsafety_box_keadaan_bersih-nasafety_box_keadaan_bersih),""+(i-ttlsaftey_box_tertutup_setelah_digunakan-nasaftey_box_tertutup_setelah_digunakan),""+((i-ttlsetiap_injeksi_needle_langsung_dimasukkan_safety_box-nasetiap_injeksi_needle_langsung_dimasukkan_safety_box)+
+                        (i-ttlsetiap_pemasangan_iv_canula_langsung_dimasukkan_safety_box-nasetiap_pemasangan_iv_canula_langsung_dimasukkan_safety_box)+(i-ttlsetiap_benda_tajam_jarum_dimasukkan_safety_box-nasetiap_benda_tajam_jarum_dimasukkan_safety_box)+(i-ttlsafety_box_tigaperempat_diganti-nasafety_box_tigaperempat_diganti)+(i-ttlsafety_box_keadaan_bersih-nasafety_box_keadaan_bersih)+(i-ttlsaftey_box_tertutup_setelah_digunakan-nasaftey_box_tertutup_setelah_digunakan))
                     });
                     tabMode.addRow(new Object[]{
-                        "","Rata-rata",":",Math.round((ttlsetiap_injeksi_needle_langsung_dimasukkan_safety_box/i)*100)+" %",Math.round((ttlsetiap_pemasangan_iv_canula_langsung_dimasukkan_safety_box/i)*100)+" %",Math.round((ttlsetiap_benda_tajam_jarum_dimasukkan_safety_box/i)*100)+" %",
-                        Math.round((ttlsafety_box_tigaperempat_diganti/i)*100)+" %",Math.round((ttlsafety_box_keadaan_bersih/i)*100)+" %",Math.round((ttlsaftey_box_tertutup_setelah_digunakan/i)*100)+" %",Math.round(ttlpenilaian/i)+" %"
+                        "","Rata-rata",":",Math.round((ttlsetiap_injeksi_needle_langsung_dimasukkan_safety_box/(i-nasetiap_injeksi_needle_langsung_dimasukkan_safety_box))*100)+" %",Math.round((ttlsetiap_pemasangan_iv_canula_langsung_dimasukkan_safety_box/(i-nasetiap_pemasangan_iv_canula_langsung_dimasukkan_safety_box))*100)+" %",Math.round((ttlsetiap_benda_tajam_jarum_dimasukkan_safety_box/(i-nasetiap_benda_tajam_jarum_dimasukkan_safety_box))*100)+" %",
+                        Math.round((ttlsafety_box_tigaperempat_diganti/(i-nasafety_box_tigaperempat_diganti))*100)+" %",Math.round((ttlsafety_box_keadaan_bersih/(i-nasafety_box_keadaan_bersih))*100)+" %",Math.round((ttlsaftey_box_tertutup_setelah_digunakan/(i-nasaftey_box_tertutup_setelah_digunakan))*100)+" %",Math.round(ttlpenilaian/i)+" %"
                     });
                 }
             } catch (Exception e) {
@@ -1203,5 +1263,37 @@ public final class DlgAuditPembuanganBendaTajam extends javax.swing.JDialog {
         };
         // Timer
         new Timer(1000, taskPerformer).start();
+    }
+    
+    private void runBackground(Runnable task) {
+        if (ceksukses) return;
+        if (executor.isShutdown() || executor.isTerminated()) return;
+        if (!isDisplayable()) return;
+
+        ceksukses = true;
+        setCursor(Cursor.getPredefinedCursor(Cursor.WAIT_CURSOR));
+
+        try {
+            executor.submit(() -> {
+                try {
+                    task.run();
+                } finally {
+                    ceksukses = false;
+                    SwingUtilities.invokeLater(() -> {
+                        if (isDisplayable()) {
+                            setCursor(Cursor.getDefaultCursor());
+                        }
+                    });
+                }
+            });
+        } catch (RejectedExecutionException ex) {
+            ceksukses = false;
+        }
+    }
+    
+    @Override
+    public void dispose() {
+        executor.shutdownNow();
+        super.dispose();
     }
 }

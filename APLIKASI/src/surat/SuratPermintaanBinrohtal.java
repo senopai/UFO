@@ -42,7 +42,7 @@ import javax.swing.text.Document;
 import javax.swing.text.html.HTMLEditorKit;
 import javax.swing.text.html.StyleSheet;
 import kepegawaian.DlgCariDokter;
-import kepegawaian.DlgCariPegawai;
+import kepegawaian.DlgCariPetugas;
 import simrskhanza.DlgCariBangsal;
 
 
@@ -54,7 +54,7 @@ public final class SuratPermintaanBinrohtal extends javax.swing.JDialog {
     private PreparedStatement ps;
     private ResultSet rs;
     private int i=0;
-    private DlgCariPegawai pegawai;
+    private DlgCariPetugas petugas;
     private DlgCariDokter dokter;
     private DlgCariBangsal kamar;
     private StringBuilder htmlContent;
@@ -237,7 +237,6 @@ public final class SuratPermintaanBinrohtal extends javax.swing.JDialog {
         jLabel12 = new widget.Label();
         cmbJnsPelayanan = new widget.ComboBox();
         PelayananLainnya = new widget.TextBox();
-        jSeparator3 = new javax.swing.JSeparator();
         ChkInput = new widget.CekBox();
         PanelAccor = new widget.PanelBiasa();
         ChkAccor = new widget.CekBox();
@@ -438,11 +437,11 @@ public final class SuratPermintaanBinrohtal extends javax.swing.JDialog {
 
         jLabel19.setText("Tanggal :");
         jLabel19.setName("jLabel19"); // NOI18N
-        jLabel19.setPreferredSize(new java.awt.Dimension(67, 23));
+        jLabel19.setPreferredSize(new java.awt.Dimension(57, 23));
         panelGlass9.add(jLabel19);
 
         DTPCari1.setForeground(new java.awt.Color(50, 70, 50));
-        DTPCari1.setModel(new javax.swing.DefaultComboBoxModel(new String[] { "27-04-2026" }));
+        DTPCari1.setModel(new javax.swing.DefaultComboBoxModel(new String[] { "10-07-2026" }));
         DTPCari1.setDisplayFormat("dd-MM-yyyy");
         DTPCari1.setName("DTPCari1"); // NOI18N
         DTPCari1.setOpaque(false);
@@ -456,7 +455,7 @@ public final class SuratPermintaanBinrohtal extends javax.swing.JDialog {
         panelGlass9.add(jLabel21);
 
         DTPCari2.setForeground(new java.awt.Color(50, 70, 50));
-        DTPCari2.setModel(new javax.swing.DefaultComboBoxModel(new String[] { "27-04-2026" }));
+        DTPCari2.setModel(new javax.swing.DefaultComboBoxModel(new String[] { "10-07-2026" }));
         DTPCari2.setDisplayFormat("dd-MM-yyyy");
         DTPCari2.setName("DTPCari2"); // NOI18N
         DTPCari2.setOpaque(false);
@@ -511,7 +510,7 @@ public final class SuratPermintaanBinrohtal extends javax.swing.JDialog {
 
         PanelInput.setName("PanelInput"); // NOI18N
         PanelInput.setOpaque(false);
-        PanelInput.setPreferredSize(new java.awt.Dimension(192, 225));
+        PanelInput.setPreferredSize(new java.awt.Dimension(192, 215));
         PanelInput.setLayout(new java.awt.BorderLayout(1, 1));
 
         FormInput.setName("FormInput"); // NOI18N
@@ -553,7 +552,7 @@ public final class SuratPermintaanBinrohtal extends javax.swing.JDialog {
         jLabel8.setText("Respon :");
         jLabel8.setName("jLabel8"); // NOI18N
         FormInput.add(jLabel8);
-        jLabel8.setBounds(0, 170, 65, 23);
+        jLabel8.setBounds(0, 160, 65, 23);
 
         ResponLainnya.setName("ResponLainnya"); // NOI18N
         ResponLainnya.addKeyListener(new java.awt.event.KeyAdapter() {
@@ -562,7 +561,7 @@ public final class SuratPermintaanBinrohtal extends javax.swing.JDialog {
             }
         });
         FormInput.add(ResponLainnya);
-        ResponLainnya.setBounds(212, 170, 210, 23);
+        ResponLainnya.setBounds(212, 160, 210, 23);
 
         cmbRespon.setModel(new javax.swing.DefaultComboBoxModel(new String[] { "Tenang", "Cemas Berkurang", "Kooperatif", "Menolak", "Lainnya" }));
         cmbRespon.setName("cmbRespon"); // NOI18N
@@ -572,7 +571,7 @@ public final class SuratPermintaanBinrohtal extends javax.swing.JDialog {
             }
         });
         FormInput.add(cmbRespon);
-        cmbRespon.setBounds(69, 170, 140, 23);
+        cmbRespon.setBounds(69, 160, 140, 23);
 
         jLabel17.setText("Tgl.Lahir :");
         jLabel17.setName("jLabel17"); // NOI18N
@@ -584,7 +583,7 @@ public final class SuratPermintaanBinrohtal extends javax.swing.JDialog {
         FormInput.add(LahirPasien);
         LahirPasien.setBounds(648, 10, 85, 23);
 
-        jLabel18.setText("Pegawai :");
+        jLabel18.setText("Petugas :");
         jLabel18.setName("jLabel18"); // NOI18N
         FormInput.add(jLabel18);
         jLabel18.setBounds(205, 40, 120, 23);
@@ -624,15 +623,10 @@ public final class SuratPermintaanBinrohtal extends javax.swing.JDialog {
         jLabel16.setBounds(0, 40, 65, 23);
 
         Tanggal.setForeground(new java.awt.Color(50, 70, 50));
-        Tanggal.setModel(new javax.swing.DefaultComboBoxModel(new String[] { "27-04-2026 14:48:08" }));
+        Tanggal.setModel(new javax.swing.DefaultComboBoxModel(new String[] { "10-07-2026 14:11:25" }));
         Tanggal.setDisplayFormat("dd-MM-yyyy HH:mm:ss");
         Tanggal.setName("Tanggal"); // NOI18N
         Tanggal.setOpaque(false);
-        Tanggal.addItemListener(new java.awt.event.ItemListener() {
-            public void itemStateChanged(java.awt.event.ItemEvent evt) {
-                TanggalItemStateChanged(evt);
-            }
-        });
         Tanggal.addKeyListener(new java.awt.event.KeyAdapter() {
             public void keyPressed(java.awt.event.KeyEvent evt) {
                 TanggalKeyPressed(evt);
@@ -663,12 +657,12 @@ public final class SuratPermintaanBinrohtal extends javax.swing.JDialog {
             }
         });
         FormInput.add(Keterangan);
-        Keterangan.setBounds(530, 170, 203, 23);
+        Keterangan.setBounds(530, 160, 203, 23);
 
         jLabel20.setText("Keterangan :");
         jLabel20.setName("jLabel20"); // NOI18N
         FormInput.add(jLabel20);
-        jLabel20.setBounds(456, 170, 70, 23);
+        jLabel20.setBounds(456, 160, 70, 23);
 
         jLabel22.setText("Dokter D.P.J.P :");
         jLabel22.setName("jLabel22"); // NOI18N
@@ -707,13 +701,13 @@ public final class SuratPermintaanBinrohtal extends javax.swing.JDialog {
         kdkamar.setName("kdkamar"); // NOI18N
         kdkamar.setPreferredSize(new java.awt.Dimension(75, 23));
         FormInput.add(kdkamar);
-        kdkamar.setBounds(69, 110, 70, 23);
+        kdkamar.setBounds(69, 100, 70, 23);
 
         nmkamar.setEditable(false);
         nmkamar.setName("nmkamar"); // NOI18N
         nmkamar.setPreferredSize(new java.awt.Dimension(215, 23));
         FormInput.add(nmkamar);
-        nmkamar.setBounds(141, 110, 220, 23);
+        nmkamar.setBounds(141, 100, 220, 23);
 
         BtnRuang.setIcon(new javax.swing.ImageIcon(getClass().getResource("/picture/190.png"))); // NOI18N
         BtnRuang.setMnemonic('3');
@@ -731,17 +725,17 @@ public final class SuratPermintaanBinrohtal extends javax.swing.JDialog {
             }
         });
         FormInput.add(BtnRuang);
-        BtnRuang.setBounds(363, 110, 28, 23);
+        BtnRuang.setBounds(363, 100, 28, 23);
 
         jLabel5.setText("Ruang :");
         jLabel5.setName("jLabel5"); // NOI18N
         FormInput.add(jLabel5);
-        jLabel5.setBounds(0, 110, 65, 23);
+        jLabel5.setBounds(0, 100, 65, 23);
 
         jLabel9.setText("Jenis Permintaan :");
         jLabel9.setName("jLabel9"); // NOI18N
         FormInput.add(jLabel9);
-        jLabel9.setBounds(419, 110, 130, 23);
+        jLabel9.setBounds(419, 100, 130, 23);
 
         cmbJnsPermintaan.setModel(new javax.swing.DefaultComboBoxModel(new String[] { "Pasien Meminta Sendiri", "Keluarga Meminta", "Rekomendasi Petugas" }));
         cmbJnsPermintaan.setName("cmbJnsPermintaan"); // NOI18N
@@ -751,12 +745,12 @@ public final class SuratPermintaanBinrohtal extends javax.swing.JDialog {
             }
         });
         FormInput.add(cmbJnsPermintaan);
-        cmbJnsPermintaan.setBounds(553, 110, 180, 23);
+        cmbJnsPermintaan.setBounds(553, 100, 180, 23);
 
         jLabel23.setText("Agama :");
         jLabel23.setName("jLabel23"); // NOI18N
         FormInput.add(jLabel23);
-        jLabel23.setBounds(0, 140, 65, 23);
+        jLabel23.setBounds(0, 130, 65, 23);
 
         Agama.setName("Agama"); // NOI18N
         Agama.addKeyListener(new java.awt.event.KeyAdapter() {
@@ -765,12 +759,12 @@ public final class SuratPermintaanBinrohtal extends javax.swing.JDialog {
             }
         });
         FormInput.add(Agama);
-        Agama.setBounds(69, 140, 140, 23);
+        Agama.setBounds(69, 130, 140, 23);
 
         jLabel12.setText("Pelayanan :");
         jLabel12.setName("jLabel12"); // NOI18N
         FormInput.add(jLabel12);
-        jLabel12.setBounds(226, 140, 70, 23);
+        jLabel12.setBounds(226, 130, 70, 23);
 
         cmbJnsPelayanan.setModel(new javax.swing.DefaultComboBoxModel(new String[] { "Konseling Rohani", "Doa / Pendampingan Spiritual", "Ibadah Khusus", "Pendampingan Menjelang Tindakan Medis", "Pendampingan Pasien Kritis / Akhir Hayat", "Lainnya" }));
         cmbJnsPelayanan.setName("cmbJnsPelayanan"); // NOI18N
@@ -780,7 +774,7 @@ public final class SuratPermintaanBinrohtal extends javax.swing.JDialog {
             }
         });
         FormInput.add(cmbJnsPelayanan);
-        cmbJnsPelayanan.setBounds(300, 140, 260, 23);
+        cmbJnsPelayanan.setBounds(300, 130, 260, 23);
 
         PelayananLainnya.setName("PelayananLainnya"); // NOI18N
         PelayananLainnya.addKeyListener(new java.awt.event.KeyAdapter() {
@@ -789,14 +783,7 @@ public final class SuratPermintaanBinrohtal extends javax.swing.JDialog {
             }
         });
         FormInput.add(PelayananLainnya);
-        PelayananLainnya.setBounds(563, 140, 170, 23);
-
-        jSeparator3.setBackground(new java.awt.Color(239, 244, 234));
-        jSeparator3.setForeground(new java.awt.Color(239, 244, 234));
-        jSeparator3.setBorder(javax.swing.BorderFactory.createLineBorder(new java.awt.Color(239, 244, 234)));
-        jSeparator3.setName("jSeparator3"); // NOI18N
-        FormInput.add(jSeparator3);
-        jSeparator3.setBounds(0, 100, 735, 1);
+        PelayananLainnya.setBounds(563, 130, 170, 23);
 
         PanelInput.add(FormInput, java.awt.BorderLayout.CENTER);
 
@@ -982,7 +969,7 @@ public final class SuratPermintaanBinrohtal extends javax.swing.JDialog {
                 if(NIK.getText().equals(tbObat.getValueAt(tbObat.getSelectedRow(),17).toString())){
                     hapus();
                 }else{
-                    JOptionPane.showMessageDialog(null,"Hanya bisa dihapus oleh pegawai yang bersangkutan..!!");
+                    JOptionPane.showMessageDialog(null,"Hanya bisa dihapus oleh petugas yang bersangkutan..!!");
                 }
             }
         }else{
@@ -1020,7 +1007,7 @@ public final class SuratPermintaanBinrohtal extends javax.swing.JDialog {
                     if(NIK.getText().equals(tbObat.getValueAt(tbObat.getSelectedRow(),17).toString())){
                         ganti();
                     }else{
-                        JOptionPane.showMessageDialog(null,"Hanya bisa diganti oleh pegawai yang bersangkutan..!!");
+                        JOptionPane.showMessageDialog(null,"Hanya bisa diganti oleh petugas yang bersangkutan..!!");
                     }
                 }
             }else{
@@ -1232,43 +1219,43 @@ public final class SuratPermintaanBinrohtal extends javax.swing.JDialog {
     }//GEN-LAST:event_BtnPegawaiKeyPressed
 
     private void BtnPegawaiActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_BtnPegawaiActionPerformed
-        if (pegawai == null || !pegawai.isDisplayable()) {
-            pegawai=new DlgCariPegawai(null,false);
-            pegawai.setDefaultCloseOperation(WindowConstants.DISPOSE_ON_CLOSE);
-            pegawai.addWindowListener(new WindowAdapter() {
+        if (petugas == null || !petugas.isDisplayable()) {
+            petugas=new DlgCariPetugas(null,false);
+            petugas.setDefaultCloseOperation(WindowConstants.DISPOSE_ON_CLOSE);
+            petugas.addWindowListener(new WindowAdapter() {
                 @Override
                 public void windowClosed(WindowEvent e) {
-                    if(pegawai.getTable().getSelectedRow()!= -1){                   
-                        NIK.setText(pegawai.getTable().getValueAt(pegawai.getTable().getSelectedRow(),0).toString());
-                        NamaPegawai.setText(pegawai.getTable().getValueAt(pegawai.getTable().getSelectedRow(),1).toString());
+                    if(petugas.getTable().getSelectedRow()!= -1){                   
+                        NIK.setText(petugas.getTable().getValueAt(petugas.getTable().getSelectedRow(),0).toString());
+                        NamaPegawai.setText(petugas.getTable().getValueAt(petugas.getTable().getSelectedRow(),1).toString());
                     }  
                     NIK.requestFocus();
-                    pegawai=null;
+                    petugas=null;
                 }
             });
             
-            pegawai.getTable().addKeyListener(new KeyAdapter() {
+            petugas.getTable().addKeyListener(new KeyAdapter() {
                 @Override
                 public void keyPressed(KeyEvent e) {
                     if(e.getKeyCode()==KeyEvent.VK_SPACE){
-                        pegawai.dispose();
+                        petugas.dispose();
                     }
                 }
             });
 
-            pegawai.setSize(internalFrame1.getWidth()-20,internalFrame1.getHeight()-20);
-            pegawai.setLocationRelativeTo(internalFrame1);
+            petugas.setSize(internalFrame1.getWidth()-20,internalFrame1.getHeight()-20);
+            petugas.setLocationRelativeTo(internalFrame1);
         }
-        if (pegawai == null) return;
-        if (!pegawai.isVisible()) {
-            pegawai.emptTeks();
+        if (petugas == null) return;
+        if (!petugas.isVisible()) {
+            petugas.emptTeks();
         }
         
-        if (pegawai.isVisible()) {
-            pegawai.toFront();
+        if (petugas.isVisible()) {
+            petugas.toFront();
             return;
         }
-        pegawai.setVisible(true);
+        petugas.setVisible(true);
     }//GEN-LAST:event_BtnPegawaiActionPerformed
 
     private void cmbResponKeyPressed(java.awt.event.KeyEvent evt) {//GEN-FIRST:event_cmbResponKeyPressed
@@ -1381,8 +1368,8 @@ public final class SuratPermintaanBinrohtal extends javax.swing.JDialog {
             param.put("kontakrs",akses.getkontakrs());
             param.put("emailrs",akses.getemailrs());
             param.put("logo",Sequel.cariGambar("select setting.logo from setting"));
-            finger=Sequel.cariIsi("select sha1(sidikjari) from sidikjari inner join pegawai on pegawai.id=sidikjari.id where pegawai.nik=?",NIK.getText());
-            param.put("finger","Dikeluarkan di "+akses.getnamars()+", Kabupaten/Kota "+akses.getkabupatenrs()+"\nDitandatangani secara elektronik oleh "+NamaPegawai.getText()+"\nID "+(finger.equals("")?TPasien.getText():finger)+"\n"+Tanggal.getSelectedItem());
+            finger=Sequel.cariIsi("select sha1(sidikjari) from sidikjari inner join petugas on petugas.id=sidikjari.id where petugas.nip=?",NIK.getText());
+            param.put("finger","Dikeluarkan di "+akses.getnamars()+", Kabupaten/Kota "+akses.getkabupatenrs()+"\nDitandatangani secara elektronip oleh "+NamaPegawai.getText()+"\nID "+(finger.equals("")?TPasien.getText():finger)+"\n"+Tanggal.getSelectedItem());
             param.put("photo","http://"+koneksiDB.HOSTHYBRIDWEB()+":"+koneksiDB.PORTWEB()+"/"+koneksiDB.HYBRIDWEB()+"/permintaanbinrohtal/"+Sequel.cariIsi("select bukti_permintaan_binrohtal.photo from bukti_permintaan_binrohtal where bukti_permintaan_binrohtal.no_surat=?",NoSurat.getText()));
             Valid.MyReportqry("rptSuratPermintaanBinrohtal.jasper","report","::[ Lembar Permintaan Binrohtal ]::",
                 "select reg_periksa.no_rawat,pasien.no_rkm_medis,pasien.nm_pasien,pasien.jk,pasien.tgl_lahir,"+
@@ -1390,14 +1377,14 @@ public final class SuratPermintaanBinrohtal extends javax.swing.JDialog {
                 "concat(pasien.alamat,', ',kelurahan.nm_kel,', ',kecamatan.nm_kec,', ',kabupaten.nm_kab,', ',propinsi.nm_prop) as alamat_pasien," +
                 "permintaan_binrohtal.no_surat,permintaan_binrohtal.tanggal,permintaan_binrohtal.kd_bangsal,bangsal.nm_bangsal,"+
                 "permintaan_binrohtal.jns_permintaan,permintaan_binrohtal.agama,permintaan_binrohtal.jns_pelayanan,permintaan_binrohtal.ket_pelayanan,"+
-                "permintaan_binrohtal.respon,permintaan_binrohtal.ket_respon,permintaan_binrohtal.keterangan,permintaan_binrohtal.nip,pegawai.nama,"+
+                "permintaan_binrohtal.respon,permintaan_binrohtal.ket_respon,permintaan_binrohtal.keterangan,permintaan_binrohtal.nip,petugas.nama,"+
                 "permintaan_binrohtal.kd_dokter,dokter.nm_dokter,antripermintaanbinrohtal.no_rawat as no_rawat_antri,bukti_permintaan_binrohtal.photo as photo_bukti "+
                 "from permintaan_binrohtal "+
                 "inner join reg_periksa on permintaan_binrohtal.no_rawat=reg_periksa.no_rawat "+
                 "inner join pasien on reg_periksa.no_rkm_medis=pasien.no_rkm_medis "+
-                "left join pegawai on permintaan_binrohtal.nip=pegawai.nik "+
-                "left join bangsal on permintaan_binrohtal.kd_bangsal=bangsal.kd_bangsal "+
-                "left join dokter on permintaan_binrohtal.kd_dokter=dokter.kd_dokter "+
+                "inner join petugas on permintaan_binrohtal.nip=petugas.nip "+
+                "inner join bangsal on permintaan_binrohtal.kd_bangsal=bangsal.kd_bangsal "+
+                "inner join dokter on permintaan_binrohtal.kd_dokter=dokter.kd_dokter "+
                 "left join antripermintaanbinrohtal on antripermintaanbinrohtal.no_surat=permintaan_binrohtal.no_surat "+
                 "left join bukti_permintaan_binrohtal on bukti_permintaan_binrohtal.no_surat=permintaan_binrohtal.no_surat "+
                 "inner join kelurahan on pasien.kd_kel=kelurahan.kd_kel "+
@@ -1409,12 +1396,6 @@ public final class SuratPermintaanBinrohtal extends javax.swing.JDialog {
             JOptionPane.showMessageDialog(null,"Maaf, silahkan pilih data terlebih dahulu..!!!!");
         }
     }//GEN-LAST:event_btnCetakLembarActionPerformed
-
-    private void TanggalItemStateChanged(java.awt.event.ItemEvent evt) {//GEN-FIRST:event_TanggalItemStateChanged
-        if (evt.getStateChange() == ItemEvent.SELECTED) {
-            autonomor();
-        }
-    }//GEN-LAST:event_TanggalItemStateChanged
 
     private void BtnRuangActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_BtnRuangActionPerformed
         if (kamar == null || !kamar.isDisplayable()) {
@@ -1575,7 +1556,6 @@ public final class SuratPermintaanBinrohtal extends javax.swing.JDialog {
     private widget.Label jLabel8;
     private widget.Label jLabel9;
     private javax.swing.JPanel jPanel3;
-    private javax.swing.JSeparator jSeparator3;
     private widget.TextBox kdkamar;
     private widget.TextBox nmkamar;
     private widget.panelisi panelGlass8;
@@ -1591,35 +1571,34 @@ public final class SuratPermintaanBinrohtal extends javax.swing.JDialog {
                     "select permintaan_binrohtal.no_surat,reg_periksa.no_rawat,pasien.no_rkm_medis,pasien.nm_pasien,reg_periksa.umurdaftar,"+
                     "reg_periksa.sttsumur,pasien.jk,pasien.tgl_lahir,permintaan_binrohtal.tanggal,permintaan_binrohtal.kd_bangsal,bangsal.nm_bangsal,"+
                     "permintaan_binrohtal.jns_permintaan,permintaan_binrohtal.agama,permintaan_binrohtal.jns_pelayanan,permintaan_binrohtal.ket_pelayanan,"+
-                    "permintaan_binrohtal.respon,permintaan_binrohtal.ket_respon,permintaan_binrohtal.keterangan,permintaan_binrohtal.nip,pegawai.nama,"+
+                    "permintaan_binrohtal.respon,permintaan_binrohtal.ket_respon,permintaan_binrohtal.keterangan,permintaan_binrohtal.nip,petugas.nama,"+
                     "permintaan_binrohtal.kd_dokter,dokter.nm_dokter from permintaan_binrohtal "+
                     "inner join reg_periksa on permintaan_binrohtal.no_rawat=reg_periksa.no_rawat "+
                     "inner join pasien on reg_periksa.no_rkm_medis=pasien.no_rkm_medis "+
-                    "inner join pegawai on permintaan_binrohtal.nip=pegawai.nik "+
-                    "left join bangsal on permintaan_binrohtal.kd_bangsal=bangsal.kd_bangsal "+
-                    "left join dokter on permintaan_binrohtal.kd_dokter=dokter.kd_dokter where "+
+                    "inner join petugas on permintaan_binrohtal.nip=petugas.nip "+
+                    "inner join bangsal on permintaan_binrohtal.kd_bangsal=bangsal.kd_bangsal "+
+                    "inner join dokter on permintaan_binrohtal.kd_dokter=dokter.kd_dokter where "+
                     "permintaan_binrohtal.tanggal between ? and ? order by permintaan_binrohtal.tanggal");
             }else{
                 ps=koneksi.prepareStatement(
                     "select permintaan_binrohtal.no_surat,reg_periksa.no_rawat,pasien.no_rkm_medis,pasien.nm_pasien,reg_periksa.umurdaftar,"+
                     "reg_periksa.sttsumur,pasien.jk,pasien.tgl_lahir,permintaan_binrohtal.tanggal,permintaan_binrohtal.kd_bangsal,bangsal.nm_bangsal,"+
                     "permintaan_binrohtal.jns_permintaan,permintaan_binrohtal.agama,permintaan_binrohtal.jns_pelayanan,permintaan_binrohtal.ket_pelayanan,"+
-                    "permintaan_binrohtal.respon,permintaan_binrohtal.ket_respon,permintaan_binrohtal.keterangan,permintaan_binrohtal.nip,pegawai.nama,"+
+                    "permintaan_binrohtal.respon,permintaan_binrohtal.ket_respon,permintaan_binrohtal.keterangan,permintaan_binrohtal.nip,petugas.nama,"+
                     "permintaan_binrohtal.kd_dokter,dokter.nm_dokter from permintaan_binrohtal "+
                     "inner join reg_periksa on permintaan_binrohtal.no_rawat=reg_periksa.no_rawat "+
                     "inner join pasien on reg_periksa.no_rkm_medis=pasien.no_rkm_medis "+
-                    "inner join pegawai on permintaan_binrohtal.nip=pegawai.nik "+
-                    "left join bangsal on permintaan_binrohtal.kd_bangsal=bangsal.kd_bangsal "+
-                    "left join dokter on permintaan_binrohtal.kd_dokter=dokter.kd_dokter where "+
-                    "permintaan_binrohtal.tanggal between ? and ? and "+
-                    "(reg_periksa.no_rawat like ? or pasien.no_rkm_medis like ? or pasien.nm_pasien like ? or "+
+                    "inner join petugas on permintaan_binrohtal.nip=petugas.nip "+
+                    "inner join bangsal on permintaan_binrohtal.kd_bangsal=bangsal.kd_bangsal "+
+                    "inner join dokter on permintaan_binrohtal.kd_dokter=dokter.kd_dokter where "+
+                    "permintaan_binrohtal.tanggal between ? and ? and (reg_periksa.no_rawat like ? or pasien.no_rkm_medis like ? or pasien.nm_pasien like ? or "+
                     "permintaan_binrohtal.keterangan like ? or permintaan_binrohtal.kd_bangsal like ? or bangsal.nm_bangsal like ? or "+
-                    "permintaan_binrohtal.nip like ? or pegawai.nama like ? or permintaan_binrohtal.kd_dokter like ? or dokter.nm_dokter like ?) "+
+                    "permintaan_binrohtal.nip like ? or petugas.nama like ? or permintaan_binrohtal.kd_dokter like ? or dokter.nm_dokter like ?) "+
                     "order by permintaan_binrohtal.tanggal");
             }
                 
             try {
-                if(TCari.getText().toString().trim().equals("")){
+                if(TCari.getText().trim().equals("")){
                     ps.setString(1,Valid.SetTgl(DTPCari1.getSelectedItem()+"")+" 00:00:00");
                     ps.setString(2,Valid.SetTgl(DTPCari2.getSelectedItem()+"")+" 23:59:59");
                 }else{
@@ -1633,6 +1612,8 @@ public final class SuratPermintaanBinrohtal extends javax.swing.JDialog {
                     ps.setString(8,"%"+TCari.getText()+"%");
                     ps.setString(9,"%"+TCari.getText()+"%");
                     ps.setString(10,"%"+TCari.getText()+"%");
+                    ps.setString(11,"%"+TCari.getText()+"%");
+                    ps.setString(12,"%"+TCari.getText()+"%");
                 }
                   
                 rs=ps.executeQuery();
@@ -1692,8 +1673,6 @@ public final class SuratPermintaanBinrohtal extends javax.swing.JDialog {
             cmbRespon.setSelectedItem(tbObat.getValueAt(tbObat.getSelectedRow(),14).toString());
             ResponLainnya.setText(tbObat.getValueAt(tbObat.getSelectedRow(),15).toString());
             Keterangan.setText(tbObat.getValueAt(tbObat.getSelectedRow(),16).toString());
-            NIK.setText(tbObat.getValueAt(tbObat.getSelectedRow(),17).toString());
-            NamaPegawai.setText(tbObat.getValueAt(tbObat.getSelectedRow(),18).toString());
             KodeDokter.setText(tbObat.getValueAt(tbObat.getSelectedRow(),19).toString());
             NamaDokter.setText(tbObat.getValueAt(tbObat.getSelectedRow(),20).toString());
             Valid.SetTgl2(Tanggal,tbObat.getValueAt(tbObat.getSelectedRow(),7).toString());
@@ -1731,7 +1710,6 @@ public final class SuratPermintaanBinrohtal extends javax.swing.JDialog {
         } catch (Exception e) {
             System.out.println("Notif : "+e);
         }
-        autonomor();
     }
     
     public void setNoRm(String norwt,Date tgl2) {
@@ -1741,13 +1719,12 @@ public final class SuratPermintaanBinrohtal extends javax.swing.JDialog {
         isRawat();
         ChkInput.setSelected(true);
         isForm();
-        autonomor();
     }
     
     private void isForm(){
         if(ChkInput.isSelected()==true){
             ChkInput.setVisible(false);
-            PanelInput.setPreferredSize(new Dimension(WIDTH,225));
+            PanelInput.setPreferredSize(new Dimension(WIDTH,215));
             FormInput.setVisible(true);      
             ChkInput.setVisible(true);
         }else if(ChkInput.isSelected()==false){           
@@ -1895,5 +1872,14 @@ public final class SuratPermintaanBinrohtal extends javax.swing.JDialog {
     public void dispose() {
         executor.shutdownNow();
         super.dispose();
+    }
+    
+    public void setNoRm(String norwt,String norm,String nama) {
+        TNoRw.setText(norwt);
+        TNoRM.setText(norm);
+        TPasien.setText(nama);
+        isRawat();
+        ChkInput.setSelected(true);
+        isForm();
     }
 }

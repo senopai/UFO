@@ -12,6 +12,11 @@ import java.io.FileWriter;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.RejectedExecutionException;
+import javax.swing.JOptionPane;
+import javax.swing.SwingUtilities;
 import javax.swing.text.Document;
 import javax.swing.text.html.HTMLEditorKit;
 import javax.swing.text.html.StyleSheet;
@@ -28,6 +33,8 @@ public class DlgRekapPermintaanDiet extends javax.swing.JDialog {
     private String tanggal="01",stringk1="",stringk2="",stringk3="",stringutama="",stringvip="",stringvvip="";
     private String[] kodebayar,carabayar;
     private int[] totalk1,totalk2,totalk3,totalutama,totalvip,totalvvip;
+    private final ExecutorService executor = Executors.newSingleThreadExecutor();
+    private volatile boolean ceksukses = false;
     
     /** Creates new form DlgProgramStudi
      * @param parent
@@ -202,40 +209,44 @@ private void KdKeyPressed(java.awt.event.KeyEvent evt) {//GEN-FIRST:event_TKdKey
     }//GEN-LAST:event_BtnPrintKeyPressed
 
     private void BtnPrintActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_BtnPrintActionPerformed
-        this.setCursor(Cursor.getPredefinedCursor(Cursor.WAIT_CURSOR));
-        try {
+        if(ceksukses==false){
+            this.setCursor(Cursor.getPredefinedCursor(Cursor.WAIT_CURSOR));
+            try {
 
-            File g = new File("file2.css");
-            BufferedWriter bg = new BufferedWriter(new FileWriter(g));
-            bg.write(
-                ".isi td{border-right: 1px solid #e2e7dd;font: 11px tahoma;height:12px;border-bottom: 1px solid #e2e7dd;background: #ffffff;color:#323232;}"+
-                ".isi2 td{font: 11px tahoma;height:12px;background: #ffffff;color:#323232;}"+
-                ".isi3 td{border-right: 1px solid #e2e7dd;font: 11px tahoma;height:12px;border-top: 1px solid #e2e7dd;background: #ffffff;color:#323232;}"+
-                ".isi4 td{font: 11px tahoma;height:12px;border-top: 1px solid #e2e7dd;background: #ffffff;color:#323232;}"
-            );
-            bg.close();
+                File g = new File("file2.css");
+                BufferedWriter bg = new BufferedWriter(new FileWriter(g));
+                bg.write(
+                    ".isi td{border-right: 1px solid #e2e7dd;font: 11px tahoma;height:12px;border-bottom: 1px solid #e2e7dd;background: #ffffff;color:#323232;}"+
+                    ".isi2 td{font: 11px tahoma;height:12px;background: #ffffff;color:#323232;}"+
+                    ".isi3 td{border-right: 1px solid #e2e7dd;font: 11px tahoma;height:12px;border-top: 1px solid #e2e7dd;background: #ffffff;color:#323232;}"+
+                    ".isi4 td{font: 11px tahoma;height:12px;border-top: 1px solid #e2e7dd;background: #ffffff;color:#323232;}"
+                );
+                bg.close();
 
-            File f = new File("RekapPermintaanDiet.html");
-            BufferedWriter bw = new BufferedWriter(new FileWriter(f));
-            bw.write(LoadHTML.getText().replaceAll("<head>","<head><link href=\"file2.css\" rel=\"stylesheet\" type=\"text/css\" />"+
-                "<table width='"+(30+(kolom*180))+"px' border='0' align='center' cellpadding='3px' cellspacing='0' class='tbl_form'>"+
-                "<tr class='isi2'>"+
-                "<td valign='top' align='center'>"+
-                "<font size='4' face='Tahoma'>"+akses.getnamars()+"</font><br>"+
-                akses.getalamatrs()+", "+akses.getkabupatenrs()+", "+akses.getpropinsirs()+"<br>"+
-                akses.getkontakrs()+", E-mail : "+akses.getemailrs()+"<br><br>"+
-                "<font size='2' face='Tahoma'>REKAP PERMINTAAN DIET PER CARA BAYAR & PER KELAS<br> TAHUN "+ThnCari.getSelectedItem()+" BULAN "+BlnCari.getSelectedItem()+"<br><br></font>"+
-                "</td>"+
-                "</tr>"+
-                "</table>")
-        );
-        bw.close();
-        Desktop.getDesktop().browse(f.toURI());
-        } catch (Exception e) {
-            System.out.println("Notifikasi : "+e);
+                File f = new File("RekapPermintaanDiet.html");
+                BufferedWriter bw = new BufferedWriter(new FileWriter(f));
+                bw.write(LoadHTML.getText().replaceAll("<head>","<head><link href=\"file2.css\" rel=\"stylesheet\" type=\"text/css\" />"+
+                    "<table width='"+(30+(kolom*180))+"px' border='0' align='center' cellpadding='3px' cellspacing='0' class='tbl_form'>"+
+                    "<tr class='isi2'>"+
+                    "<td valign='top' align='center'>"+
+                    "<font size='4' face='Tahoma'>"+akses.getnamars()+"</font><br>"+
+                    akses.getalamatrs()+", "+akses.getkabupatenrs()+", "+akses.getpropinsirs()+"<br>"+
+                    akses.getkontakrs()+", E-mail : "+akses.getemailrs()+"<br><br>"+
+                    "<font size='2' face='Tahoma'>REKAP PERMINTAAN DIET PER CARA BAYAR & PER KELAS<br> TAHUN "+ThnCari.getSelectedItem()+" BULAN "+BlnCari.getSelectedItem()+"<br><br></font>"+
+                    "</td>"+
+                    "</tr>"+
+                    "</table>")
+                );
+                bw.close();
+                Desktop.getDesktop().browse(f.toURI());
+            } catch (Exception e) {
+                System.out.println("Notifikasi : "+e);
+            }
+
+            this.setCursor(Cursor.getDefaultCursor());
+        }else{
+            JOptionPane.showMessageDialog(null,"Masih proses menampilkan data, harap tunggu terlebih dahulu...!");
         }
-
-        this.setCursor(Cursor.getDefaultCursor());
     }//GEN-LAST:event_BtnPrintActionPerformed
 
     private void btnCariKeyPressed(java.awt.event.KeyEvent evt) {//GEN-FIRST:event_btnCariKeyPressed
@@ -247,7 +258,7 @@ private void KdKeyPressed(java.awt.event.KeyEvent evt) {//GEN-FIRST:event_TKdKey
     }//GEN-LAST:event_btnCariKeyPressed
 
     private void btnCariActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_btnCariActionPerformed
-        prosesCari();
+        runBackground(() ->prosesCari());
     }//GEN-LAST:event_btnCariActionPerformed
 
     /**
@@ -285,10 +296,7 @@ private void KdKeyPressed(java.awt.event.KeyEvent evt) {//GEN-FIRST:event_TKdKey
         this.setCursor(Cursor.getPredefinedCursor(Cursor.WAIT_CURSOR));
         try {
             htmlContent = new StringBuilder();
-            htmlContent.append(                             
-                "<tr class='isi'>"+
-                    "<td valign='middle' bgcolor='#FFFAFA' align='center' width='40px' rowspan='2'>Tgl</td>"
-            );
+            htmlContent.append("<tr class='isi'><td valign='middle' bgcolor='#FFFAFA' align='center' width='40px' rowspan='2'>Tgl</td>");
             kolom=Sequel.cariInteger("select count(*) from penjab");
             kodebayar=new String[kolom];
             carabayar=new String[kolom];
@@ -299,7 +307,7 @@ private void KdKeyPressed(java.awt.event.KeyEvent evt) {//GEN-FIRST:event_TKdKey
             totalvip=new int[kolom];
             totalvvip=new int[kolom];
             kolom=0;
-            ps=koneksi.prepareStatement("select * from penjab order by png_jawab");
+            ps=koneksi.prepareStatement("select penjab.kd_pj,penjab.png_jawab from penjab order by penjab.png_jawab");
             try {
                 rs=ps.executeQuery();
                 while(rs.next()){
@@ -312,7 +320,7 @@ private void KdKeyPressed(java.awt.event.KeyEvent evt) {//GEN-FIRST:event_TKdKey
                     totalvip[kolom]=0;
                     totalvvip[kolom]=0;
                     kolom++;
-                    htmlContent.append("<td valign='middle' bgcolor='#FFFAFA' align='center' width='180px' colspan='6'>"+rs.getString("png_jawab")+"</td>");
+                    htmlContent.append("<td valign='middle' bgcolor='#FFFAFA' align='center' width='180px' colspan='6'>").append(rs.getString("png_jawab")).append("</td>");
                 }
             } catch (Exception e) {
                 System.out.println("Akun Bayar : "+e);
@@ -324,20 +332,12 @@ private void KdKeyPressed(java.awt.event.KeyEvent evt) {//GEN-FIRST:event_TKdKey
                     ps.close();
                 }
             }
-            htmlContent.append(
-                    "<td valign='middle' bgcolor='#FFFAFA' align='center' width='50px' rowspan='2'>Jumlah</td>"+
-                "</tr>"
-            );   
-            
-            htmlContent.append(                             
-                "<tr class='isi'>"
-            );
+            htmlContent.append("<td valign='middle' bgcolor='#FFFAFA' align='center' width='50px' rowspan='2'>Jumlah</td></tr>");   
+            htmlContent.append("<tr class='isi'>");
             for(i=0;i<kolom;i++){
                 htmlContent.append("<td valign='middle' bgcolor='#FFFAFA' align='center'>K 1</td><td valign='middle' bgcolor='#FFFAFA' align='center'>K 2</td><td valign='middle' bgcolor='#FFFAFA' align='center'>K 3</td><td valign='middle' bgcolor='#FFFAFA' align='center'>Utama</td><td valign='middle' bgcolor='#FFFAFA' align='center'>VIP</td><td valign='middle' bgcolor='#FFFAFA' align='center'>VVIP</td>");
             }
-            htmlContent.append(
-                "</tr>"
-            ); 
+            htmlContent.append("</tr>"); 
             
             totaljumlah=0;
             for(x=1;x<32;x++){
@@ -346,10 +346,7 @@ private void KdKeyPressed(java.awt.event.KeyEvent evt) {//GEN-FIRST:event_TKdKey
                 }else{
                     tanggal=""+x;
                 }
-                htmlContent.append(                             
-                    "<tr class='isi'>"+
-                        "<td valign='middle' align='center'>"+x+"</td>"
-                );
+                htmlContent.append("<tr class='isi'><td valign='middle' align='center'>").append(x).append("</td>");
                 
                 jumlah=0;
                 for(i=0;i<kolom;i++){
@@ -408,49 +405,19 @@ private void KdKeyPressed(java.awt.event.KeyEvent evt) {//GEN-FIRST:event_TKdKey
                         stringvvip=""+vvip;
                     }
                     
-                    htmlContent.append(
-                        "<td valign='middle' align='center'>"+stringk1+"</td><td valign='middle' align='center'>"+stringk2+"</td><td valign='middle' align='center'>"+stringk3+"</td><td valign='middle' align='center'>"+stringutama+"</td><td valign='middle' align='center'>"+stringvip+"</td><td valign='middle' align='center'>"+stringvvip+"</td>"
-                    );
+                    htmlContent.append("<td valign='middle' align='center'>").append(stringk1).append("</td><td valign='middle' align='center'>").append(stringk2).append("</td><td valign='middle' align='center'>").append(stringk3).append("</td><td valign='middle' align='center'>").append(stringutama).append("</td><td valign='middle' align='center'>").append(stringvip).append("</td><td valign='middle' align='center'>").append(stringvvip).append("</td>");
                 }
-                htmlContent.append(
-                        "<td valign='middle' align='center'>"+jumlah+"</td>"+
-                    "</tr>"
-                ); 
+                htmlContent.append("<td valign='middle' align='center'>").append(jumlah).append("</td></tr>"); 
                 totaljumlah=totaljumlah+jumlah;
             }
             
-            htmlContent.append(                             
-                "<tr class='isi'>"+
-                    "<td valign='middle' align='center'><b>Total :</b></td>"
-            );
+            htmlContent.append("<tr class='isi'><td valign='middle' align='center'><b>Total :</b></td>");
             for(i=0;i<kolom;i++){
-                htmlContent.append(
-                    "<td valign='middle' align='center'><b>"+totalk1[i]+"</b></td><td valign='middle' align='center'><b>"+totalk2[i]+"</b></td><td valign='middle' align='center'><b>"+totalk3[i]+"</b></td><td valign='middle' align='center'><b>"+totalutama[i]+"</b></td><td valign='middle' align='center'><b>"+totalvip[i]+"</b></td><td valign='middle' align='center'><b>"+totalvvip[i]+"</b></td>"
-                );
+                htmlContent.append("<td valign='middle' align='center'><b>").append(totalk1[i]).append("</b></td><td valign='middle' align='center'><b>").append(totalk2[i]).append("</b></td><td valign='middle' align='center'><b>").append(totalk3[i]).append("</b></td><td valign='middle' align='center'><b>").append(totalutama[i]).append("</b></td><td valign='middle' align='center'><b>").append(totalvip[i]).append("</b></td><td valign='middle' align='center'><b>").append(totalvvip[i]).append("</b></td>");
             }
-            htmlContent.append(
-                    "<td valign='middle' align='center'><b>"+totaljumlah+"</b></td>"+
-                "</tr>"
-            ); 
-            
-            htmlContent.append(                             
-                "<tr class='isi'>"+
-                    "<td valign='middle' colspan='"+(2+(kolom*6))+"'>&nbsp;</td>"+
-                "</tr>"
-            );
-            
-            htmlContent.append(                             
-                "<tr class='isi'>"+
-                    "<td valign='middle' bgcolor='#FFFAFA' align='center' colspan='7'>Status/Cara Bayar</td>"+
-                    "<td valign='middle' bgcolor='#FFFAFA' align='center' colspan='2'>K 1</td>"+
-                    "<td valign='middle' bgcolor='#FFFAFA' align='center' colspan='2'>K 2</td>"+
-                    "<td valign='middle' bgcolor='#FFFAFA' align='center' colspan='2'>K 3</td>"+
-                    "<td valign='middle' bgcolor='#FFFAFA' align='center' colspan='2'>Utama</td>"+
-                    "<td valign='middle' bgcolor='#FFFAFA' align='center' colspan='2'>VIP</td>"+
-                    "<td valign='middle' bgcolor='#FFFAFA' align='center' colspan='2'>VVIP</td>"+
-                    "<td valign='middle' colspan='"+((kolom*6)-17)+"'>&nbsp;</td>"+
-                "</tr>"
-            );
+            htmlContent.append("<td valign='middle' align='center'><b>").append(totaljumlah).append("</b></td></tr>"); 
+            htmlContent.append("<tr class='isi'><td valign='middle' colspan='").append(2).append(kolom*6).append("'>&nbsp;</td></tr>");
+            htmlContent.append("<tr class='isi'><td valign='middle' bgcolor='#FFFAFA' align='center' colspan='7'>Status/Cara Bayar</td><td valign='middle' bgcolor='#FFFAFA' align='center' colspan='2'>K 1</td><td valign='middle' bgcolor='#FFFAFA' align='center' colspan='2'>K 2</td><td valign='middle' bgcolor='#FFFAFA' align='center' colspan='2'>K 3</td><td valign='middle' bgcolor='#FFFAFA' align='center' colspan='2'>Utama</td><td valign='middle' bgcolor='#FFFAFA' align='center' colspan='2'>VIP</td><td valign='middle' bgcolor='#FFFAFA' align='center' colspan='2'>VVIP</td><td valign='middle' colspan='").append((kolom*6)-17).append("'>&nbsp;</td></tr>");
             
             jumlahtotalk1=0;jumlahtotalk2=0;jumlahtotalk3=0;jumlahtotalutama=0;jumlahtotalvip=0;jumlahtotalvvip=0;
             for(i=0;i<kolom;i++){
@@ -460,31 +427,9 @@ private void KdKeyPressed(java.awt.event.KeyEvent evt) {//GEN-FIRST:event_TKdKey
                 jumlahtotalutama=jumlahtotalutama+totalutama[i];
                 jumlahtotalvip=jumlahtotalvip+totalvip[i];
                 jumlahtotalvvip=jumlahtotalvvip+totalvvip[i];
-                htmlContent.append(                             
-                    "<tr class='isi'>"+
-                        "<td valign='middle' colspan='7'>"+carabayar[i]+"</td>"+
-                        "<td valign='middle' align='center' colspan='2'>"+totalk1[i]+"</td>"+
-                        "<td valign='middle' align='center' colspan='2'>"+totalk2[i]+"</td>"+
-                        "<td valign='middle' align='center' colspan='2'>"+totalk3[i]+"</td>"+
-                        "<td valign='middle' align='center' colspan='2'>"+totalutama[i]+"</td>"+
-                        "<td valign='middle' align='center' colspan='2'>"+totalvip[i]+"</td>"+
-                        "<td valign='middle' align='center' colspan='2'>"+totalvvip[i]+"</td>"+
-                        "<td valign='middle' colspan='"+((kolom*6)-17)+"'>&nbsp;</td>"+
-                    "</tr>"
-                );
+                htmlContent.append("<tr class='isi'><td valign='middle' colspan='7'>").append(carabayar[i]).append("</td><td valign='middle' align='center' colspan='2'>").append(totalk1[i]).append("</td><td valign='middle' align='center' colspan='2'>").append(totalk2[i]).append("</td><td valign='middle' align='center' colspan='2'>").append(totalk3[i]).append("</td><td valign='middle' align='center' colspan='2'>").append(totalutama[i]).append("</td><td valign='middle' align='center' colspan='2'>").append(totalvip[i]).append("</td><td valign='middle' align='center' colspan='2'>").append(totalvvip[i]).append("</td><td valign='middle' colspan='").append((kolom*6)-17).append("'>&nbsp;</td></tr>");
             }
-            htmlContent.append(                             
-                "<tr class='isi'>"+
-                    "<td valign='middle' colspan='7'><b>Total :</b></td>"+
-                    "<td valign='middle' align='center' colspan='2'><b>"+jumlahtotalk1+"</b></td>"+
-                    "<td valign='middle' align='center' colspan='2'><b>"+jumlahtotalk2+"</b></td>"+
-                    "<td valign='middle' align='center' colspan='2'><b>"+jumlahtotalk3+"</b></td>"+
-                    "<td valign='middle' align='center' colspan='2'><b>"+jumlahtotalutama+"</b></td>"+
-                    "<td valign='middle' align='center' colspan='2'><b>"+jumlahtotalvip+"</b></td>"+
-                    "<td valign='middle' align='center' colspan='2'><b>"+jumlahtotalvvip+"</b></td>"+
-                    "<td valign='middle' colspan='"+((kolom*6)-17)+"'>&nbsp;</td>"+
-                "</tr>"
-            );
+            htmlContent.append("<tr class='isi'><td valign='middle' colspan='7'><b>Total :</b></td><td valign='middle' align='center' colspan='2'><b>").append(jumlahtotalk1).append("</b></td><td valign='middle' align='center' colspan='2'><b>").append(jumlahtotalk2).append("</b></td><td valign='middle' align='center' colspan='2'><b>").append(jumlahtotalk3).append("</b></td><td valign='middle' align='center' colspan='2'><b>").append(jumlahtotalutama).append("</b></td><td valign='middle' align='center' colspan='2'><b>").append(jumlahtotalvip).append("</b></td><td valign='middle' align='center' colspan='2'><b>").append(jumlahtotalvvip).append("</b></td><td valign='middle' colspan='").append((kolom*6)-17).append("'>&nbsp;</td></tr>");
             
             LoadHTML.setText(
                     "<html>"+
@@ -503,4 +448,35 @@ private void KdKeyPressed(java.awt.event.KeyEvent evt) {//GEN-FIRST:event_TKdKey
         BtnPrint.setEnabled(akses.getrekap_permintaan_diet());
     }
     
+    private void runBackground(Runnable task) {
+        if (ceksukses) return;
+        if (executor.isShutdown() || executor.isTerminated()) return;
+        if (!isDisplayable()) return;
+
+        ceksukses = true;
+        setCursor(Cursor.getPredefinedCursor(Cursor.WAIT_CURSOR));
+
+        try {
+            executor.submit(() -> {
+                try {
+                    task.run();
+                } finally {
+                    ceksukses = false;
+                    SwingUtilities.invokeLater(() -> {
+                        if (isDisplayable()) {
+                            setCursor(Cursor.getDefaultCursor());
+                        }
+                    });
+                }
+            });
+        } catch (RejectedExecutionException ex) {
+            ceksukses = false;
+        }
+    }
+    
+    @Override
+    public void dispose() {
+        executor.shutdownNow();
+        super.dispose();
+    }
 }

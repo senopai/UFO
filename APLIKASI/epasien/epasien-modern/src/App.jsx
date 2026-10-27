@@ -1,11 +1,11 @@
 import React, { useState } from 'react';
 import Sidebar from './components/Sidebar';
 import Header from './components/Header';
-import Dashboard from './components/Dashboard';
-import Booking from './components/Booking';
-import History from './components/History';
-import EConsent from './components/EConsent';
-import Settings from './components/Settings';
+import Dashboard from './pages/Dashboard';
+import Booking from './pages/Booking';
+import History from './pages/History';
+import EConsent from './pages/EConsent';
+import Settings from './pages/Settings';
 import CardPasien from './components/CardPasien';
 import { 
   HeartPulse, 

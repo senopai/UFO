@@ -19,6 +19,7 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
+import java.util.concurrent.RejectedExecutionException;
 import javax.swing.JOptionPane;
 import javax.swing.JTable;
 import javax.swing.SwingUtilities;
@@ -88,6 +89,8 @@ public class KeuanganBubes extends javax.swing.JDialog {
     private void initComponents() {
 
         Kd2 = new widget.TextBox();
+        Popup = new javax.swing.JPopupMenu();
+        CekJurnal = new widget.MenuItem();
         internalFrame1 = new widget.InternalFrame();
         scrollPane1 = new widget.ScrollPane();
         tbDokter = new widget.Table();
@@ -112,6 +115,22 @@ public class KeuanganBubes extends javax.swing.JDialog {
         Kd2.setName("Kd2"); // NOI18N
         Kd2.setPreferredSize(new java.awt.Dimension(207, 23));
 
+        Popup.setName("Popup"); // NOI18N
+
+        CekJurnal.setBackground(new java.awt.Color(255, 255, 254));
+        CekJurnal.setFont(new java.awt.Font("Tahoma", 0, 11)); // NOI18N
+        CekJurnal.setForeground(java.awt.Color.darkGray);
+        CekJurnal.setIcon(new javax.swing.ImageIcon(getClass().getResource("/picture/category.png"))); // NOI18N
+        CekJurnal.setText("Tampilkan Riwayat Jurnal");
+        CekJurnal.setName("CekJurnal"); // NOI18N
+        CekJurnal.setPreferredSize(new java.awt.Dimension(180, 25));
+        CekJurnal.addActionListener(new java.awt.event.ActionListener() {
+            public void actionPerformed(java.awt.event.ActionEvent evt) {
+                CekJurnalActionPerformed(evt);
+            }
+        });
+        Popup.add(CekJurnal);
+
         setDefaultCloseOperation(javax.swing.WindowConstants.DISPOSE_ON_CLOSE);
         setUndecorated(true);
         setResizable(false);
@@ -134,6 +153,7 @@ public class KeuanganBubes extends javax.swing.JDialog {
 
             }
         ));
+        tbDokter.setComponentPopupMenu(Popup);
         tbDokter.setName("tbDokter"); // NOI18N
         scrollPane1.setViewportView(tbDokter);
 
@@ -308,7 +328,6 @@ private void KdKeyPressed(java.awt.event.KeyEvent evt) {//GEN-FIRST:event_TKdKey
 
     private void BtnPrintActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_BtnPrintActionPerformed
         this.setCursor(Cursor.getPredefinedCursor(Cursor.WAIT_CURSOR));
-        BtnCariActionPerformed(evt);
         if(tabMode.getRowCount()==0){
             JOptionPane.showMessageDialog(null,"Maaf, data sudah habis. Tidak ada data yang bisa anda print...!!!!");
             Tahun.requestFocus();
@@ -423,7 +442,7 @@ private void KdKeyPressed(java.awt.event.KeyEvent evt) {//GEN-FIRST:event_TKdKey
         });  
         rekening.emptTeks();
         rekening.isCek();
-        rekening.tampil();
+        rekening.tampil2();
         rekening.setSize(internalFrame1.getWidth()-20,internalFrame1.getHeight()-20);
         rekening.setLocationRelativeTo(internalFrame1);
         rekening.setVisible(true);
@@ -454,6 +473,22 @@ private void KdKeyPressed(java.awt.event.KeyEvent evt) {//GEN-FIRST:event_TKdKey
         }
     }//GEN-LAST:event_ChkTanggalItemStateChanged
 
+    private void CekJurnalActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_CekJurnalActionPerformed
+        if(tbDokter.getSelectedRow()>-1){
+            this.setCursor(Cursor.getPredefinedCursor(Cursor.WAIT_CURSOR));
+            DlgCariJurnal form=new DlgCariJurnal(null,false);
+            form.emptTeks();        
+            form.setSize(internalFrame1.getWidth()-20,internalFrame1.getHeight()-20);
+            form.setLocationRelativeTo(internalFrame1);
+            form.setAlwaysOnTop(false);
+            form.setJurnal(tbDokter.getValueAt(tbDokter.getSelectedRow(),1).toString(),tbDokter.getValueAt(tbDokter.getSelectedRow(),0).toString());
+            form.setVisible(true);
+            this.setCursor(Cursor.getDefaultCursor());
+        }else{
+            JOptionPane.showMessageDialog(null,"Maaf, pilih dulu data yang ingin ditampilkan riwayat jurnalnya.\nKlik data pada table untuk memilih...!!!!");
+        }
+    }//GEN-LAST:event_CekJurnalActionPerformed
+
     /**
     * @param args the command line arguments
     */
@@ -476,9 +511,11 @@ private void KdKeyPressed(java.awt.event.KeyEvent evt) {//GEN-FIRST:event_TKdKey
     private widget.Button BtnKeluar;
     private widget.Button BtnPrint;
     private widget.ComboBox Bulan;
+    private widget.MenuItem CekJurnal;
     private widget.CekBox ChkBulan;
     private widget.CekBox ChkTanggal;
     private widget.TextBox Kd2;
+    private javax.swing.JPopupMenu Popup;
     private widget.ComboBox Tahun;
     private widget.ComboBox Tanggal;
     private widget.InternalFrame internalFrame1;
@@ -632,25 +669,46 @@ private void KdKeyPressed(java.awt.event.KeyEvent evt) {//GEN-FIRST:event_TKdKey
         }
     }
     
+    public void setRiwayatTransaksi(String kodeakun){
+        kdrek.setText(kodeakun);
+        nmrek.setText(Sequel.cariIsi("select rekening.nm_rek from rekening where rekening.kd_rek=?",kodeakun));
+        runBackground(() ->prosesCari());
+    }
+    
     public void isCek(){
         BtnPrint.setEnabled(akses.getbuku_besar());
+        CekJurnal.setEnabled(akses.getposting_jurnal()); 
     }
      
     private void runBackground(Runnable task) {
         if (ceksukses) return;
+        if (executor.isShutdown() || executor.isTerminated()) return;
+        if (!isDisplayable()) return;
+
         ceksukses = true;
+        setCursor(Cursor.getPredefinedCursor(Cursor.WAIT_CURSOR));
 
-        this.setCursor(Cursor.getPredefinedCursor(Cursor.WAIT_CURSOR));
-
-        executor.submit(() -> {
-            try {
-                task.run();
-            } finally {
-                ceksukses = false;
-                SwingUtilities.invokeLater(() -> {
-                    this.setCursor(Cursor.getDefaultCursor());
-                });
-            }
-        });
+        try {
+            executor.submit(() -> {
+                try {
+                    task.run();
+                } finally {
+                    ceksukses = false;
+                    SwingUtilities.invokeLater(() -> {
+                        if (isDisplayable()) {
+                            setCursor(Cursor.getDefaultCursor());
+                        }
+                    });
+                }
+            });
+        } catch (RejectedExecutionException ex) {
+            ceksukses = false;
+        }
+    }
+    
+    @Override
+    public void dispose() {
+        executor.shutdownNow();
+        super.dispose();
     }
 }

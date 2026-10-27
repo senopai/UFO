@@ -12,6 +12,7 @@ import fungsi.koneksiDB;
 import fungsi.sekuel;
 import fungsi.validasi;
 import fungsi.akses;
+import fungsi.ppnralan;
 import java.awt.Cursor;
 import java.awt.Dimension;
 import java.awt.event.KeyEvent;
@@ -39,8 +40,6 @@ public class DlgBilingParsialRalan extends javax.swing.JDialog {
     private sekuel Sequel=new sekuel();
     private validasi Valid=new validasi();
     private Jurnal jur=new Jurnal();
-    private DlgCariDokter dokter=new DlgCariDokter(null,false);
-    private DlgCariPetugas petugas=new DlgCariPetugas(null,false);
     private WarnaTable2 warna=new WarnaTable2();
     private final DefaultTableModel tabModeAkunBayar,TabModeTindakanDr,
             tabModeBilling,TabModeTindakanDrBayar,TabModeTindakanPr,
@@ -68,7 +67,7 @@ public class DlgBilingParsialRalan extends javax.swing.JDialog {
                             "where no_rawat=?",
             sqlpsbiling="insert into billing values(?,?,?,?,?,?,?,?,?,?,?)",
             biaya="",tambahan="",totals="",sqlpsrekening="select * from set_akun_ralan",
-            cara_bayar_radiologi="No",kelas_radiologi="No",tampilkan_ppnobat_ralan="",
+            cara_bayar_radiologi="No",kelas_radiologi="No",
             Tindakan_Ralan="",Laborat_Ralan="",Radiologi_Ralan="",
             Registrasi_Ralan="",Beban_Jasa_Medik_Dokter_Tindakan_Ralan="",
             Utang_Jasa_Medik_Dokter_Tindakan_Ralan="",Beban_Jasa_Medik_Paramedis_Tindakan_Ralan="",
@@ -117,95 +116,6 @@ public class DlgBilingParsialRalan extends javax.swing.JDialog {
         KdDok.setDocument(new batasInput((byte)20).getKata(KdDok));
         KdDok2.setDocument(new batasInput((byte)20).getKata(KdDok2));
         TCari.setDocument(new batasInput((int)100).getKata(TCari));
-        
-        if(koneksiDB.CARICEPAT().equals("aktif")){
-            TCari.getDocument().addDocumentListener(new javax.swing.event.DocumentListener(){
-                @Override
-                public void insertUpdate(DocumentEvent e) {
-                    if(TCari.getText().length()>2){
-                        BtnCariBayarActionPerformed(null);
-                    }
-                }
-                @Override
-                public void removeUpdate(DocumentEvent e) {
-                    if(TCari.getText().length()>2){
-                        BtnCariBayarActionPerformed(null);
-                    }
-                }
-                @Override
-                public void changedUpdate(DocumentEvent e) {
-                    if(TCari.getText().length()>2){
-                        BtnCariBayarActionPerformed(null);
-                    }
-                }
-            });
-        } 
-        
-        dokter.addWindowListener(new WindowListener() {
-            @Override
-            public void windowOpened(WindowEvent e) {}
-            @Override
-            public void windowClosing(WindowEvent e) {}
-            @Override
-            public void windowClosed(WindowEvent e) {
-                if(dokter.getTable().getSelectedRow()!= -1){
-                    if(TabRawat.getSelectedIndex()==0){
-                        KdDok.setText(dokter.getTable().getValueAt(dokter.getTable().getSelectedRow(),0).toString());
-                        TDokter.setText(dokter.getTable().getValueAt(dokter.getTable().getSelectedRow(),1).toString());
-                        KdDok.requestFocus();
-                    }else if(TabRawat.getSelectedIndex()==2){
-                        KdDok2.setText(dokter.getTable().getValueAt(dokter.getTable().getSelectedRow(),0).toString());
-                        TDokter2.setText(dokter.getTable().getValueAt(dokter.getTable().getSelectedRow(),1).toString());
-                        KdDok2.requestFocus();
-                    }else if(TabRawat.getSelectedIndex()==3){
-                        KdDokPerujukRad.setText(dokter.getTable().getValueAt(dokter.getTable().getSelectedRow(),0).toString());
-                        TDokterPerujukRad.setText(dokter.getTable().getValueAt(dokter.getTable().getSelectedRow(),1).toString());
-                        KdDokPerujukRad.requestFocus();
-                    }else if(TabRawat.getSelectedIndex()==4){
-                        KdDokPerujukLab.setText(dokter.getTable().getValueAt(dokter.getTable().getSelectedRow(),0).toString());
-                        TDokterPerujukLab.setText(dokter.getTable().getValueAt(dokter.getTable().getSelectedRow(),1).toString());
-                        KdDokPerujukLab.requestFocus();
-                    }                         
-                } 
-            }
-            @Override
-            public void windowIconified(WindowEvent e) {}
-            @Override
-            public void windowDeiconified(WindowEvent e) {}
-            @Override
-            public void windowActivated(WindowEvent e) {}
-            @Override
-            public void windowDeactivated(WindowEvent e) {}
-        });
-        
-        petugas.addWindowListener(new WindowListener() {
-            @Override
-            public void windowOpened(WindowEvent e) {}
-            @Override
-            public void windowClosing(WindowEvent e) {}
-            @Override
-            public void windowClosed(WindowEvent e) {
-                if(petugas.getTable().getSelectedRow()!= -1){   
-                    if(TabRawat.getSelectedIndex()==1){
-                        kdptg.setText(petugas.getTable().getValueAt(petugas.getTable().getSelectedRow(),0).toString());
-                        TPerawat.setText(petugas.getTable().getValueAt(petugas.getTable().getSelectedRow(),1).toString());
-                        kdptg.requestFocus();
-                    }else if(TabRawat.getSelectedIndex()==2){
-                        kdptg2.setText(petugas.getTable().getValueAt(petugas.getTable().getSelectedRow(),0).toString());
-                        TPerawat2.setText(petugas.getTable().getValueAt(petugas.getTable().getSelectedRow(),1).toString());
-                        kdptg2.requestFocus();
-                    }                            
-                }
-            }
-            @Override
-            public void windowIconified(WindowEvent e) {}
-            @Override
-            public void windowDeiconified(WindowEvent e) {}
-            @Override
-            public void windowActivated(WindowEvent e) {}
-            @Override
-            public void windowDeactivated(WindowEvent e) {}
-        });
         
         tabModeAkunBayar=new DefaultTableModel(null,new Object[]{"Nama Akun","Kode Rek","Bayar","PPN(%)","PPN(Rp)"}){             
             @Override public boolean isCellEditable(int rowIndex, int colIndex){
@@ -1102,12 +1012,10 @@ public class DlgBilingParsialRalan extends javax.swing.JDialog {
             notaralan=Sequel.cariIsi("select set_nota.cetaknotasimpanralan from set_nota"); 
             centangdokterralan=Sequel.cariIsi("select set_nota.centangdokterralan from set_nota"); 
             rinciandokterralan=Sequel.cariIsi("select set_nota.rinciandokterralan from set_nota"); 
-            tampilkan_ppnobat_ralan=Sequel.cariIsi("select set_nota.tampilkan_ppnobat_ralan from set_nota"); 
         } catch (Exception e) {
             notaralan="No"; 
             centangdokterralan="No";
             rinciandokterralan="No";
-            tampilkan_ppnobat_ralan="No";
         }
         
         try {
@@ -1189,47 +1097,47 @@ public class DlgBilingParsialRalan extends javax.swing.JDialog {
     private void initComponents() {
 
         PopupTindakanDr = new javax.swing.JPopupMenu();
-        ppBersihkanTindakanDr = new javax.swing.JMenuItem();
-        ppSemuaTindakanDr = new javax.swing.JMenuItem();
+        ppBersihkanTindakanDr = new widget.MenuItem();
+        ppSemuaTindakanDr = new widget.MenuItem();
         PopupTindakanDrBayar = new javax.swing.JPopupMenu();
-        ppBersihkanTindakanDrBayar = new javax.swing.JMenuItem();
-        ppSemuaTindakanDrBayar = new javax.swing.JMenuItem();
+        ppBersihkanTindakanDrBayar = new widget.MenuItem();
+        ppSemuaTindakanDrBayar = new widget.MenuItem();
         PopupTindakanPr = new javax.swing.JPopupMenu();
-        ppBersihkanTindakanPr = new javax.swing.JMenuItem();
-        ppSemuaTindakanPr = new javax.swing.JMenuItem();
+        ppBersihkanTindakanPr = new widget.MenuItem();
+        ppSemuaTindakanPr = new widget.MenuItem();
         PopupTindakanPrBayar = new javax.swing.JPopupMenu();
-        ppBersihkanTindakanPrBayar = new javax.swing.JMenuItem();
-        ppSemuaTindakanPrBayar = new javax.swing.JMenuItem();
+        ppBersihkanTindakanPrBayar = new widget.MenuItem();
+        ppSemuaTindakanPrBayar = new widget.MenuItem();
         PopupTindakanDrPr = new javax.swing.JPopupMenu();
-        ppBersihkanTindakanDrPr = new javax.swing.JMenuItem();
-        ppSemuaTindakanDrPr = new javax.swing.JMenuItem();
+        ppBersihkanTindakanDrPr = new widget.MenuItem();
+        ppSemuaTindakanDrPr = new widget.MenuItem();
         PopupTindakanDrPrBayar = new javax.swing.JPopupMenu();
-        ppBersihkanTindakanDrPrBayar = new javax.swing.JMenuItem();
-        ppSemuaTindakanDrPrBayar = new javax.swing.JMenuItem();
+        ppBersihkanTindakanDrPrBayar = new widget.MenuItem();
+        ppSemuaTindakanDrPrBayar = new widget.MenuItem();
         PopupRadiologi = new javax.swing.JPopupMenu();
-        ppBersihkanRadiologi = new javax.swing.JMenuItem();
-        ppSemuaRadiologi = new javax.swing.JMenuItem();
+        ppBersihkanRadiologi = new widget.MenuItem();
+        ppSemuaRadiologi = new widget.MenuItem();
         PopupRadiologiBayar = new javax.swing.JPopupMenu();
-        ppBersihkanRadiologiBayar = new javax.swing.JMenuItem();
-        ppSemuaRadiologiBayar = new javax.swing.JMenuItem();
+        ppBersihkanRadiologiBayar = new widget.MenuItem();
+        ppSemuaRadiologiBayar = new widget.MenuItem();
         PopupLaborat = new javax.swing.JPopupMenu();
-        ppBersihkanLaborat = new javax.swing.JMenuItem();
-        ppSemuaLaborat = new javax.swing.JMenuItem();
+        ppBersihkanLaborat = new widget.MenuItem();
+        ppSemuaLaborat = new widget.MenuItem();
         PopupDetailLaborat = new javax.swing.JPopupMenu();
-        ppBersihkanDetailLaborat = new javax.swing.JMenuItem();
-        ppSemuaDetailLaborat = new javax.swing.JMenuItem();
+        ppBersihkanDetailLaborat = new widget.MenuItem();
+        ppSemuaDetailLaborat = new widget.MenuItem();
         PopupLaboratBayar = new javax.swing.JPopupMenu();
-        ppBersihkanLaboratBayar = new javax.swing.JMenuItem();
-        ppSemuaLaboratBayar = new javax.swing.JMenuItem();
+        ppBersihkanLaboratBayar = new widget.MenuItem();
+        ppSemuaLaboratBayar = new widget.MenuItem();
         PopupDetailLaboratBayar = new javax.swing.JPopupMenu();
-        ppBersihkanDetailLaboratBayar = new javax.swing.JMenuItem();
-        ppSemuaDetailLaboratBayar = new javax.swing.JMenuItem();
+        ppBersihkanDetailLaboratBayar = new widget.MenuItem();
+        ppSemuaDetailLaboratBayar = new widget.MenuItem();
         PopupObat = new javax.swing.JPopupMenu();
-        ppBersihkanObat = new javax.swing.JMenuItem();
-        ppSemuaObat = new javax.swing.JMenuItem();
+        ppBersihkanObat = new widget.MenuItem();
+        ppSemuaObat = new widget.MenuItem();
         PopupObatBayar = new javax.swing.JPopupMenu();
-        ppBersihkanObatBayar = new javax.swing.JMenuItem();
-        ppSemuaObatBayar = new javax.swing.JMenuItem();
+        ppBersihkanObatBayar = new widget.MenuItem();
+        ppSemuaObatBayar = new widget.MenuItem();
         internalFrame1 = new widget.InternalFrame();
         panelGlass1 = new widget.panelisi();
         jLabel3 = new widget.Label();
@@ -1259,7 +1167,7 @@ public class DlgBilingParsialRalan extends javax.swing.JDialog {
         BtnNota = new widget.Button();
         TtlSemua = new widget.TextBox();
         jLabel11 = new widget.Label();
-        TabRawat = new javax.swing.JTabbedPane();
+        TabRawat = new widget.TabPane();
         internalFrame2 = new widget.InternalFrame();
         panelGlass7 = new widget.panelisi();
         jLabel5 = new widget.Label();
@@ -1311,13 +1219,13 @@ public class DlgBilingParsialRalan extends javax.swing.JDialog {
         BtnSeekDokter3 = new widget.Button();
         TDokterPerujukLab = new widget.TextBox();
         internalFrame7 = new widget.InternalFrame();
-        TabRawatLaborat = new javax.swing.JTabbedPane();
+        TabRawatLaborat = new widget.TabPane();
         Scroll12 = new widget.ScrollPane();
         tbLaborat = new widget.Table();
         Scroll14 = new widget.ScrollPane();
         tbDetailLaborat = new widget.Table();
         internalFrame8 = new widget.InternalFrame();
-        TabRawatLaboratBayar = new javax.swing.JTabbedPane();
+        TabRawatLaboratBayar = new widget.TabPane();
         Scroll15 = new widget.ScrollPane();
         tbLaboratBayar = new widget.Table();
         Scroll16 = new widget.ScrollPane();
@@ -2642,6 +2550,29 @@ public class DlgBilingParsialRalan extends javax.swing.JDialog {
     }//GEN-LAST:event_KdDokKeyPressed
 
     private void BtnSeekDokterActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_BtnSeekDokterActionPerformed
+        DlgCariDokter dokter=new DlgCariDokter(null,false);
+        dokter.addWindowListener(new WindowListener() {
+            @Override
+            public void windowOpened(WindowEvent e) {}
+            @Override
+            public void windowClosing(WindowEvent e) {}
+            @Override
+            public void windowClosed(WindowEvent e) {
+                if(dokter.getTable().getSelectedRow()!= -1){
+                    KdDok.setText(dokter.getTable().getValueAt(dokter.getTable().getSelectedRow(),0).toString());
+                    TDokter.setText(dokter.getTable().getValueAt(dokter.getTable().getSelectedRow(),1).toString());
+                    KdDok.requestFocus();                    
+                } 
+            }
+            @Override
+            public void windowIconified(WindowEvent e) {}
+            @Override
+            public void windowDeiconified(WindowEvent e) {}
+            @Override
+            public void windowActivated(WindowEvent e) {}
+            @Override
+            public void windowDeactivated(WindowEvent e) {}
+        });
         dokter.emptTeks();
         dokter.isCek();
         dokter.setSize(internalFrame1.getWidth()-20,internalFrame1.getHeight()-20);
@@ -2654,6 +2585,29 @@ public class DlgBilingParsialRalan extends javax.swing.JDialog {
     }//GEN-LAST:event_kdptgKeyPressed
 
     private void BtnSeekPetugasActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_BtnSeekPetugasActionPerformed
+        DlgCariPetugas petugas=new DlgCariPetugas(null,false);
+        petugas.addWindowListener(new WindowListener() {
+            @Override
+            public void windowOpened(WindowEvent e) {}
+            @Override
+            public void windowClosing(WindowEvent e) {}
+            @Override
+            public void windowClosed(WindowEvent e) {
+                if(petugas.getTable().getSelectedRow()!= -1){   
+                    kdptg.setText(petugas.getTable().getValueAt(petugas.getTable().getSelectedRow(),0).toString());
+                    TPerawat.setText(petugas.getTable().getValueAt(petugas.getTable().getSelectedRow(),1).toString());
+                    kdptg.requestFocus();
+                }
+            }
+            @Override
+            public void windowIconified(WindowEvent e) {}
+            @Override
+            public void windowDeiconified(WindowEvent e) {}
+            @Override
+            public void windowActivated(WindowEvent e) {}
+            @Override
+            public void windowDeactivated(WindowEvent e) {}
+        });
         petugas.emptTeks();
         petugas.isCek();
         petugas.setSize(internalFrame1.getWidth()-20,internalFrame1.getHeight()-20);
@@ -2666,6 +2620,29 @@ public class DlgBilingParsialRalan extends javax.swing.JDialog {
     }//GEN-LAST:event_kdptg2KeyPressed
 
     private void BtnSeekPetugas2ActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_BtnSeekPetugas2ActionPerformed
+        DlgCariPetugas petugas=new DlgCariPetugas(null,false);
+        petugas.addWindowListener(new WindowListener() {
+            @Override
+            public void windowOpened(WindowEvent e) {}
+            @Override
+            public void windowClosing(WindowEvent e) {}
+            @Override
+            public void windowClosed(WindowEvent e) {
+                if(petugas.getTable().getSelectedRow()!= -1){   
+                    kdptg2.setText(petugas.getTable().getValueAt(petugas.getTable().getSelectedRow(),0).toString());
+                    TPerawat2.setText(petugas.getTable().getValueAt(petugas.getTable().getSelectedRow(),1).toString());
+                    kdptg2.requestFocus();   
+                }
+            }
+            @Override
+            public void windowIconified(WindowEvent e) {}
+            @Override
+            public void windowDeiconified(WindowEvent e) {}
+            @Override
+            public void windowActivated(WindowEvent e) {}
+            @Override
+            public void windowDeactivated(WindowEvent e) {}
+        });
         petugas.emptTeks();
         petugas.isCek();
         petugas.setSize(internalFrame1.getWidth()-20,internalFrame1.getHeight()-20);
@@ -2678,6 +2655,29 @@ public class DlgBilingParsialRalan extends javax.swing.JDialog {
     }//GEN-LAST:event_KdDok2KeyPressed
 
     private void BtnSeekDokter2ActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_BtnSeekDokter2ActionPerformed
+        DlgCariDokter dokter=new DlgCariDokter(null,false);
+        dokter.addWindowListener(new WindowListener() {
+            @Override
+            public void windowOpened(WindowEvent e) {}
+            @Override
+            public void windowClosing(WindowEvent e) {}
+            @Override
+            public void windowClosed(WindowEvent e) {
+                if(dokter.getTable().getSelectedRow()!= -1){
+                    KdDok2.setText(dokter.getTable().getValueAt(dokter.getTable().getSelectedRow(),0).toString());
+                    TDokter2.setText(dokter.getTable().getValueAt(dokter.getTable().getSelectedRow(),1).toString());
+                    KdDok2.requestFocus();                    
+                } 
+            }
+            @Override
+            public void windowIconified(WindowEvent e) {}
+            @Override
+            public void windowDeiconified(WindowEvent e) {}
+            @Override
+            public void windowActivated(WindowEvent e) {}
+            @Override
+            public void windowDeactivated(WindowEvent e) {}
+        });
         dokter.emptTeks();
         dokter.isCek();
         dokter.setSize(internalFrame1.getWidth()-20,internalFrame1.getHeight()-20);
@@ -2995,6 +2995,29 @@ public class DlgBilingParsialRalan extends javax.swing.JDialog {
     }//GEN-LAST:event_KdDokPerujukRadKeyPressed
 
     private void BtnSeekDokter1ActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_BtnSeekDokter1ActionPerformed
+        DlgCariDokter dokter=new DlgCariDokter(null,false);
+        dokter.addWindowListener(new WindowListener() {
+            @Override
+            public void windowOpened(WindowEvent e) {}
+            @Override
+            public void windowClosing(WindowEvent e) {}
+            @Override
+            public void windowClosed(WindowEvent e) {
+                if(dokter.getTable().getSelectedRow()!= -1){
+                        KdDokPerujukRad.setText(dokter.getTable().getValueAt(dokter.getTable().getSelectedRow(),0).toString());
+                        TDokterPerujukRad.setText(dokter.getTable().getValueAt(dokter.getTable().getSelectedRow(),1).toString());
+                        KdDokPerujukRad.requestFocus();                  
+                } 
+            }
+            @Override
+            public void windowIconified(WindowEvent e) {}
+            @Override
+            public void windowDeiconified(WindowEvent e) {}
+            @Override
+            public void windowActivated(WindowEvent e) {}
+            @Override
+            public void windowDeactivated(WindowEvent e) {}
+        });
         dokter.emptTeks();
         dokter.isCek();
         dokter.setSize(internalFrame1.getWidth()-20,internalFrame1.getHeight()-20);
@@ -3007,6 +3030,29 @@ public class DlgBilingParsialRalan extends javax.swing.JDialog {
     }//GEN-LAST:event_KdDokPerujukLabKeyPressed
 
     private void BtnSeekDokter3ActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_BtnSeekDokter3ActionPerformed
+        DlgCariDokter dokter=new DlgCariDokter(null,false);
+        dokter.addWindowListener(new WindowListener() {
+            @Override
+            public void windowOpened(WindowEvent e) {}
+            @Override
+            public void windowClosing(WindowEvent e) {}
+            @Override
+            public void windowClosed(WindowEvent e) {
+                if(dokter.getTable().getSelectedRow()!= -1){
+                    KdDokPerujukLab.setText(dokter.getTable().getValueAt(dokter.getTable().getSelectedRow(),0).toString());
+                    TDokterPerujukLab.setText(dokter.getTable().getValueAt(dokter.getTable().getSelectedRow(),1).toString());
+                    KdDokPerujukLab.requestFocus();
+                } 
+            }
+            @Override
+            public void windowIconified(WindowEvent e) {}
+            @Override
+            public void windowDeiconified(WindowEvent e) {}
+            @Override
+            public void windowActivated(WindowEvent e) {}
+            @Override
+            public void windowDeactivated(WindowEvent e) {}
+        });
         dokter.emptTeks();
         dokter.isCek();
         dokter.setSize(internalFrame1.getWidth()-20,internalFrame1.getHeight()-20);
@@ -3199,6 +3245,33 @@ public class DlgBilingParsialRalan extends javax.swing.JDialog {
 
     private void formWindowOpened(java.awt.event.WindowEvent evt) {//GEN-FIRST:event_formWindowOpened
         tampilAkunBayar();
+        
+        if(ppnralan.getTampilPPNRalan().equals("")){
+            ppnralan.SetPPNRalan();
+        }
+        
+        if(koneksiDB.CARICEPAT().equals("aktif")){
+            TCari.getDocument().addDocumentListener(new javax.swing.event.DocumentListener(){
+                @Override
+                public void insertUpdate(DocumentEvent e) {
+                    if(TCari.getText().length()>2){
+                        BtnCariBayarActionPerformed(null);
+                    }
+                }
+                @Override
+                public void removeUpdate(DocumentEvent e) {
+                    if(TCari.getText().length()>2){
+                        BtnCariBayarActionPerformed(null);
+                    }
+                }
+                @Override
+                public void changedUpdate(DocumentEvent e) {
+                    if(TCari.getText().length()>2){
+                        BtnCariBayarActionPerformed(null);
+                    }
+                }
+            });
+        } 
     }//GEN-LAST:event_formWindowOpened
 
     private void tbDetailLaboratBayarMouseClicked(java.awt.event.MouseEvent evt) {//GEN-FIRST:event_tbDetailLaboratBayarMouseClicked
@@ -3378,9 +3451,9 @@ public class DlgBilingParsialRalan extends javax.swing.JDialog {
     private widget.TextBox TPasien;
     private widget.TextBox TPerawat;
     private widget.TextBox TPerawat2;
-    private javax.swing.JTabbedPane TabRawat;
-    private javax.swing.JTabbedPane TabRawatLaborat;
-    private javax.swing.JTabbedPane TabRawatLaboratBayar;
+    private widget.TabPane TabRawat;
+    private widget.TabPane TabRawatLaborat;
+    private widget.TabPane TabRawatLaboratBayar;
     private widget.TextBox TagihanPPN;
     private widget.TextBox TtlSemua;
     private widget.CekBox chkPoli;
@@ -3417,34 +3490,34 @@ public class DlgBilingParsialRalan extends javax.swing.JDialog {
     private widget.panelisi panelGlass7;
     private widget.panelisi panelGlass8;
     private widget.panelisi panelGlass9;
-    private javax.swing.JMenuItem ppBersihkanDetailLaborat;
-    private javax.swing.JMenuItem ppBersihkanDetailLaboratBayar;
-    private javax.swing.JMenuItem ppBersihkanLaborat;
-    private javax.swing.JMenuItem ppBersihkanLaboratBayar;
-    private javax.swing.JMenuItem ppBersihkanObat;
-    private javax.swing.JMenuItem ppBersihkanObatBayar;
-    private javax.swing.JMenuItem ppBersihkanRadiologi;
-    private javax.swing.JMenuItem ppBersihkanRadiologiBayar;
-    private javax.swing.JMenuItem ppBersihkanTindakanDr;
-    private javax.swing.JMenuItem ppBersihkanTindakanDrBayar;
-    private javax.swing.JMenuItem ppBersihkanTindakanDrPr;
-    private javax.swing.JMenuItem ppBersihkanTindakanDrPrBayar;
-    private javax.swing.JMenuItem ppBersihkanTindakanPr;
-    private javax.swing.JMenuItem ppBersihkanTindakanPrBayar;
-    private javax.swing.JMenuItem ppSemuaDetailLaborat;
-    private javax.swing.JMenuItem ppSemuaDetailLaboratBayar;
-    private javax.swing.JMenuItem ppSemuaLaborat;
-    private javax.swing.JMenuItem ppSemuaLaboratBayar;
-    private javax.swing.JMenuItem ppSemuaObat;
-    private javax.swing.JMenuItem ppSemuaObatBayar;
-    private javax.swing.JMenuItem ppSemuaRadiologi;
-    private javax.swing.JMenuItem ppSemuaRadiologiBayar;
-    private javax.swing.JMenuItem ppSemuaTindakanDr;
-    private javax.swing.JMenuItem ppSemuaTindakanDrBayar;
-    private javax.swing.JMenuItem ppSemuaTindakanDrPr;
-    private javax.swing.JMenuItem ppSemuaTindakanDrPrBayar;
-    private javax.swing.JMenuItem ppSemuaTindakanPr;
-    private javax.swing.JMenuItem ppSemuaTindakanPrBayar;
+    private widget.MenuItem ppBersihkanDetailLaborat;
+    private widget.MenuItem ppBersihkanDetailLaboratBayar;
+    private widget.MenuItem ppBersihkanLaborat;
+    private widget.MenuItem ppBersihkanLaboratBayar;
+    private widget.MenuItem ppBersihkanObat;
+    private widget.MenuItem ppBersihkanObatBayar;
+    private widget.MenuItem ppBersihkanRadiologi;
+    private widget.MenuItem ppBersihkanRadiologiBayar;
+    private widget.MenuItem ppBersihkanTindakanDr;
+    private widget.MenuItem ppBersihkanTindakanDrBayar;
+    private widget.MenuItem ppBersihkanTindakanDrPr;
+    private widget.MenuItem ppBersihkanTindakanDrPrBayar;
+    private widget.MenuItem ppBersihkanTindakanPr;
+    private widget.MenuItem ppBersihkanTindakanPrBayar;
+    private widget.MenuItem ppSemuaDetailLaborat;
+    private widget.MenuItem ppSemuaDetailLaboratBayar;
+    private widget.MenuItem ppSemuaLaborat;
+    private widget.MenuItem ppSemuaLaboratBayar;
+    private widget.MenuItem ppSemuaObat;
+    private widget.MenuItem ppSemuaObatBayar;
+    private widget.MenuItem ppSemuaRadiologi;
+    private widget.MenuItem ppSemuaRadiologiBayar;
+    private widget.MenuItem ppSemuaTindakanDr;
+    private widget.MenuItem ppSemuaTindakanDrBayar;
+    private widget.MenuItem ppSemuaTindakanDrPr;
+    private widget.MenuItem ppSemuaTindakanDrPrBayar;
+    private widget.MenuItem ppSemuaTindakanPr;
+    private widget.MenuItem ppSemuaTindakanPrBayar;
     private widget.ScrollPane scrollPane3;
     private widget.Table tbAkunBayar;
     private widget.Table tbBilling;
@@ -5626,7 +5699,7 @@ public class DlgBilingParsialRalan extends javax.swing.JDialog {
                     }
                     
                     if(subttl>0){
-                        if(tampilkan_ppnobat_ralan.equals("Yes")){
+                        if(ppnralan.getTampilPPNRalan().equals("Yes")){
                             ppnobat=Math.round(subttl*0.11);
                             tabModeBilling.addRow(new Object[]{
                                 "","PPN Obat",":",ppnobat,1,ppnobat,"Obat"
@@ -6526,7 +6599,7 @@ public class DlgBilingParsialRalan extends javax.swing.JDialog {
             }                           
         } 
         if(ttlObat>0){
-            if(tampilkan_ppnobat_ralan.equals("Yes")){
+            if(ppnralan.getTampilPPNRalan().equals("Yes")){
                 ppnobat=Math.round(ttlObat*0.11); 
                 ttlObat=ttlObat+ppnobat;
                 ttl=ttl+ppnobat;
@@ -7090,7 +7163,7 @@ public class DlgBilingParsialRalan extends javax.swing.JDialog {
                 }
                 
                 if(ppnobat>0){
-                    if(tampilkan_ppnobat_ralan.equals("Yes")){
+                    if(ppnralan.getTampilPPNRalan().equals("Yes")){
                         try {
                             psbiling=koneksi.prepareStatement(sqlpsbiling);
                             try {

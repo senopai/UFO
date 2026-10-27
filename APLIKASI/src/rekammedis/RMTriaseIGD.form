@@ -72,7 +72,7 @@
         <Property name="verticalGap" type="int" value="1"/>
       </Layout>
       <SubComponents>
-        <Container class="javax.swing.JTabbedPane" name="TabPilihan">
+        <Container class="widget.TabPane" name="TabPilihan">
           <Properties>
             <Property name="background" type="java.awt.Color" editor="org.netbeans.beaninfo.editors.ColorEditor">
               <Color blue="fe" green="ff" red="ff" type="rgb"/>
@@ -132,7 +132,7 @@
                     <Property name="verticalGap" type="int" value="1"/>
                   </Layout>
                   <SubComponents>
-                    <Container class="javax.swing.JTabbedPane" name="TabTriase">
+                    <Container class="widget.TabPane" name="TabTriase">
                       <Properties>
                         <Property name="background" type="java.awt.Color" editor="org.netbeans.beaninfo.editors.ColorEditor">
                           <Color blue="fe" green="ff" red="ff" type="rgb"/>
@@ -537,7 +537,7 @@
                                     </Property>
                                     <Property name="model" type="javax.swing.ComboBoxModel" editor="org.netbeans.modules.form.editors2.ComboBoxModelEditor">
                                       <StringArray count="1">
-                                        <StringItem index="0" value="10-10-2025 11:19:40"/>
+                                        <StringItem index="0" value="14-09-2026 13:57:29"/>
                                       </StringArray>
                                     </Property>
                                     <Property name="displayFormat" type="java.lang.String" value="dd-MM-yyyy HH:mm:ss"/>
@@ -924,7 +924,7 @@
                                             </Component>
                                           </SubComponents>
                                         </Container>
-                                        <Container class="javax.swing.JTabbedPane" name="TabSkala1dan2">
+                                        <Container class="widget.TabPane" name="TabSkala1dan2">
                                           <Properties>
                                             <Property name="background" type="java.awt.Color" editor="org.netbeans.beaninfo.editors.ColorEditor">
                                               <Color blue="fe" green="ff" red="ff" type="rgb"/>
@@ -981,7 +981,7 @@
                                                 <Component class="widget.Table" name="tbSkala1">
                                                   <Properties>
                                                     <Property name="foreground" type="java.awt.Color" editor="org.netbeans.beaninfo.editors.ColorEditor">
-                                                      <Color blue="0" green="0" red="ff" type="rgb"/>
+                                                      <Color blue="0" green="0" red="aa" type="rgb"/>
                                                     </Property>
                                                     <Property name="name" type="java.lang.String" value="tbSkala1" noResource="true"/>
                                                     <Property name="selectionForeground" type="java.awt.Color" editor="org.netbeans.beaninfo.editors.ColorEditor">
@@ -1376,7 +1376,7 @@
                                     </Property>
                                     <Property name="model" type="javax.swing.ComboBoxModel" editor="org.netbeans.modules.form.editors2.ComboBoxModelEditor">
                                       <StringArray count="1">
-                                        <StringItem index="0" value="10-10-2025 11:19:41"/>
+                                        <StringItem index="0" value="14-09-2026 13:57:31"/>
                                       </StringArray>
                                     </Property>
                                     <Property name="displayFormat" type="java.lang.String" value="dd-MM-yyyy HH:mm:ss"/>
@@ -1762,7 +1762,7 @@
                                             </Component>
                                           </SubComponents>
                                         </Container>
-                                        <Container class="javax.swing.JTabbedPane" name="TabSkala3dan4dan5">
+                                        <Container class="widget.TabPane" name="TabSkala3dan4dan5">
                                           <Properties>
                                             <Property name="background" type="java.awt.Color" editor="org.netbeans.beaninfo.editors.ColorEditor">
                                               <Color blue="fe" green="ff" red="ff" type="rgb"/>
@@ -1886,7 +1886,7 @@
                                                 <Component class="widget.Table" name="tbSkala5">
                                                   <Properties>
                                                     <Property name="foreground" type="java.awt.Color" editor="org.netbeans.beaninfo.editors.ColorEditor">
-                                                      <Color blue="0" green="aa" red="0" type="rgb"/>
+                                                      <Color blue="96" green="96" red="96" type="rgb"/>
                                                     </Property>
                                                     <Property name="name" type="java.lang.String" value="tbSkala5" noResource="true"/>
                                                     <Property name="selectionForeground" type="java.awt.Color" editor="org.netbeans.beaninfo.editors.ColorEditor">
@@ -2005,7 +2005,7 @@
                             </Property>
                             <Property name="model" type="javax.swing.ComboBoxModel" editor="org.netbeans.modules.form.editors2.ComboBoxModelEditor">
                               <StringArray count="1">
-                                <StringItem index="0" value="10-10-2025 11:19:41"/>
+                                <StringItem index="0" value="14-09-2026 13:57:32"/>
                               </StringArray>
                             </Property>
                             <Property name="displayFormat" type="java.lang.String" value="dd-MM-yyyy HH:mm:ss"/>
@@ -2310,7 +2310,7 @@
                         </Property>
                         <Property name="model" type="javax.swing.ComboBoxModel" editor="org.netbeans.modules.form.editors2.ComboBoxModelEditor">
                           <StringArray count="1">
-                            <StringItem index="0" value="10-10-2025"/>
+                            <StringItem index="0" value="14-09-2026"/>
                           </StringArray>
                         </Property>
                         <Property name="displayFormat" type="java.lang.String" value="dd-MM-yyyy"/>
@@ -2338,7 +2338,7 @@
                         </Property>
                         <Property name="model" type="javax.swing.ComboBoxModel" editor="org.netbeans.modules.form.editors2.ComboBoxModelEditor">
                           <StringArray count="1">
-                            <StringItem index="0" value="10-10-2025"/>
+                            <StringItem index="0" value="14-09-2026"/>
                           </StringArray>
                         </Property>
                         <Property name="displayFormat" type="java.lang.String" value="dd-MM-yyyy"/>

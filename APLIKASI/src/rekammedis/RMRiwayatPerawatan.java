@@ -36995,7 +36995,7 @@ private void BtnPasienKeyPressed(java.awt.event.KeyEvent evt) {//GEN-FIRST:event
         BtnCari1ActionPerformed(null);
     }
     
-    public void setCekRalan(String norm, boolean icd10, boolean icd9,boolean pemeriksaan,boolean tindakan,boolean radiologi,boolean laborat,boolean obat,boolean tambahan,boolean potongan) {
+    public void setCekRalan(String norm, boolean icd10, boolean icd9,boolean pemeriksaan,boolean tindakan,boolean operasi,boolean radiologi,boolean laborat,boolean obat,boolean tambahan,boolean potongan) {
         NoRM.setText(norm);
         isPasien(); 
         chkSemua.setSelected(false);
@@ -37003,6 +37003,7 @@ private void BtnPasienKeyPressed(java.awt.event.KeyEvent evt) {//GEN-FIRST:event
         chkProsedurTindakan.setSelected(icd9);
         chkPemeriksaanRalan.setSelected(pemeriksaan);
         chkTindakanRalanDokter.setSelected(tindakan);
+        chkOperasiVK.setSelected(operasi);
         chkPemeriksaanRadiologi.setSelected(radiologi);
         chkPemeriksaanLaborat.setSelected(laborat);
         chkPemberianObat.setSelected(obat);

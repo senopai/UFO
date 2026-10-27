@@ -5,6 +5,7 @@ export default function Header({ user, onLogout }) {
   const [greeting, setGreeting] = useState('Selamat Pagi');
   const [showNotifications, setShowNotifications] = useState(false);
   const [showProfileMenu, setShowProfileMenu] = useState(false);
+  const [notifications, setNotifications] = useState([]);
 
   useEffect(() => {
     const hrs = new Date().getHours();
@@ -12,13 +13,25 @@ export default function Header({ user, onLogout }) {
     else if (hrs < 16) setGreeting('Selamat Siang');
     else if (hrs < 20) setGreeting('Selamat Sore');
     else setGreeting('Selamat Malam');
-  }, []);
 
-  const notifications = [
-    { id: 1, title: 'Check-in Berhasil', desc: 'Check-in untuk Poli Dalam hari ini berhasil.', time: '5m ago' },
-    { id: 2, title: 'Hasil Lab PK Tersedia', desc: 'Hasil laboratorium tanggal 12 Juni sudah keluar.', time: '1h ago' },
-    { id: 3, title: 'Permintaan Persetujuan', desc: 'Silakan tandatangani dokumen Persetujuan Umum.', time: '1d ago' },
-  ];
+    const fetchNotifications = async () => {
+      try {
+        const baseUrl = import.meta.env.DEV ? 'http://localhost:5000' : '';
+        const res = await fetch(`${baseUrl}/api.php?action=get_notifications`);
+        const data = await res.json();
+        if (data.success && data.notifications) {
+          setNotifications(data.notifications);
+        }
+      } catch (e) {
+        console.error('Failed to fetch notifications:', e);
+      }
+    };
+
+    fetchNotifications();
+    // Optional: Set interval here if you want it to auto-refresh every X minutes
+    // const interval = setInterval(fetchNotifications, 60000 * 5); // 5 minutes
+    // return () => clearInterval(interval);
+  }, []);
 
   return (
     <header className="sticky top-0 z-30 flex items-center justify-between py-4 px-4 md:px-8 border-b border-slate-200/50 glass-panel">
@@ -36,43 +49,6 @@ export default function Header({ user, onLogout }) {
 
       {/* Right Tools: Notifications & Profile */}
       <div className="flex items-center gap-3">
-        {/* Notifications */}
-        <div className="relative">
-          <button 
-            onClick={() => {
-              setShowNotifications(!showNotifications);
-              setShowProfileMenu(false);
-            }}
-            className="p-2 text-slate-600 hover:text-emerald-600 bg-slate-100 hover:bg-slate-200/60 border border-slate-200 rounded-xl transition-all duration-200"
-          >
-            <div className="relative">
-              <Bell size={20} />
-              <span className="absolute top-0 right-0 w-2 h-2 bg-emerald-600 rounded-full"></span>
-            </div>
-          </button>
-
-          {/* Notifications Dropdown */}
-          {showNotifications && (
-            <div className="absolute right-0 mt-3 w-80 glass-panel border border-slate-200/80 rounded-2xl shadow-2xl p-4 overflow-hidden z-50 animate-in fade-in slide-in-from-top-2 duration-200">
-              <div className="flex justify-between items-center pb-3 border-b border-slate-100 mb-3">
-                <h4 className="font-semibold text-sm text-slate-800">Notifikasi Terbaru</h4>
-                <span className="text-[10px] text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded-full font-semibold border border-emerald-100">3 Baru</span>
-              </div>
-              <div className="space-y-3 max-h-60 overflow-y-auto pr-1">
-                {notifications.map((notif) => (
-                  <div key={notif.id} className="p-2 hover:bg-slate-50 rounded-xl border border-transparent hover:border-slate-100 transition-all">
-                    <div className="flex justify-between items-baseline mb-0.5">
-                      <h5 className="text-xs font-semibold text-slate-800">{notif.title}</h5>
-                      <span className="text-[9px] text-slate-400">{notif.time}</span>
-                    </div>
-                    <p className="text-[10px] text-slate-600 leading-normal">{notif.desc}</p>
-                  </div>
-                ))}
-              </div>
-            </div>
-          )}
-        </div>
-
         {/* User Avatar & Dropdown for Mobile / Desktop Quick Settings */}
         <div className="relative">
           <button 

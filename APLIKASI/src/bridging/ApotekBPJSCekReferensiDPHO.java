@@ -71,12 +71,12 @@ public final class ApotekBPJSCekReferensiDPHO extends javax.swing.JDialog {
         tabMode=new DefaultTableModel(null,new String[]{
                 "Kode Obat","Nama Obat","PRB","Kronis","Kemo","Harga","Restriksi","Generik","Aktif","Sedia","Stok"
             }){
-              @Override public boolean isCellEditable(int rowIndex, int colIndex){return false;}
+            @Override public boolean isCellEditable(int rowIndex, int colIndex){return false;}
             Class[] types = new Class[]{
                 java.lang.Object.class,java.lang.Object.class,java.lang.Boolean.class,java.lang.Boolean.class,java.lang.Boolean.class,
                 java.lang.Double.class,java.lang.Object.class,java.lang.Object.class,java.lang.Object.class,java.lang.Object.class,
                 java.lang.Object.class
-        };
+            };
 
             @Override
             public Class getColumnClass(int columnIndex) {
@@ -119,29 +119,6 @@ public final class ApotekBPJSCekReferensiDPHO extends javax.swing.JDialog {
         
         Poli.setDocument(new batasInput((byte)100).getKata(Poli));
         
-        if(koneksiDB.CARICEPAT().equals("aktif")){
-            Poli.getDocument().addDocumentListener(new javax.swing.event.DocumentListener(){
-                @Override
-                public void insertUpdate(DocumentEvent e) {
-                    if(Poli.getText().length()>2){
-                        runBackground(() ->tampil(Poli.getText()));
-                    }
-                }
-                @Override
-                public void removeUpdate(DocumentEvent e) {
-                    if(Poli.getText().length()>2){
-                        runBackground(() ->tampil(Poli.getText()));
-                    }
-                }
-                @Override
-                public void changedUpdate(DocumentEvent e) {
-                    if(Poli.getText().length()>2){
-                        runBackground(() ->tampil(Poli.getText()));
-                    }
-                }
-            });
-        } 
-        
         try {
             link=koneksiDB.URLAPIAPOTEKBPJS();
         } catch (Exception e) {
@@ -177,6 +154,11 @@ public final class ApotekBPJSCekReferensiDPHO extends javax.swing.JDialog {
         setIconImages(null);
         setUndecorated(true);
         setResizable(false);
+        addWindowListener(new java.awt.event.WindowAdapter() {
+            public void windowOpened(java.awt.event.WindowEvent evt) {
+                formWindowOpened(evt);
+            }
+        });
 
         internalFrame1.setBorder(javax.swing.BorderFactory.createTitledBorder(javax.swing.BorderFactory.createLineBorder(new java.awt.Color(240, 245, 235)), "::[ Pencarian Data Referensi DPHO Apotek BPJS ]::", javax.swing.border.TitledBorder.DEFAULT_JUSTIFICATION, javax.swing.border.TitledBorder.DEFAULT_POSITION, new java.awt.Font("Tahoma", 0, 11), new java.awt.Color(50, 50, 50))); // NOI18N
         internalFrame1.setName("internalFrame1"); // NOI18N
@@ -185,7 +167,7 @@ public final class ApotekBPJSCekReferensiDPHO extends javax.swing.JDialog {
         Scroll.setName("Scroll"); // NOI18N
         Scroll.setOpaque(true);
 
-        tbKamar.setAutoCreateRowSorter(true);
+        tbKamar.setAutoCreateRowSorter(false);
         tbKamar.setName("tbKamar"); // NOI18N
         Scroll.setViewportView(tbKamar);
 
@@ -338,6 +320,31 @@ public final class ApotekBPJSCekReferensiDPHO extends javax.swing.JDialog {
         }
     }//GEN-LAST:event_BtnCariKeyPressed
 
+    private void formWindowOpened(java.awt.event.WindowEvent evt) {//GEN-FIRST:event_formWindowOpened
+        if(koneksiDB.CARICEPAT().equals("aktif")){
+            Poli.getDocument().addDocumentListener(new javax.swing.event.DocumentListener(){
+                @Override
+                public void insertUpdate(DocumentEvent e) {
+                    if(Poli.getText().length()>2){
+                        runBackground(() ->tampil(Poli.getText()));
+                    }
+                }
+                @Override
+                public void removeUpdate(DocumentEvent e) {
+                    if(Poli.getText().length()>2){
+                        runBackground(() ->tampil(Poli.getText()));
+                    }
+                }
+                @Override
+                public void changedUpdate(DocumentEvent e) {
+                    if(Poli.getText().length()>2){
+                        runBackground(() ->tampil(Poli.getText()));
+                    }
+                }
+            });
+        }
+    }//GEN-LAST:event_formWindowOpened
+
     /**
     * @param args the command line arguments
     */
@@ -384,7 +391,6 @@ public final class ApotekBPJSCekReferensiDPHO extends javax.swing.JDialog {
             if(nameNode.path("code").asText().equals("200")){
                 Valid.tabelKosong(tabMode);
                 response = mapper.readTree(api.Decrypt(root.path("response").asText(),utc));
-                System.out.println("Data = "+response);
                 if(response.path("list").isArray()){
                     for(JsonNode list:response.path("list")){
                         if(list.path("namaobat").asText().toLowerCase().contains(keyword.toLowerCase())||
@@ -431,7 +437,7 @@ public final class ApotekBPJSCekReferensiDPHO extends javax.swing.JDialog {
                     SwingUtilities.invokeLater(() -> {
                         if (isDisplayable()) {
                             setCursor(Cursor.getDefaultCursor());
-}
+                        }
                     });
                 }
             });

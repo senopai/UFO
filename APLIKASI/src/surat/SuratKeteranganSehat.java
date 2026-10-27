@@ -18,25 +18,21 @@ import fungsi.akses;
 import java.awt.Cursor;
 import java.awt.Dimension;
 import java.awt.event.KeyEvent;
-import java.io.File;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.RejectedExecutionException;
 import javax.swing.JOptionPane;
 import javax.swing.JTable;
+import javax.swing.SwingUtilities;
 import javax.swing.event.DocumentEvent;
 import javax.swing.table.DefaultTableModel;
 import javax.swing.table.TableColumn;
-import org.apache.commons.io.FileUtils;
-import org.apache.http.client.HttpClient;
-import org.apache.http.client.methods.HttpPost;
-import org.apache.http.entity.mime.HttpMultipartMode;
-import org.apache.http.entity.mime.MultipartEntity;
-import org.apache.http.entity.mime.content.ByteArrayBody;
-import org.apache.http.impl.client.DefaultHttpClient;
 
 
 /**
@@ -52,7 +48,8 @@ public final class SuratKeteranganSehat extends javax.swing.JDialog {
     private ResultSet rs;
     private int i=0;
     private String tgl,finger="",kodedokter="",namadokter="";
-    private String FileName = "", kodeberkas = "";
+    private final ExecutorService executor = Executors.newSingleThreadExecutor();
+    private volatile boolean ceksukses = false;
     /** Creates new form DlgRujuk
      * @param parent
      * @param modal */
@@ -111,28 +108,6 @@ public final class SuratKeteranganSehat extends javax.swing.JDialog {
         Suhu.setDocument(new batasInput((byte)4).getKata(Suhu));
         TNoRw.setDocument(new batasInput((byte)17).getKata(TNoRw));  
         TCari.setDocument(new batasInput((byte)100).getKata(TCari));           
-        if(koneksiDB.CARICEPAT().equals("aktif")){
-            TCari.getDocument().addDocumentListener(new javax.swing.event.DocumentListener(){
-                @Override
-                public void insertUpdate(DocumentEvent e) {
-                    if(TCari.getText().length()>2){
-                        tampil();
-                    }
-                }
-                @Override
-                public void removeUpdate(DocumentEvent e) {
-                    if(TCari.getText().length()>2){
-                        tampil();
-                    }
-                }
-                @Override
-                public void changedUpdate(DocumentEvent e) {
-                    if(TCari.getText().length()>2){
-                        tampil();
-                    }
-                }
-            });
-        }
         ChkInput.setSelected(false);
         isForm();
     }
@@ -151,9 +126,8 @@ public final class SuratKeteranganSehat extends javax.swing.JDialog {
     private void initComponents() {
 
         jPopupMenu1 = new javax.swing.JPopupMenu();
-        UploadSuratSehat = new javax.swing.JMenuItem();
-        MnCetakSuratSehat = new javax.swing.JMenuItem();
-        MnCetakSuratSehat1 = new javax.swing.JMenuItem();
+        MnCetakSuratSehat = new widget.MenuItem();
+        MnCetakSuratSehat1 = new widget.MenuItem();
         internalFrame1 = new widget.InternalFrame();
         Scroll = new widget.ScrollPane();
         tbObat = new widget.Table();
@@ -208,20 +182,6 @@ public final class SuratKeteranganSehat extends javax.swing.JDialog {
 
         jPopupMenu1.setName("jPopupMenu1"); // NOI18N
 
-        UploadSuratSehat.setBackground(new java.awt.Color(250, 250, 250));
-        UploadSuratSehat.setFont(new java.awt.Font("Tahoma", 0, 11)); // NOI18N
-        UploadSuratSehat.setForeground(new java.awt.Color(50, 50, 50));
-        UploadSuratSehat.setIcon(new javax.swing.ImageIcon(getClass().getResource("/picture/category.png"))); // NOI18N
-        UploadSuratSehat.setText("Upload Surat Sehat");
-        UploadSuratSehat.setName("UploadSuratSehat"); // NOI18N
-        UploadSuratSehat.setPreferredSize(new java.awt.Dimension(200, 26));
-        UploadSuratSehat.addActionListener(new java.awt.event.ActionListener() {
-            public void actionPerformed(java.awt.event.ActionEvent evt) {
-                UploadSuratSehatActionPerformed(evt);
-            }
-        });
-        jPopupMenu1.add(UploadSuratSehat);
-
         MnCetakSuratSehat.setBackground(new java.awt.Color(250, 250, 250));
         MnCetakSuratSehat.setFont(new java.awt.Font("Tahoma", 0, 11)); // NOI18N
         MnCetakSuratSehat.setForeground(new java.awt.Color(50, 50, 50));
@@ -253,6 +213,11 @@ public final class SuratKeteranganSehat extends javax.swing.JDialog {
         setDefaultCloseOperation(javax.swing.WindowConstants.DISPOSE_ON_CLOSE);
         setUndecorated(true);
         setResizable(false);
+        addWindowListener(new java.awt.event.WindowAdapter() {
+            public void windowOpened(java.awt.event.WindowEvent evt) {
+                formWindowOpened(evt);
+            }
+        });
 
         internalFrame1.setBorder(javax.swing.BorderFactory.createTitledBorder(javax.swing.BorderFactory.createLineBorder(new java.awt.Color(240, 245, 235)), "::[ Data Surat Keterangan Sehat ]::", javax.swing.border.TitledBorder.DEFAULT_JUSTIFICATION, javax.swing.border.TitledBorder.DEFAULT_POSITION, new java.awt.Font("Tahoma", 0, 11), new java.awt.Color(50, 50, 50))); // NOI18N
         internalFrame1.setFont(new java.awt.Font("Tahoma", 2, 12)); // NOI18N
@@ -428,7 +393,7 @@ public final class SuratKeteranganSehat extends javax.swing.JDialog {
         panelGlass9.add(jLabel19);
 
         DTPCari1.setForeground(new java.awt.Color(50, 70, 50));
-        DTPCari1.setModel(new javax.swing.DefaultComboBoxModel(new String[] { "03-05-2023" }));
+        DTPCari1.setModel(new javax.swing.DefaultComboBoxModel(new String[] { "11-02-2026" }));
         DTPCari1.setDisplayFormat("dd-MM-yyyy");
         DTPCari1.setName("DTPCari1"); // NOI18N
         DTPCari1.setOpaque(false);
@@ -442,7 +407,7 @@ public final class SuratKeteranganSehat extends javax.swing.JDialog {
         panelGlass9.add(jLabel21);
 
         DTPCari2.setForeground(new java.awt.Color(50, 70, 50));
-        DTPCari2.setModel(new javax.swing.DefaultComboBoxModel(new String[] { "03-05-2023" }));
+        DTPCari2.setModel(new javax.swing.DefaultComboBoxModel(new String[] { "11-02-2026" }));
         DTPCari2.setDisplayFormat("dd-MM-yyyy");
         DTPCari2.setName("DTPCari2"); // NOI18N
         DTPCari2.setOpaque(false);
@@ -676,7 +641,7 @@ public final class SuratKeteranganSehat extends javax.swing.JDialog {
         CmbKesimpulan.setBounds(606, 70, 114, 23);
 
         TanggalSurat.setForeground(new java.awt.Color(50, 70, 50));
-        TanggalSurat.setModel(new javax.swing.DefaultComboBoxModel(new String[] { "03-05-2023" }));
+        TanggalSurat.setModel(new javax.swing.DefaultComboBoxModel(new String[] { "11-02-2026" }));
         TanggalSurat.setDisplayFormat("dd-MM-yyyy");
         TanggalSurat.setName("TanggalSurat"); // NOI18N
         TanggalSurat.setOpaque(false);
@@ -929,7 +894,7 @@ public final class SuratKeteranganSehat extends javax.swing.JDialog {
 }//GEN-LAST:event_TCariKeyPressed
 
     private void BtnCariActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_BtnCariActionPerformed
-        tampil();
+        runBackground(() ->tampil());
 }//GEN-LAST:event_BtnCariActionPerformed
 
     private void BtnCariKeyPressed(java.awt.event.KeyEvent evt) {//GEN-FIRST:event_BtnCariKeyPressed
@@ -942,12 +907,12 @@ public final class SuratKeteranganSehat extends javax.swing.JDialog {
 
     private void BtnAllActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_BtnAllActionPerformed
         TCari.setText("");
-        tampil();
+        runBackground(() ->tampil());
 }//GEN-LAST:event_BtnAllActionPerformed
 
     private void BtnAllKeyPressed(java.awt.event.KeyEvent evt) {//GEN-FIRST:event_BtnAllKeyPressed
         if(evt.getKeyCode()==KeyEvent.VK_SPACE){
-            tampil();
+            runBackground(() ->tampil());
             TCari.setText("");
         }else{
             Valid.pindah(evt, BtnCari, TPasien);
@@ -1077,13 +1042,30 @@ public final class SuratKeteranganSehat extends javax.swing.JDialog {
         Valid.pindah(evt,Keperluan,BtnSimpan);
     }//GEN-LAST:event_CmbKesimpulanKeyPressed
 
-    private void UploadSuratSehatActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_UploadSuratSehatActionPerformed
-        FileName = "SEHAT_" + tbObat.getValueAt(tbObat.getSelectedRow(), 0).toString().replaceAll("/", "");
-        CreatePDF(FileName);
-        String filePath = "tmpPDF/" + FileName;
-        UploadPDF(FileName, "berkasrawat/pages/upload/");
-        HapusPDF();
-    }//GEN-LAST:event_UploadSuratSehatActionPerformed
+    private void formWindowOpened(java.awt.event.WindowEvent evt) {//GEN-FIRST:event_formWindowOpened
+        if(koneksiDB.CARICEPAT().equals("aktif")){
+            TCari.getDocument().addDocumentListener(new javax.swing.event.DocumentListener(){
+                @Override
+                public void insertUpdate(DocumentEvent e) {
+                    if(TCari.getText().length()>2){
+                        runBackground(() ->tampil());
+                    }
+                }
+                @Override
+                public void removeUpdate(DocumentEvent e) {
+                    if(TCari.getText().length()>2){
+                        runBackground(() ->tampil());
+                    }
+                }
+                @Override
+                public void changedUpdate(DocumentEvent e) {
+                    if(TCari.getText().length()>2){
+                        runBackground(() ->tampil());
+                    }
+                }
+            });
+        }
+    }//GEN-LAST:event_formWindowOpened
 
     /**
     * @param args the command line arguments
@@ -1119,8 +1101,8 @@ public final class SuratKeteranganSehat extends javax.swing.JDialog {
     private widget.PanelBiasa FormInput;
     private widget.TextBox Keperluan;
     private widget.Label LCount;
-    private javax.swing.JMenuItem MnCetakSuratSehat;
-    private javax.swing.JMenuItem MnCetakSuratSehat1;
+    private widget.MenuItem MnCetakSuratSehat;
+    private widget.MenuItem MnCetakSuratSehat1;
     private widget.TextBox NoSurat;
     private javax.swing.JPanel PanelInput;
     private widget.ScrollPane Scroll;
@@ -1132,7 +1114,6 @@ public final class SuratKeteranganSehat extends javax.swing.JDialog {
     private widget.Tanggal TanggalSurat;
     private widget.TextBox Tb;
     private widget.TextBox Tensi;
-    private javax.swing.JMenuItem UploadSuratSehat;
     private widget.InternalFrame internalFrame1;
     private widget.Label jLabel13;
     private widget.Label jLabel14;
@@ -1159,7 +1140,7 @@ public final class SuratKeteranganSehat extends javax.swing.JDialog {
     private widget.Table tbObat;
     // End of variables declaration//GEN-END:variables
 
-    public void tampil() {
+    private void tampil() {
         Valid.tabelKosong(tabMode);
         try{
             tgl=" surat_keterangan_sehat.tanggalsurat between '"+Valid.SetTgl(DTPCari1.getSelectedItem()+"")+"' and '"+Valid.SetTgl(DTPCari2.getSelectedItem()+"")+"' ";
@@ -1264,6 +1245,7 @@ public final class SuratKeteranganSehat extends javax.swing.JDialog {
         isPsien(); 
         ChkInput.setSelected(true);
         isForm();
+        runBackground(() ->tampil());
     }
     private void isForm(){
         if(ChkInput.isSelected()==true){
@@ -1278,6 +1260,7 @@ public final class SuratKeteranganSehat extends javax.swing.JDialog {
             ChkInput.setVisible(true);
         }
     }
+       
     
     public void isCek(){
         BtnSimpan.setEnabled(akses.getsurat_keterangan_sehat());
@@ -1285,108 +1268,36 @@ public final class SuratKeteranganSehat extends javax.swing.JDialog {
         BtnEdit.setEnabled(akses.getsurat_keterangan_sehat());
     }
     
-    private void CreatePDF(String FileName) {
-        this.setCursor(Cursor.getPredefinedCursor(Cursor.WAIT_CURSOR));
-        Map<String, Object> param = new HashMap<>();
-        param.put("namars", akses.getnamars());
-        param.put("alamatrs", akses.getalamatrs());
-        param.put("kotars", akses.getkabupatenrs());
-        param.put("propinsirs", akses.getpropinsirs());
-        param.put("kontakrs", akses.getkontakrs());
-        param.put("emailrs", akses.getemailrs());
-        param.put("logo", Sequel.cariGambar("select setting.logo from setting"));
+    private void runBackground(Runnable task) {
+        if (ceksukses) return;
+        if (executor.isShutdown() || executor.isTerminated()) return;
+        if (!isDisplayable()) return;
 
-        String noSurat = tbObat.getValueAt(tbObat.getSelectedRow(), 0).toString();
-        String noRawat = Sequel.cariIsi("select no_rawat from surat_keterangan_sehat where no_surat='"+noSurat+"'");
-        String kdDokter = Sequel.cariIsi("select kd_dokter from reg_periksa where no_rawat='" + noRawat + "'");
-        String nmDokter = Sequel.cariIsi("select nm_dokter from dokter where kd_dokter='" + kdDokter + "'");
-        String finger = Sequel.cariIsi("select sha1(sidikjari.sidikjari) from sidikjari inner join pegawai on pegawai.id=sidikjari.id where pegawai.nik='" + kdDokter + "'");
+        ceksukses = true;
+        setCursor(Cursor.getPredefinedCursor(Cursor.WAIT_CURSOR));
 
-        param.put("finger", "Dikeluarkan di " + akses.getnamars() + ", Kabupaten/Kota " + akses.getkabupatenrs() + "\nDitandatangani secara elektronik oleh " + nmDokter + "\nID " + (finger.equals("") ? kdDokter : finger) + "\n" + Valid.SetTgl3(tbObat.getValueAt(tbObat.getSelectedRow(), 3).toString()));
-
-        String query = 
-                "select surat_keterangan_sehat.no_surat, surat_keterangan_sehat.tanggalsurat, " +
-                "surat_keterangan_sehat.berat, surat_keterangan_sehat.tinggi, " +
-                "surat_keterangan_sehat.tensi, surat_keterangan_sehat.suhu, " +
-                "surat_keterangan_sehat.butawarna, surat_keterangan_sehat.keperluan, " +
-                "surat_keterangan_sehat.kesimpulan, dokter.nm_dokter, pasien.jk, " +
-                "reg_periksa.kd_dokter, pasien.nm_pasien, " +
-
-                "concat(reg_periksa.umurdaftar,' ',reg_periksa.sttsumur) as umur, " +
-                "concat(pasien.alamat,', ',kelurahan.nm_kel,', ',kecamatan.nm_kec,', ',kabupaten.nm_kab) as alamat " +
-
-                "from surat_keterangan_sehat " +
-                "inner join reg_periksa on surat_keterangan_sehat.no_rawat=reg_periksa.no_rawat " +
-                "inner join pasien on reg_periksa.no_rkm_medis=pasien.no_rkm_medis " +
-                "inner join dokter on reg_periksa.kd_dokter=dokter.kd_dokter " +
-                "inner join kelurahan on pasien.kd_kel=kelurahan.kd_kel " +
-                "inner join kecamatan on pasien.kd_kec=kecamatan.kd_kec " +
-                "inner join kabupaten on pasien.kd_kab=kabupaten.kd_kab " +
-
-                "where surat_keterangan_sehat.no_surat='" + noSurat + "'";
-
-        Valid.MyReportPDFqryUpload("rptSuratKeteranganSehat.jasper", "report", "::[ Surat Keterangan Sehat ]::", query, FileName, param);        
-        this.setCursor(Cursor.getDefaultCursor());
-    }
-
-    private void UploadPDF(String FileName, String docpath) {
         try {
-            File file = new File("tmpPDF/" + FileName + ".pdf");
-            if (!file.exists()) {
-                System.out.println("File tidak ditemukan: " + file.getAbsolutePath());
-                return;
-            }
-
-            byte[] data = FileUtils.readFileToByteArray(file);
-            HttpClient httpClient = new DefaultHttpClient();
-            HttpPost postRequest = new HttpPost("http://" + koneksiDB.HOSTHYBRIDWEB() + ":" + koneksiDB.PORTWEB() + "/" + koneksiDB.HYBRIDWEB() + "/upload.php?doc=" + docpath);
-            ByteArrayBody fileData = new ByteArrayBody(data, FileName + ".pdf");
-            MultipartEntity reqEntity = new MultipartEntity(HttpMultipartMode.BROWSER_COMPATIBLE);
-            reqEntity.addPart("file", fileData);
-            postRequest.setEntity(reqEntity);
-            httpClient.execute(postRequest);
-
-            boolean uploadSuccess = false;
-            kodeberkas = Sequel.cariIsi("SELECT kode FROM master_berkas_digital WHERE nama LIKE '%SEHAT%'");
-            if(kodeberkas.equals("")){
-                 JOptionPane.showMessageDialog(null, "Kode berkas 'SEHAT' tidak ditemukan di master_berkas_digital.");
-                 return;
-            }
-            
-            if (Sequel.cariInteger("SELECT COUNT(no_rawat) FROM berkas_digital_perawatan WHERE no_rawat='" + tbObat.getValueAt(tbObat.getSelectedRow(), 1).toString() + "' AND kode='" + kodeberkas + "'") > 0) {
-                uploadSuccess = Sequel.mengedittf("berkas_digital_perawatan", "lokasi_file=?", "no_rawat=? AND kode=?", 3, new String[]{
-                    "pages/upload/" + FileName + ".pdf",
-                    tbObat.getValueAt(tbObat.getSelectedRow(), 1).toString(),
-                    kodeberkas
-                });
-            } else {
-                uploadSuccess = Sequel.menyimpantf("berkas_digital_perawatan", "?,?,?", "Berkas Digital", 3, new String[]{
-                    tbObat.getValueAt(tbObat.getSelectedRow(), 1).toString(),
-                    kodeberkas,
-                    "pages/upload/" + FileName + ".pdf"
-                });
-            }
-
-            if (uploadSuccess) {
-                JOptionPane.showMessageDialog(null, "Upload berhasil!", "Informasi", JOptionPane.INFORMATION_MESSAGE);
-            } else {
-                JOptionPane.showMessageDialog(null, "Upload gagal disimpan ke database.", "Peringatan", JOptionPane.WARNING_MESSAGE);
-            }
-
-        } catch (Exception e) {
-            System.out.println("Upload error: " + e);
-            JOptionPane.showMessageDialog(null, "Terjadi kesalahan saat upload: " + e.getMessage(), "Kesalahan", JOptionPane.ERROR_MESSAGE);
+            executor.submit(() -> {
+                try {
+                    task.run();
+                } finally {
+                    ceksukses = false;
+                    SwingUtilities.invokeLater(() -> {
+                        if (isDisplayable()) {
+                            setCursor(Cursor.getDefaultCursor());
+                        }
+                    });
+                }
+            });
+        } catch (RejectedExecutionException ex) {
+            ceksukses = false;
         }
     }
-
-    private void HapusPDF() {
-        File file = new File("tmpPDF");
-        if (file.isDirectory()) {
-            String[] myFiles = file.list();
-            for (int i = 0; i < myFiles.length; i++) {
-                new File(file, myFiles[i]).delete();
-            }
-        }
+    
+    @Override
+    public void dispose() {
+        executor.shutdownNow();
+        super.dispose();
     }
 }
 

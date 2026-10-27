@@ -31,10 +31,14 @@ import java.util.Date;
 import java.util.HashMap;
 import java.util.Locale;
 import java.util.Map;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.RejectedExecutionException;
 import javax.swing.JButton;
 import javax.swing.JOptionPane;
 import javax.swing.JTable;
 import javax.swing.JTextField;
+import javax.swing.SwingUtilities;
 import javax.swing.event.DocumentEvent;
 import javax.swing.table.DefaultTableModel;
 import javax.swing.table.TableColumn;
@@ -51,8 +55,10 @@ public class DlgIKBBayi extends javax.swing.JDialog {
     private LocalDate birthday;
     private Period p;
     private long p2;
-    private DUKCAPILJakartaCekNik cekViaDukcapilJakarta=new DUKCAPILJakartaCekNik();
+    private final ExecutorService executor = Executors.newSingleThreadExecutor();
+    private volatile boolean ceksukses = false;
     private DUKCAPILJakartaPostLahir postlahir=new DUKCAPILJakartaPostLahir();
+    private DUKCAPILJakartaCekNik cekViaDukcapilJakarta=new DUKCAPILJakartaCekNik();
     private String pengurutan="",bulan="",tahun="",awalantahun="",awalanbulan="",posisitahun="",
             nokk="",nmbayi="",tgllhr="",jamlhr="",jk="",jnslhr="",lahirke="",brt="",
             pjg="",pnlglhr="",nikibu="",nmibu="",alamatibu="",kerjaibu="",nikayah="",
@@ -274,28 +280,6 @@ public class DlgIKBBayi extends javax.swing.JDialog {
         Mikonium.setDocument(new batasInput((int)100).getKata(Mikonium));
         
         TCari.setDocument(new batasInput((byte)100).getKata(TCari));
-        if(koneksiDB.CARICEPAT().equals("aktif")){
-            TCari.getDocument().addDocumentListener(new javax.swing.event.DocumentListener(){
-                @Override
-                public void insertUpdate(DocumentEvent e) {
-                    if(TCari.getText().length()>2){
-                        tampil();
-                    }
-                }
-                @Override
-                public void removeUpdate(DocumentEvent e) {
-                    if(TCari.getText().length()>2){
-                        tampil();
-                    }
-                }
-                @Override
-                public void changedUpdate(DocumentEvent e) {
-                    if(TCari.getText().length()>2){
-                        tampil();
-                    }
-                }
-            });
-        } 
         
         pengurutan=Sequel.cariIsi("select set_urut_no_rkm_medis.urutan from set_urut_no_rkm_medis");
         tahun=Sequel.cariIsi("select set_urut_no_rkm_medis.tahun from set_urut_no_rkm_medis");
@@ -318,32 +302,32 @@ public class DlgIKBBayi extends javax.swing.JDialog {
     private void initComponents() {
 
         Popup = new javax.swing.JPopupMenu();
-        ppGrafikjkbayi = new javax.swing.JMenuItem();
-        jMenu1 = new javax.swing.JMenu();
-        ppGrafikberat = new javax.swing.JMenuItem();
-        ppGrafikberatlaki = new javax.swing.JMenuItem();
-        ppGrafikberatwn = new javax.swing.JMenuItem();
-        jMenu2 = new javax.swing.JMenu();
-        ppGrafikpanjang = new javax.swing.JMenuItem();
-        ppGrafikpanjanglaki = new javax.swing.JMenuItem();
-        ppGrafikpanjangwn = new javax.swing.JMenuItem();
-        jMenu3 = new javax.swing.JMenu();
-        ppGrafiklahirtahun = new javax.swing.JMenuItem();
-        ppGrafiklahirtahunlaki = new javax.swing.JMenuItem();
-        ppGrafiklahirtahunwn = new javax.swing.JMenuItem();
-        jMenu4 = new javax.swing.JMenu();
-        ppGrafiklahirbulan = new javax.swing.JMenuItem();
-        ppGrafiklahirbulanlaki = new javax.swing.JMenuItem();
-        ppGrafiklahirbulanwn = new javax.swing.JMenuItem();
-        jMenu5 = new javax.swing.JMenu();
-        ppGrafikproseslahir = new javax.swing.JMenuItem();
-        ppGrafikproseslahirlaki = new javax.swing.JMenuItem();
-        ppGrafikproseslahirwn = new javax.swing.JMenuItem();
-        MnKartu = new javax.swing.JMenuItem();
-        MnInformasiBayi = new javax.swing.JMenuItem();
-        MnSKL = new javax.swing.JMenuItem();
-        MnSKL1 = new javax.swing.JMenuItem();
-        MnSKL2 = new javax.swing.JMenuItem();
+        ppGrafikjkbayi = new widget.MenuItem();
+        jMenu1 = new widget.Menu();
+        ppGrafikberat = new widget.MenuItem();
+        ppGrafikberatlaki = new widget.MenuItem();
+        ppGrafikberatwn = new widget.MenuItem();
+        jMenu2 = new widget.Menu();
+        ppGrafikpanjang = new widget.MenuItem();
+        ppGrafikpanjanglaki = new widget.MenuItem();
+        ppGrafikpanjangwn = new widget.MenuItem();
+        jMenu3 = new widget.Menu();
+        ppGrafiklahirtahun = new widget.MenuItem();
+        ppGrafiklahirtahunlaki = new widget.MenuItem();
+        ppGrafiklahirtahunwn = new widget.MenuItem();
+        jMenu4 = new widget.Menu();
+        ppGrafiklahirbulan = new widget.MenuItem();
+        ppGrafiklahirbulanlaki = new widget.MenuItem();
+        ppGrafiklahirbulanwn = new widget.MenuItem();
+        jMenu5 = new widget.Menu();
+        ppGrafikproseslahir = new widget.MenuItem();
+        ppGrafikproseslahirlaki = new widget.MenuItem();
+        ppGrafikproseslahirwn = new widget.MenuItem();
+        MnKartu = new widget.MenuItem();
+        MnInformasiBayi = new widget.MenuItem();
+        MnSKL = new widget.MenuItem();
+        MnSKL1 = new widget.MenuItem();
+        MnSKL2 = new widget.MenuItem();
         Kd2 = new widget.TextBox();
         DlgBridgingLahir = new javax.swing.JDialog();
         internalFrame3 = new widget.InternalFrame();
@@ -430,7 +414,7 @@ public class DlgIKBBayi extends javax.swing.JDialog {
         label10 = new widget.Label();
         LCount = new widget.Label();
         BtnKeluar = new widget.Button();
-        TabRawat = new javax.swing.JTabbedPane();
+        TabRawat = new widget.TabPane();
         Scroll1 = new widget.ScrollPane();
         FormInput = new widget.PanelBiasa();
         label12 = new widget.Label();
@@ -1459,6 +1443,11 @@ public class DlgIKBBayi extends javax.swing.JDialog {
         setDefaultCloseOperation(javax.swing.WindowConstants.DISPOSE_ON_CLOSE);
         setUndecorated(true);
         setResizable(false);
+        addWindowListener(new java.awt.event.WindowAdapter() {
+            public void windowOpened(java.awt.event.WindowEvent evt) {
+                formWindowOpened(evt);
+            }
+        });
 
         internalFrame1.setBorder(javax.swing.BorderFactory.createTitledBorder(javax.swing.BorderFactory.createLineBorder(new java.awt.Color(240, 245, 235)), "::[ Data Kelahiran Bayi ]::", javax.swing.border.TitledBorder.DEFAULT_JUSTIFICATION, javax.swing.border.TitledBorder.DEFAULT_POSITION, new java.awt.Font("Tahoma", 0, 11), new java.awt.Color(50, 50, 50))); // NOI18N
         internalFrame1.setName("internalFrame1"); // NOI18N
@@ -2379,7 +2368,7 @@ public class DlgIKBBayi extends javax.swing.JDialog {
         scrollPane1.setName("scrollPane1"); // NOI18N
         scrollPane1.setOpaque(true);
 
-        tbDokter.setAutoCreateRowSorter(true);
+        tbDokter.setAutoCreateRowSorter(false);
         tbDokter.setModel(new javax.swing.table.DefaultTableModel(
             new Object [][] {
                 {},
@@ -2426,7 +2415,7 @@ public class DlgIKBBayi extends javax.swing.JDialog {
 }//GEN-LAST:event_TCariKeyPressed
 
     private void BtnCariActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_BtnCariActionPerformed
-        tampil();
+        runBackground(() ->tampil());
 }//GEN-LAST:event_BtnCariActionPerformed
 
     private void BtnCariKeyPressed(java.awt.event.KeyEvent evt) {//GEN-FIRST:event_BtnCariKeyPressed
@@ -2476,7 +2465,6 @@ public class DlgIKBBayi extends javax.swing.JDialog {
 
     private void BtnPrintActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_BtnPrintActionPerformed
         this.setCursor(Cursor.getPredefinedCursor(Cursor.WAIT_CURSOR));
-        tampil();
         if(tabMode.getRowCount()==0){
             JOptionPane.showMessageDialog(null,"Maaf, data sudah habis. Tidak ada data yang bisa anda print...!!!!");
             BtnBatal.requestFocus();
@@ -2539,7 +2527,7 @@ public class DlgIKBBayi extends javax.swing.JDialog {
 
     private void BtnAllActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_BtnAllActionPerformed
         TCari.setText("");
-        tampil();
+        runBackground(() ->tampil());
 }//GEN-LAST:event_BtnAllActionPerformed
 
     private void BtnAllKeyPressed(java.awt.event.KeyEvent evt) {//GEN-FIRST:event_BtnAllKeyPressed
@@ -3039,7 +3027,7 @@ private void BtnEditActionPerformed1(java.awt.event.ActionEvent evt) {//GEN-FIRS
                     "f10='"+Valid.SetInteger(tbAPGAR.getValueAt(0,6).toString())+"',u10='"+Valid.SetInteger(tbAPGAR.getValueAt(1,6).toString())+"',t10='"+Valid.SetInteger(tbAPGAR.getValueAt(2,6).toString())+"',"+
                     "r10='"+Valid.SetInteger(tbAPGAR.getValueAt(3,6).toString())+"',w10='"+Valid.SetInteger(tbAPGAR.getValueAt(4,6).toString())+"',n10='"+N10.getText()+"',resusitas='"+Resusitas.getText()+"',"+
                     "obat_diberikan='"+ObatDiberikan.getText()+"',mikasi='"+Mikasi.getText()+"',mikonium='"+Mikonium.getText()+"'");
-            if(tabMode.getRowCount()!=0){tampil();TabRawat.setSelectedIndex(1);}
+            if(tabMode.getRowCount()!=0){runBackground(() ->tampil());TabRawat.setSelectedIndex(1);}
         }
 }//GEN-LAST:event_BtnEditActionPerformed1
 
@@ -3054,7 +3042,7 @@ private void BtnEditKeyPressed(java.awt.event.KeyEvent evt) {//GEN-FIRST:event_B
 private void BtnHapusActionPerformed1(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_BtnHapusActionPerformed1
    Valid.hapusTable(tabMode,NoRm,"pasien_bayi","no_rkm_medis");
    Valid.hapusTable(tabMode,NoRm,"bridging_dukcapil","no_rkm_medis");
-   tampil();
+   runBackground(() ->tampil());
 }//GEN-LAST:event_BtnHapusActionPerformed1
 
 private void BtnHapusKeyPressed(java.awt.event.KeyEvent evt) {//GEN-FIRST:event_BtnHapusKeyPressed
@@ -3113,7 +3101,6 @@ private void MnKartuActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST
 
     private void MnInformasiBayiActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_MnInformasiBayiActionPerformed
         this.setCursor(Cursor.getPredefinedCursor(Cursor.WAIT_CURSOR));
-        tampil();
         if(tabMode.getRowCount()==0){
             JOptionPane.showMessageDialog(null,"Maaf, data sudah habis. Tidak ada data yang bisa anda print...!!!!");
             BtnBatal.requestFocus();
@@ -3825,9 +3812,34 @@ private void MnKartuActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST
 
     private void TabRawatMouseClicked(java.awt.event.MouseEvent evt) {//GEN-FIRST:event_TabRawatMouseClicked
         if(TabRawat.getSelectedIndex()==1){
-            tampil();
+            runBackground(() ->tampil());
         }
     }//GEN-LAST:event_TabRawatMouseClicked
+
+    private void formWindowOpened(java.awt.event.WindowEvent evt) {//GEN-FIRST:event_formWindowOpened
+        if(koneksiDB.CARICEPAT().equals("aktif")){
+            TCari.getDocument().addDocumentListener(new javax.swing.event.DocumentListener(){
+                @Override
+                public void insertUpdate(DocumentEvent e) {
+                    if(TCari.getText().length()>2){
+                        runBackground(() ->tampil());
+                    }
+                }
+                @Override
+                public void removeUpdate(DocumentEvent e) {
+                    if(TCari.getText().length()>2){
+                        runBackground(() ->tampil());
+                    }
+                }
+                @Override
+                public void changedUpdate(DocumentEvent e) {
+                    if(TCari.getText().length()>2){
+                        runBackground(() ->tampil());
+                    }
+                }
+            });
+        }
+    }//GEN-LAST:event_formWindowOpened
 
     /**
     * @param args the command line arguments
@@ -3894,11 +3906,11 @@ private void MnKartuActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST
     private widget.TextBox LingkarPerut;
     private widget.TextBox Mikasi;
     private widget.TextBox Mikonium;
-    private javax.swing.JMenuItem MnInformasiBayi;
-    private javax.swing.JMenuItem MnKartu;
-    private javax.swing.JMenuItem MnSKL;
-    private javax.swing.JMenuItem MnSKL1;
-    private javax.swing.JMenuItem MnSKL2;
+    private widget.MenuItem MnInformasiBayi;
+    private widget.MenuItem MnKartu;
+    private widget.MenuItem MnSKL;
+    private widget.MenuItem MnSKL1;
+    private widget.MenuItem MnSKL2;
     private widget.TextBox2 N1;
     private widget.TextBox2 N10;
     private widget.TextBox2 N5;
@@ -3930,7 +3942,7 @@ private void MnKartuActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST
     private widget.ScrollPane Scroll1;
     private widget.ScrollPane Scroll2;
     private widget.TextBox TCari;
-    private javax.swing.JTabbedPane TabRawat;
+    private widget.TabPane TabRawat;
     private widget.TextBox TelpOrtu;
     private widget.TextBox UmurAyah;
     private widget.TextBox UmurAyah2;
@@ -3950,11 +3962,11 @@ private void MnKartuActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST
     private widget.Label jLabel103;
     private widget.Label jLabel24;
     private widget.Label jLabel7;
-    private javax.swing.JMenu jMenu1;
-    private javax.swing.JMenu jMenu2;
-    private javax.swing.JMenu jMenu3;
-    private javax.swing.JMenu jMenu4;
-    private javax.swing.JMenu jMenu5;
+    private widget.Menu jMenu1;
+    private widget.Menu jMenu2;
+    private widget.Menu jMenu3;
+    private widget.Menu jMenu4;
+    private widget.Menu jMenu5;
     private javax.swing.JPanel jPanel2;
     private widget.ComboBox jam;
     private widget.Label label10;
@@ -4020,22 +4032,22 @@ private void MnKartuActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST
     private widget.PanelBiasa panelBiasa2;
     private widget.panelisi panelisi1;
     private widget.panelisi panelisi2;
-    private javax.swing.JMenuItem ppGrafikberat;
-    private javax.swing.JMenuItem ppGrafikberatlaki;
-    private javax.swing.JMenuItem ppGrafikberatwn;
-    private javax.swing.JMenuItem ppGrafikjkbayi;
-    private javax.swing.JMenuItem ppGrafiklahirbulan;
-    private javax.swing.JMenuItem ppGrafiklahirbulanlaki;
-    private javax.swing.JMenuItem ppGrafiklahirbulanwn;
-    private javax.swing.JMenuItem ppGrafiklahirtahun;
-    private javax.swing.JMenuItem ppGrafiklahirtahunlaki;
-    private javax.swing.JMenuItem ppGrafiklahirtahunwn;
-    private javax.swing.JMenuItem ppGrafikpanjang;
-    private javax.swing.JMenuItem ppGrafikpanjanglaki;
-    private javax.swing.JMenuItem ppGrafikpanjangwn;
-    private javax.swing.JMenuItem ppGrafikproseslahir;
-    private javax.swing.JMenuItem ppGrafikproseslahirlaki;
-    private javax.swing.JMenuItem ppGrafikproseslahirwn;
+    private widget.MenuItem ppGrafikberat;
+    private widget.MenuItem ppGrafikberatlaki;
+    private widget.MenuItem ppGrafikberatwn;
+    private widget.MenuItem ppGrafikjkbayi;
+    private widget.MenuItem ppGrafiklahirbulan;
+    private widget.MenuItem ppGrafiklahirbulanlaki;
+    private widget.MenuItem ppGrafiklahirbulanwn;
+    private widget.MenuItem ppGrafiklahirtahun;
+    private widget.MenuItem ppGrafiklahirtahunlaki;
+    private widget.MenuItem ppGrafiklahirtahunwn;
+    private widget.MenuItem ppGrafikpanjang;
+    private widget.MenuItem ppGrafikpanjanglaki;
+    private widget.MenuItem ppGrafikpanjangwn;
+    private widget.MenuItem ppGrafikproseslahir;
+    private widget.MenuItem ppGrafikproseslahirlaki;
+    private widget.MenuItem ppGrafikproseslahirwn;
     private widget.ScrollPane scrollPane1;
     private widget.ScrollPane scrollPane2;
     private widget.ScrollPane scrollPane3;
@@ -4044,7 +4056,7 @@ private void MnKartuActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST
     private widget.Table tbDokter;
     // End of variables declaration//GEN-END:variables
 
-    public void tampil() {
+    private void tampil() {
         jkelcari=""; tglcari="";
         if(! cmbCrJk.getSelectedItem().toString().equals("SEMUA")){
             jkelcari=" pasien.jk='"+cmbCrJk.getSelectedItem().toString().substring(0,1)+"' and ";
@@ -4116,6 +4128,10 @@ private void MnKartuActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST
         }
         int b=tabMode.getRowCount();
         LCount.setText(""+b);
+    }
+    
+    public void tampil2() {
+        runBackground(() ->tampil());
     }
 
     public void emptTeks() {
@@ -4367,5 +4383,37 @@ private void MnKartuActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST
         } catch (Exception e) {
             N10.setText("");
         }
+    }
+    
+    private void runBackground(Runnable task) {
+        if (ceksukses) return;
+        if (executor.isShutdown() || executor.isTerminated()) return;
+        if (!isDisplayable()) return;
+
+        ceksukses = true;
+        setCursor(Cursor.getPredefinedCursor(Cursor.WAIT_CURSOR));
+
+        try {
+            executor.submit(() -> {
+                try {
+                    task.run();
+                } finally {
+                    ceksukses = false;
+                    SwingUtilities.invokeLater(() -> {
+                        if (isDisplayable()) {
+                            setCursor(Cursor.getDefaultCursor());
+                        }
+                    });
+                }
+            });
+        } catch (RejectedExecutionException ex) {
+            ceksukses = false;
+        }
+    }
+    
+    @Override
+    public void dispose() {
+        executor.shutdownNow();
+        super.dispose();
     }
 }

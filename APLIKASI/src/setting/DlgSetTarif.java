@@ -15,14 +15,19 @@ import fungsi.koneksiDB;
 import fungsi.sekuel;
 import fungsi.validasi;
 import fungsi.WarnaTable;
+import java.awt.Cursor;
 import java.awt.Dimension;
 import java.awt.event.KeyEvent;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.RejectedExecutionException;
 import javax.swing.JOptionPane;
 import javax.swing.JTable;
+import javax.swing.SwingUtilities;
 import javax.swing.table.DefaultTableModel;
 import javax.swing.table.TableColumn;
 
@@ -35,6 +40,10 @@ public class DlgSetTarif extends javax.swing.JDialog {
     private Connection koneksi=koneksiDB.condb();
     private sekuel Sequel=new sekuel();
     private validasi Valid=new validasi();
+    private PreparedStatement ps;
+    private ResultSet rs;
+    private final ExecutorService executor = Executors.newSingleThreadExecutor();
+    private volatile boolean ceksukses = false;
 
     /** Creates new form DlgAdmin 
      *@param parent
@@ -45,13 +54,13 @@ public class DlgSetTarif extends javax.swing.JDialog {
         this.setLocation(10,10);
         setSize(457,249);
 
-        Object[] row={"Per Poli Ralan","Per Jenis Bayar Ralan","Per Ruang Ranap",
-                      "Per Jenis Bayar Ranap","Per Jenis Bayar Laborat",
-                      "Per Jenis Bayar Radiologi","Per Jenis Bayar Operasi",
-                      "Per Kelas Ranap","Per Kelas Laborat",
-                      "Per Kelas Radiologi","Per Kelas Operasi"
-        };
-        tabMode=new DefaultTableModel(null,row){
+        tabMode=new DefaultTableModel(null,new Object[]{
+                "Per Poli Ralan","Per Jenis Bayar Ralan","Per Ruang Ranap",
+                "Per Jenis Bayar Ranap","Per Jenis Bayar Laborat",
+                "Per Jenis Bayar Radiologi","Per Jenis Bayar Operasi",
+                "Per Kelas Ranap","Per Kelas Laborat","Per Kelas Radiologi",
+                "Per Kelas Operasi","Per Jenis Bayar Resep"
+            }){
               @Override public boolean isCellEditable(int rowIndex, int colIndex){return false;}
         };
 
@@ -59,7 +68,7 @@ public class DlgSetTarif extends javax.swing.JDialog {
         tbAdmin.setPreferredScrollableViewportSize(new Dimension(500,500));
         tbAdmin.setAutoResizeMode(JTable.AUTO_RESIZE_OFF);
 
-        for (int i = 0; i < 11; i++) {
+        for (int i = 0; i < 12; i++) {
             TableColumn column = tbAdmin.getColumnModel().getColumn(i);
             column.setPreferredWidth(130);
         }
@@ -103,6 +112,8 @@ public class DlgSetTarif extends javax.swing.JDialog {
         label44 = new widget.Label();
         YesNo11 = new widget.ComboBox();
         label45 = new widget.Label();
+        label46 = new widget.Label();
+        YesNo12 = new widget.ComboBox();
         panelisi1 = new widget.panelisi();
         BtnSimpan = new widget.Button();
         BtnBatal = new widget.Button();
@@ -119,7 +130,7 @@ public class DlgSetTarif extends javax.swing.JDialog {
             }
         });
 
-        internalFrame1.setBorder(javax.swing.BorderFactory.createTitledBorder(javax.swing.BorderFactory.createLineBorder(new java.awt.Color(240, 245, 235)), "::[ Setup Penggunaan Tarif Ranap, Ralan & Operasi ]::", javax.swing.border.TitledBorder.DEFAULT_JUSTIFICATION, javax.swing.border.TitledBorder.DEFAULT_POSITION, new java.awt.Font("Tahoma", 0, 11), new java.awt.Color(50,50,50))); // NOI18N
+        internalFrame1.setBorder(javax.swing.BorderFactory.createTitledBorder(javax.swing.BorderFactory.createLineBorder(new java.awt.Color(240, 245, 235)), "::[ Setup Penggunaan Tarif Ranap, Ralan & Operasi ]::", javax.swing.border.TitledBorder.DEFAULT_JUSTIFICATION, javax.swing.border.TitledBorder.DEFAULT_POSITION, new java.awt.Font("Tahoma", 0, 11), new java.awt.Color(50, 50, 50))); // NOI18N
         internalFrame1.setName("internalFrame1"); // NOI18N
         internalFrame1.setLayout(new java.awt.BorderLayout(1, 1));
 
@@ -333,6 +344,23 @@ public class DlgSetTarif extends javax.swing.JDialog {
         panelisi2.add(label45);
         label45.setBounds(325, 40, 215, 23);
 
+        label46.setText("Aktifkan Per Cara Bayar di Resep Dokter : ");
+        label46.setName("label46"); // NOI18N
+        label46.setPreferredSize(new java.awt.Dimension(82, 23));
+        panelisi2.add(label46);
+        label46.setBounds(325, 160, 215, 23);
+
+        YesNo12.setModel(new javax.swing.DefaultComboBoxModel(new String[] { "Yes", "No" }));
+        YesNo12.setName("YesNo12"); // NOI18N
+        YesNo12.setPreferredSize(new java.awt.Dimension(50, 23));
+        YesNo12.addKeyListener(new java.awt.event.KeyAdapter() {
+            public void keyPressed(java.awt.event.KeyEvent evt) {
+                YesNo12KeyPressed(evt);
+            }
+        });
+        panelisi2.add(YesNo12);
+        YesNo12.setBounds(540, 160, 100, 23);
+
         internalFrame1.add(panelisi2, java.awt.BorderLayout.PAGE_START);
 
         panelisi1.setName("panelisi1"); // NOI18N
@@ -438,13 +466,13 @@ public class DlgSetTarif extends javax.swing.JDialog {
 
     private void BtnSimpanActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_BtnSimpanActionPerformed
         if(tabMode.getRowCount()==0){
-            Sequel.menyimpan("set_tarif","?,?,?,?,?,?,?,?,?,?,?","Set Tarif",11,new String[]{
+            Sequel.menyimpan("set_tarif","?,?,?,?,?,?,?,?,?,?,?,?","Set Tarif",12,new String[]{
                 YesNo1.getSelectedItem().toString(),YesNo2.getSelectedItem().toString(),YesNo3.getSelectedItem().toString(),
                 YesNo4.getSelectedItem().toString(),YesNo5.getSelectedItem().toString(),YesNo6.getSelectedItem().toString(),
                 YesNo7.getSelectedItem().toString(),YesNo8.getSelectedItem().toString(),YesNo9.getSelectedItem().toString(),
-                YesNo10.getSelectedItem().toString(),YesNo11.getSelectedItem().toString()
+                YesNo10.getSelectedItem().toString(),YesNo11.getSelectedItem().toString(),YesNo12.getSelectedItem().toString()
             });
-            tampil();
+            runBackground(() ->tampil());
             emptTeks();
         }else if(tabMode.getRowCount()>0){
             JOptionPane.showMessageDialog(null,"Maaf, Hanya diijinkan satu record ...!!!!");
@@ -456,7 +484,7 @@ public class DlgSetTarif extends javax.swing.JDialog {
         if(evt.getKeyCode()==KeyEvent.VK_SPACE){
             BtnSimpanActionPerformed(null);
         }else{
-            Valid.pindah(evt,YesNo7,BtnBatal);
+            Valid.pindah(evt,YesNo12,BtnBatal);
         }
 }//GEN-LAST:event_BtnSimpanKeyPressed
 
@@ -472,7 +500,7 @@ public class DlgSetTarif extends javax.swing.JDialog {
 
     private void BtnHapusActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_BtnHapusActionPerformed
             Sequel.queryu("delete from set_tarif");
-            tampil();
+            runBackground(() ->tampil());
             emptTeks();
 }//GEN-LAST:event_BtnHapusActionPerformed
 
@@ -486,13 +514,13 @@ public class DlgSetTarif extends javax.swing.JDialog {
 
     private void BtnEditActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_BtnEditActionPerformed
         Sequel.queryu("delete from set_tarif");
-        Sequel.menyimpan("set_tarif","?,?,?,?,?,?,?,?,?,?,?","Set Tarif",11,new String[]{
+        Sequel.menyimpan("set_tarif","?,?,?,?,?,?,?,?,?,?,?,?","Set Tarif",12,new String[]{
                 YesNo1.getSelectedItem().toString(),YesNo2.getSelectedItem().toString(),YesNo3.getSelectedItem().toString(),
                 YesNo4.getSelectedItem().toString(),YesNo5.getSelectedItem().toString(),YesNo6.getSelectedItem().toString(),
                 YesNo7.getSelectedItem().toString(),YesNo8.getSelectedItem().toString(),YesNo9.getSelectedItem().toString(),
-                YesNo10.getSelectedItem().toString(),YesNo11.getSelectedItem().toString()
+                YesNo10.getSelectedItem().toString(),YesNo11.getSelectedItem().toString(),YesNo12.getSelectedItem().toString()
         });
-        tampil();
+        runBackground(() ->tampil());
         emptTeks();
 }//GEN-LAST:event_BtnEditActionPerformed
 
@@ -560,7 +588,7 @@ public class DlgSetTarif extends javax.swing.JDialog {
     }//GEN-LAST:event_YesNo4KeyPressed
 
     private void formWindowOpened(java.awt.event.WindowEvent evt) {//GEN-FIRST:event_formWindowOpened
-        tampil();
+        runBackground(() ->tampil());
     }//GEN-LAST:event_formWindowOpened
 
     private void YesNo6KeyPressed(java.awt.event.KeyEvent evt) {//GEN-FIRST:event_YesNo6KeyPressed
@@ -568,24 +596,28 @@ public class DlgSetTarif extends javax.swing.JDialog {
     }//GEN-LAST:event_YesNo6KeyPressed
 
     private void YesNo7KeyPressed(java.awt.event.KeyEvent evt) {//GEN-FIRST:event_YesNo7KeyPressed
-        Valid.pindah(evt, YesNo6,BtnSimpan);
+        Valid.pindah(evt, YesNo6,YesNo8);
     }//GEN-LAST:event_YesNo7KeyPressed
 
     private void YesNo8KeyPressed(java.awt.event.KeyEvent evt) {//GEN-FIRST:event_YesNo8KeyPressed
-        // TODO add your handling code here:
+        Valid.pindah(evt, YesNo7,YesNo9);
     }//GEN-LAST:event_YesNo8KeyPressed
 
     private void YesNo9KeyPressed(java.awt.event.KeyEvent evt) {//GEN-FIRST:event_YesNo9KeyPressed
-        // TODO add your handling code here:
+        Valid.pindah(evt, YesNo8,YesNo10);
     }//GEN-LAST:event_YesNo9KeyPressed
 
     private void YesNo10KeyPressed(java.awt.event.KeyEvent evt) {//GEN-FIRST:event_YesNo10KeyPressed
-        // TODO add your handling code here:
+        Valid.pindah(evt, YesNo9,YesNo11);
     }//GEN-LAST:event_YesNo10KeyPressed
 
     private void YesNo11KeyPressed(java.awt.event.KeyEvent evt) {//GEN-FIRST:event_YesNo11KeyPressed
-        // TODO add your handling code here:
+        Valid.pindah(evt, YesNo10,YesNo12);
     }//GEN-LAST:event_YesNo11KeyPressed
+
+    private void YesNo12KeyPressed(java.awt.event.KeyEvent evt) {//GEN-FIRST:event_YesNo12KeyPressed
+        Valid.pindah(evt, YesNo11,BtnSimpan);
+    }//GEN-LAST:event_YesNo12KeyPressed
 
     /**
     * @param args the command line arguments
@@ -613,6 +645,7 @@ public class DlgSetTarif extends javax.swing.JDialog {
     private widget.ComboBox YesNo1;
     private widget.ComboBox YesNo10;
     private widget.ComboBox YesNo11;
+    private widget.ComboBox YesNo12;
     private widget.ComboBox YesNo2;
     private widget.ComboBox YesNo3;
     private widget.ComboBox YesNo4;
@@ -633,28 +666,37 @@ public class DlgSetTarif extends javax.swing.JDialog {
     private widget.Label label43;
     private widget.Label label44;
     private widget.Label label45;
+    private widget.Label label46;
     private widget.panelisi panelisi1;
     private widget.panelisi panelisi2;
     private widget.Table tbAdmin;
     // End of variables declaration//GEN-END:variables
 
-    public void tampil() {
-        String sql="select * from set_tarif";
-        prosesCari(sql);
-    }
-
-    private void prosesCari(String sql) {
+    private void tampil() {
         Valid.tabelKosong(tabMode);
         try{
-            PreparedStatement stat=koneksi.prepareStatement(sql);
-            ResultSet rs=stat.executeQuery();
-            while(rs.next()){
-                tabMode.addRow(new Object[]{
-                    rs.getString(1),rs.getString(2),rs.getString(3),
-                    rs.getString(4),rs.getString(5),rs.getString(6),
-                    rs.getString(7),rs.getString(8),rs.getString(9),
-                    rs.getString(10),rs.getString(11)});
+            ps=koneksi.prepareStatement("select * from set_tarif");
+            try{
+                rs=ps.executeQuery();
+                while(rs.next()){
+                    tabMode.addRow(new Object[]{
+                        rs.getString(1),rs.getString(2),rs.getString(3),
+                        rs.getString(4),rs.getString(5),rs.getString(6),
+                        rs.getString(7),rs.getString(8),rs.getString(9),
+                        rs.getString(10),rs.getString(11),rs.getString(12)
+                    });
+                }
+            } catch (Exception e) {
+                System.out.println("Notif Map : "+e);
+            } finally{
+                if(rs!=null){
+                    rs.close();
+                }
+                if(ps!=null){
+                    ps.close();
+                }
             }
+                
         }catch(SQLException e){
             System.out.println("Notifikasi : "+e);
         }
@@ -674,6 +716,7 @@ public class DlgSetTarif extends javax.swing.JDialog {
             YesNo9.setSelectedItem(tbAdmin.getValueAt(row,8).toString());
             YesNo10.setSelectedItem(tbAdmin.getValueAt(row,9).toString());
             YesNo11.setSelectedItem(tbAdmin.getValueAt(row,10).toString());
+            YesNo12.setSelectedItem(tbAdmin.getValueAt(row,11).toString());
         }
     }
 
@@ -689,5 +732,38 @@ public class DlgSetTarif extends javax.swing.JDialog {
         YesNo9.setSelectedIndex(0);
         YesNo10.setSelectedIndex(0);
         YesNo11.setSelectedIndex(0);
+        YesNo12.setSelectedIndex(0);
+    }
+    
+    private void runBackground(Runnable task) {
+        if (ceksukses) return;
+        if (executor.isShutdown() || executor.isTerminated()) return;
+        if (!isDisplayable()) return;
+
+        ceksukses = true;
+        setCursor(Cursor.getPredefinedCursor(Cursor.WAIT_CURSOR));
+
+        try {
+            executor.submit(() -> {
+                try {
+                    task.run();
+                } finally {
+                    ceksukses = false;
+                    SwingUtilities.invokeLater(() -> {
+                        if (isDisplayable()) {
+                            setCursor(Cursor.getDefaultCursor());
+                        }
+                    });
+                }
+            });
+        } catch (RejectedExecutionException ex) {
+            ceksukses = false;
+        }
+    }
+    
+    @Override
+    public void dispose() {
+        executor.shutdownNow();
+        super.dispose();
     }
 }

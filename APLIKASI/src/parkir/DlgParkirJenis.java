@@ -48,7 +48,7 @@ public class DlgParkirJenis extends javax.swing.JDialog {
         initComponents();
 
         this.setLocation(10,10);
-        setSize(459,539);
+        
 
         Object[] row={"ID Jenis","Jenis Parkir","Biaya Parkir","Sistem"};
         tabMode=new DefaultTableModel(null,row){
@@ -164,7 +164,7 @@ public class DlgParkirJenis extends javax.swing.JDialog {
         Scroll.setName("Scroll"); // NOI18N
         Scroll.setOpaque(true);
 
-        tbSpesialis.setAutoCreateRowSorter(true);
+        tbSpesialis.setAutoCreateRowSorter(false);
         tbSpesialis.setToolTipText("Silahkan klik untuk memilih data yang mau diedit ataupun dihapus");
         tbSpesialis.setName("tbSpesialis"); // NOI18N
         tbSpesialis.addMouseListener(new java.awt.event.MouseAdapter() {

@@ -19,7 +19,9 @@ import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.awt.event.KeyEvent;
 import java.awt.event.WindowEvent;
-import java.awt.event.WindowListener;
+import java.awt.event.WindowAdapter;
+import java.util.concurrent.RejectedExecutionException;
+import javax.swing.SwingUtilities;
 import java.io.BufferedWriter;
 import java.io.File;
 import java.io.FileWriter;
@@ -31,9 +33,12 @@ import java.util.Calendar;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 import javax.swing.JOptionPane;
 import javax.swing.JTable;
 import javax.swing.Timer;
+import javax.swing.WindowConstants;
 import javax.swing.event.DocumentEvent;
 import javax.swing.table.DefaultTableModel;
 import javax.swing.table.TableColumn;
@@ -55,7 +60,9 @@ public final class RMPenilaianTambahanBunuhDiri extends javax.swing.JDialog {
     private PreparedStatement ps;
     private ResultSet rs;
     private int i=0;    
-    private DlgCariPetugas petugas=new DlgCariPetugas(null,false);
+    private DlgCariPetugas petugas;
+    private final ExecutorService executor = Executors.newSingleThreadExecutor();
+    private volatile boolean ceksukses = false;
     private String finger="";
     private StringBuilder htmlContent;
     /** Creates new form DlgRujuk
@@ -68,11 +75,10 @@ public final class RMPenilaianTambahanBunuhDiri extends javax.swing.JDialog {
         setSize(628,674);
 
         tabMode=new DefaultTableModel(null,new Object[]{
-            "No.Rawat","No.R.M.","Nama Pasien","Tgl.Lahir","JK","Tanggal","Faktor Statik 1","Skor Statik 1","Faktor Statik 2","Skor Statik 2",
-            "Faktor Statik 3","Skor Statik 3","Faktor Statik 4","Skor Statik 4","Faktor Statik 5","Skor Statik 5","Faktor Statik 6","Skor Statik 6",
-            "Faktor Statik 7","Skor Statik 7","Jml Skor Statik","Faktor Dinamis 1","Skor Dinamis 1", "Faktor Dinamis 2","Skor Dinamis 2", 
-            "Faktor Dinamis 3","Skor Dinamis 3","Faktor Dinamis 4","Skor Dinamis 4","Faktor Dinamis 5","Skor Dinamis 5","Faktor Dinamis 6","Skor Dinamis 6",
-            "Faktor Dinamis 7","Skor Dinamis 7","Jml Skor Dinamis","Faktor-faktor Pencegahan","Total Skor","Level Skor","NIP","Petugas"
+            "No.Rawat","No.R.M.","Nama Pasien","Tgl.Lahir","JK","Tanggal",
+            "Komitmen Keselamatan","Rencana Bunuh Diri","Letalitas Rencana","Riwayat Percobaan","Ide Bunuh Diri",
+            "Gejala","Pikiran Kematian","Validitas Jawaban","Total Skor","Interval Monitoring","Nama & Paraf",
+            "NIP","Petugas"
         }){
               @Override public boolean isCellEditable(int rowIndex, int colIndex){return false;}
         };
@@ -82,7 +88,7 @@ public final class RMPenilaianTambahanBunuhDiri extends javax.swing.JDialog {
         tbObat.setPreferredScrollableViewportSize(new Dimension(500,500));
         tbObat.setAutoResizeMode(JTable.AUTO_RESIZE_OFF);
 
-        for (i = 0; i < 41; i++) {
+        for (i = 0; i < 19; i++) {
             TableColumn column = tbObat.getColumnModel().getColumn(i);
             if(i==0){
                 column.setPreferredWidth(105);
@@ -97,129 +103,39 @@ public final class RMPenilaianTambahanBunuhDiri extends javax.swing.JDialog {
             }else if(i==5){
                 column.setPreferredWidth(115);
             }else if(i==6){
-                column.setPreferredWidth(80);
+                column.setPreferredWidth(230);
             }else if(i==7){
-                column.setPreferredWidth(70);
+                column.setPreferredWidth(230);
             }else if(i==8){
-                column.setPreferredWidth(80);
+                column.setPreferredWidth(230);
             }else if(i==9){
-                column.setPreferredWidth(70);
+                column.setPreferredWidth(230);
             }else if(i==10){
-                column.setPreferredWidth(80);
+                column.setPreferredWidth(230);
             }else if(i==11){
-                column.setPreferredWidth(70);
+                column.setPreferredWidth(230);
             }else if(i==12){
-                column.setPreferredWidth(80);
+                column.setPreferredWidth(230);
             }else if(i==13){
-                column.setPreferredWidth(70);
+                column.setPreferredWidth(230);
             }else if(i==14){
-                column.setPreferredWidth(80);
+                column.setPreferredWidth(65);
             }else if(i==15){
-                column.setPreferredWidth(70);
+                column.setPreferredWidth(140);
             }else if(i==16){
-                column.setPreferredWidth(80);
+                column.setPreferredWidth(140);
             }else if(i==17){
-                column.setPreferredWidth(70);
-            }else if(i==18){
-                column.setPreferredWidth(80);
-            }else if(i==19){
-                column.setPreferredWidth(70);
-            }else if(i==20){
-                column.setPreferredWidth(80);
-            }else if(i==21){
-                column.setPreferredWidth(90);
-            }else if(i==22){
-                column.setPreferredWidth(80);
-            }else if(i==23){
-                column.setPreferredWidth(90);
-            }else if(i==24){
-                column.setPreferredWidth(80);
-            }else if(i==25){
-                column.setPreferredWidth(90);
-            }else if(i==26){
-                column.setPreferredWidth(80);
-            }else if(i==27){
-                column.setPreferredWidth(90);
-            }else if(i==28){
-                column.setPreferredWidth(80);
-            }else if(i==29){
-                column.setPreferredWidth(90);
-            }else if(i==30){
-                column.setPreferredWidth(80);
-            }else if(i==31){
-                column.setPreferredWidth(90);
-            }else if(i==32){
-                column.setPreferredWidth(80);
-            }else if(i==33){
-                column.setPreferredWidth(90);
-            }else if(i==34){
-                column.setPreferredWidth(80);
-            }else if(i==35){
-                column.setPreferredWidth(90);
-            }else if(i==36){
-                column.setPreferredWidth(200);
-            }else if(i==37){
-                column.setPreferredWidth(60);
-            }else if(i==38){
                 column.setPreferredWidth(75);
-            }else if(i==39){
-                column.setPreferredWidth(80);
-            }else if(i==40){
+            }else if(i==18){
                 column.setPreferredWidth(150);
             }
         }
         tbObat.setDefaultRenderer(Object.class, new WarnaTable());
 
         TNoRw.setDocument(new batasInput((byte)17).getKata(TNoRw));
-        NIP.setDocument(new batasInput((byte)20).getKata(NIP));
+        KdPetugas.setDocument(new batasInput((byte)20).getKata(KdPetugas));
         FaktorPencegahan.setDocument(new batasInput((int)500).getKata(FaktorPencegahan));
         TCari.setDocument(new batasInput((int)100).getKata(TCari));
-        
-        if(koneksiDB.CARICEPAT().equals("aktif")){
-            TCari.getDocument().addDocumentListener(new javax.swing.event.DocumentListener(){
-                @Override
-                public void insertUpdate(DocumentEvent e) {
-                    if(TCari.getText().length()>2){
-                        tampil();
-                    }
-                }
-                @Override
-                public void removeUpdate(DocumentEvent e) {
-                    if(TCari.getText().length()>2){
-                        tampil();
-                    }
-                }
-                @Override
-                public void changedUpdate(DocumentEvent e) {
-                    if(TCari.getText().length()>2){
-                        tampil();
-                    }
-                }
-            });
-        }
-        
-        petugas.addWindowListener(new WindowListener() {
-            @Override
-            public void windowOpened(WindowEvent e) {}
-            @Override
-            public void windowClosing(WindowEvent e) {}
-            @Override
-            public void windowClosed(WindowEvent e) {
-                if(petugas.getTable().getSelectedRow()!= -1){                   
-                    NIP.setText(petugas.getTable().getValueAt(petugas.getTable().getSelectedRow(),0).toString());
-                    NamaPetugas.setText(petugas.getTable().getValueAt(petugas.getTable().getSelectedRow(),1).toString());
-                }  
-                NIP.requestFocus();
-            }
-            @Override
-            public void windowIconified(WindowEvent e) {}
-            @Override
-            public void windowDeiconified(WindowEvent e) {}
-            @Override
-            public void windowActivated(WindowEvent e) {}
-            @Override
-            public void windowDeactivated(WindowEvent e) {}
-        }); 
         
         ChkInput.setSelected(false);
         isForm();
@@ -296,9 +212,9 @@ public final class RMPenilaianTambahanBunuhDiri extends javax.swing.JDialog {
         Detik = new widget.ComboBox();
         ChkKejadian = new widget.CekBox();
         jLabel18 = new widget.Label();
-        NIP = new widget.TextBox();
-        NamaPetugas = new widget.TextBox();
-        btnPetugas = new widget.Button();
+        KdPetugas = new widget.TextBox();
+        NmPetugas = new widget.TextBox();
+        BtnPetugas = new widget.Button();
         jLabel8 = new widget.Label();
         TglLahir = new widget.TextBox();
         jLabel57 = new widget.Label();
@@ -400,6 +316,11 @@ public final class RMPenilaianTambahanBunuhDiri extends javax.swing.JDialog {
         setDefaultCloseOperation(javax.swing.WindowConstants.DISPOSE_ON_CLOSE);
         setUndecorated(true);
         setResizable(false);
+        addWindowListener(new java.awt.event.WindowAdapter() {
+            public void windowOpened(java.awt.event.WindowEvent evt) {
+                formWindowOpened(evt);
+            }
+        });
 
         internalFrame1.setBorder(javax.swing.BorderFactory.createTitledBorder(javax.swing.BorderFactory.createLineBorder(new java.awt.Color(240, 245, 235)), "::[ Pengkajian Tambahan Bunuh Diri ]::", javax.swing.border.TitledBorder.DEFAULT_JUSTIFICATION, javax.swing.border.TitledBorder.DEFAULT_POSITION, new java.awt.Font("Tahoma", 0, 11), new java.awt.Color(50, 50, 50))); // NOI18N
         internalFrame1.setFont(new java.awt.Font("Tahoma", 2, 12)); // NOI18N
@@ -567,10 +488,9 @@ public final class RMPenilaianTambahanBunuhDiri extends javax.swing.JDialog {
         panelGlass9.add(jLabel19);
 
         DTPCari1.setForeground(new java.awt.Color(50, 70, 50));
-        DTPCari1.setModel(new javax.swing.DefaultComboBoxModel(new String[] { "13-04-2023" }));
+        DTPCari1.setModel(new javax.swing.DefaultComboBoxModel(new String[] { "26-10-2026" }));
         DTPCari1.setDisplayFormat("dd-MM-yyyy");
         DTPCari1.setName("DTPCari1"); // NOI18N
-        DTPCari1.setOpaque(false);
         DTPCari1.setPreferredSize(new java.awt.Dimension(95, 23));
         panelGlass9.add(DTPCari1);
 
@@ -581,10 +501,9 @@ public final class RMPenilaianTambahanBunuhDiri extends javax.swing.JDialog {
         panelGlass9.add(jLabel21);
 
         DTPCari2.setForeground(new java.awt.Color(50, 70, 50));
-        DTPCari2.setModel(new javax.swing.DefaultComboBoxModel(new String[] { "13-04-2023" }));
+        DTPCari2.setModel(new javax.swing.DefaultComboBoxModel(new String[] { "26-10-2026" }));
         DTPCari2.setDisplayFormat("dd-MM-yyyy");
         DTPCari2.setName("DTPCari2"); // NOI18N
-        DTPCari2.setOpaque(false);
         DTPCari2.setPreferredSize(new java.awt.Dimension(95, 23));
         panelGlass9.add(DTPCari2);
 
@@ -702,10 +621,9 @@ public final class RMPenilaianTambahanBunuhDiri extends javax.swing.JDialog {
         TPasien.setBounds(336, 10, 285, 23);
 
         Tanggal.setForeground(new java.awt.Color(50, 70, 50));
-        Tanggal.setModel(new javax.swing.DefaultComboBoxModel(new String[] { "13-04-2023" }));
+        Tanggal.setModel(new javax.swing.DefaultComboBoxModel(new String[] { "26-10-2026" }));
         Tanggal.setDisplayFormat("dd-MM-yyyy");
         Tanggal.setName("Tanggal"); // NOI18N
-        Tanggal.setOpaque(false);
         Tanggal.addKeyListener(new java.awt.event.KeyAdapter() {
             public void keyPressed(java.awt.event.KeyEvent evt) {
                 TanggalKeyPressed(evt);
@@ -775,33 +693,33 @@ public final class RMPenilaianTambahanBunuhDiri extends javax.swing.JDialog {
         FormInput.add(jLabel18);
         jLabel18.setBounds(400, 40, 70, 23);
 
-        NIP.setEditable(false);
-        NIP.setHighlighter(null);
-        NIP.setName("NIP"); // NOI18N
-        FormInput.add(NIP);
-        NIP.setBounds(474, 40, 94, 23);
+        KdPetugas.setEditable(false);
+        KdPetugas.setHighlighter(null);
+        KdPetugas.setName("KdPetugas"); // NOI18N
+        FormInput.add(KdPetugas);
+        KdPetugas.setBounds(474, 40, 94, 23);
 
-        NamaPetugas.setEditable(false);
-        NamaPetugas.setName("NamaPetugas"); // NOI18N
-        FormInput.add(NamaPetugas);
-        NamaPetugas.setBounds(570, 40, 187, 23);
+        NmPetugas.setEditable(false);
+        NmPetugas.setName("NmPetugas"); // NOI18N
+        FormInput.add(NmPetugas);
+        NmPetugas.setBounds(570, 40, 187, 23);
 
-        btnPetugas.setIcon(new javax.swing.ImageIcon(getClass().getResource("/picture/190.png"))); // NOI18N
-        btnPetugas.setMnemonic('2');
-        btnPetugas.setToolTipText("ALt+2");
-        btnPetugas.setName("btnPetugas"); // NOI18N
-        btnPetugas.addActionListener(new java.awt.event.ActionListener() {
+        BtnPetugas.setIcon(new javax.swing.ImageIcon(getClass().getResource("/picture/190.png"))); // NOI18N
+        BtnPetugas.setMnemonic('2');
+        BtnPetugas.setToolTipText("ALt+2");
+        BtnPetugas.setName("BtnPetugas"); // NOI18N
+        BtnPetugas.addActionListener(new java.awt.event.ActionListener() {
             public void actionPerformed(java.awt.event.ActionEvent evt) {
-                btnPetugasActionPerformed(evt);
+                BtnPetugasActionPerformed(evt);
             }
         });
-        btnPetugas.addKeyListener(new java.awt.event.KeyAdapter() {
+        BtnPetugas.addKeyListener(new java.awt.event.KeyAdapter() {
             public void keyPressed(java.awt.event.KeyEvent evt) {
-                btnPetugasKeyPressed(evt);
+                BtnPetugasKeyPressed(evt);
             }
         });
-        FormInput.add(btnPetugas);
-        btnPetugas.setBounds(761, 40, 28, 23);
+        FormInput.add(BtnPetugas);
+        BtnPetugas.setBounds(761, 40, 28, 23);
 
         jLabel8.setText("Tgl.Lahir :");
         jLabel8.setName("jLabel8"); // NOI18N
@@ -1426,11 +1344,11 @@ public final class RMPenilaianTambahanBunuhDiri extends javax.swing.JDialog {
     private void BtnSimpanActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_BtnSimpanActionPerformed
         if(TNoRw.getText().trim().equals("")||TPasien.getText().trim().equals("")){
             Valid.textKosong(TNoRw,"pasien");
-        }else if(NIP.getText().trim().equals("")||NamaPetugas.getText().trim().equals("")){
-            Valid.textKosong(NIP,"Petugas");
+        }else if(KdPetugas.getText().trim().equals("")||NmPetugas.getText().trim().equals("")){
+            Valid.textKosong(KdPetugas,"Petugas");
         }else{
             if(Sequel.menyimpantf("penilaian_tambahan_bunuh_diri","?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?","Data",36,new String[]{
-                TNoRw.getText(),Valid.SetTgl(Tanggal.getSelectedItem()+"")+" "+Jam.getSelectedItem()+":"+Menit.getSelectedItem()+":"+Detik.getSelectedItem(),NIP.getText(),
+                TNoRw.getText(),Valid.SetTgl(Tanggal.getSelectedItem()+"")+" "+Jam.getSelectedItem()+":"+Menit.getSelectedItem()+":"+Detik.getSelectedItem(),KdPetugas.getText(),
                 FaktorStatik1.getSelectedItem().toString(),SkorStatik1.getText(),FaktorStatik2.getSelectedItem().toString(),SkorStatik2.getText(),FaktorStatik3.getSelectedItem().toString(),SkorStatik3.getText(),
                 FaktorStatik4.getSelectedItem().toString(),SkorStatik4.getText(),FaktorStatik5.getSelectedItem().toString(),SkorStatik5.getText(),FaktorStatik6.getSelectedItem().toString(),SkorStatik6.getText(), 
                 FaktorStatik7.getSelectedItem().toString(),SkorStatik7.getText(),TotalStatik.getText(),FaktorDinamis1.getSelectedItem().toString(),SkorDinamis1.getText(), 
@@ -1445,7 +1363,7 @@ public final class RMPenilaianTambahanBunuhDiri extends javax.swing.JDialog {
                     FaktorStatik7.getSelectedItem().toString(),SkorStatik7.getText(),TotalStatik.getText(),FaktorDinamis1.getSelectedItem().toString(),SkorDinamis1.getText(), 
                     FaktorDinamis2.getSelectedItem().toString(),SkorDinamis2.getText(),FaktorDinamis3.getSelectedItem().toString(),SkorDinamis3.getText(),FaktorDinamis4.getSelectedItem().toString(),SkorDinamis4.getText(), 
                     FaktorDinamis5.getSelectedItem().toString(),SkorDinamis5.getText(),FaktorDinamis6.getSelectedItem().toString(),SkorDinamis6.getText(),FaktorDinamis7.getSelectedItem().toString(),SkorDinamis7.getText(), 
-                    TotalDinamis.getText(),FaktorPencegahan.getText(),SkorTotal.getText(),Level.getText(),NIP.getText(),NamaPetugas.getText()
+                    TotalDinamis.getText(),FaktorPencegahan.getText(),SkorTotal.getText(),Level.getText(),KdPetugas.getText(),NmPetugas.getText()
                 });
                 emptTeks();
                 LCount.setText(""+tabMode.getRowCount());
@@ -1478,7 +1396,7 @@ public final class RMPenilaianTambahanBunuhDiri extends javax.swing.JDialog {
             if(akses.getkode().equals("Admin Utama")){
                 hapus();
             }else{
-                if(NIP.getText().equals(tbObat.getValueAt(tbObat.getSelectedRow(),39).toString())){
+                if(KdPetugas.getText().equals(tbObat.getValueAt(tbObat.getSelectedRow(),39).toString())){
                     hapus();
                 }else{
                     JOptionPane.showMessageDialog(null,"Hanya bisa dihapus oleh petugas yang bersangkutan..!!");
@@ -1500,14 +1418,14 @@ public final class RMPenilaianTambahanBunuhDiri extends javax.swing.JDialog {
     private void BtnEditActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_BtnEditActionPerformed
         if(TNoRw.getText().trim().equals("")||TPasien.getText().trim().equals("")){
             Valid.textKosong(TNoRw,"pasien");
-        }else if(NIP.getText().trim().equals("")||NamaPetugas.getText().trim().equals("")){
-            Valid.textKosong(NIP,"Petugas");
+        }else if(KdPetugas.getText().trim().equals("")||NmPetugas.getText().trim().equals("")){
+            Valid.textKosong(KdPetugas,"Petugas");
         }else{
             if(tbObat.getSelectedRow()>-1){
                 if(akses.getkode().equals("Admin Utama")){
                     ganti();
                 }else{
-                    if(NIP.getText().equals(tbObat.getValueAt(tbObat.getSelectedRow(),39).toString())){
+                    if(KdPetugas.getText().equals(tbObat.getValueAt(tbObat.getSelectedRow(),39).toString())){
                         ganti();
                     }else{
                         JOptionPane.showMessageDialog(null,"Hanya bisa diganti oleh petugas yang bersangkutan..!!");
@@ -1528,7 +1446,6 @@ public final class RMPenilaianTambahanBunuhDiri extends javax.swing.JDialog {
 }//GEN-LAST:event_BtnEditKeyPressed
 
     private void BtnKeluarActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_BtnKeluarActionPerformed
-        petugas.dispose();
         dispose();
 }//GEN-LAST:event_BtnKeluarActionPerformed
 
@@ -1703,7 +1620,7 @@ public final class RMPenilaianTambahanBunuhDiri extends javax.swing.JDialog {
 }//GEN-LAST:event_TCariKeyPressed
 
     private void BtnCariActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_BtnCariActionPerformed
-        tampil();
+        runBackground(() ->tampil());
 }//GEN-LAST:event_BtnCariActionPerformed
 
     private void BtnCariKeyPressed(java.awt.event.KeyEvent evt) {//GEN-FIRST:event_BtnCariKeyPressed
@@ -1716,13 +1633,13 @@ public final class RMPenilaianTambahanBunuhDiri extends javax.swing.JDialog {
 
     private void BtnAllActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_BtnAllActionPerformed
         TCari.setText("");
-        tampil();
+        runBackground(() ->tampil());
 }//GEN-LAST:event_BtnAllActionPerformed
 
     private void BtnAllKeyPressed(java.awt.event.KeyEvent evt) {//GEN-FIRST:event_BtnAllKeyPressed
         if(evt.getKeyCode()==KeyEvent.VK_SPACE){
             TCari.setText("");
-            tampil();
+            runBackground(() ->tampil());
         }else{
             Valid.pindah(evt, BtnCari, TPasien);
         }
@@ -1769,20 +1686,44 @@ public final class RMPenilaianTambahanBunuhDiri extends javax.swing.JDialog {
     }//GEN-LAST:event_MenitKeyPressed
 
     private void DetikKeyPressed(java.awt.event.KeyEvent evt) {//GEN-FIRST:event_DetikKeyPressed
-        Valid.pindah(evt,Menit,btnPetugas);
+        Valid.pindah(evt,Menit,BtnPetugas);
     }//GEN-LAST:event_DetikKeyPressed
 
-    private void btnPetugasActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_btnPetugasActionPerformed
-        petugas.emptTeks();
-        petugas.isCek();
-        petugas.setSize(internalFrame1.getWidth()-20,internalFrame1.getHeight()-20);
-        petugas.setLocationRelativeTo(internalFrame1);
-        petugas.setVisible(true);
-    }//GEN-LAST:event_btnPetugasActionPerformed
+    private void BtnPetugasActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_BtnPetugasActionPerformed
+        if (petugas == null || !petugas.isDisplayable()) {
+            petugas=new DlgCariPetugas(null,false);
+            petugas.setDefaultCloseOperation(WindowConstants.DISPOSE_ON_CLOSE);
+            petugas.addWindowListener(new WindowAdapter() {
+                @Override
+                public void windowClosed(WindowEvent e) {
+                    if(petugas.getTable().getSelectedRow()!= -1){                   
+                        KdPetugas.setText(petugas.getTable().getValueAt(petugas.getTable().getSelectedRow(),0).toString());
+                        NmPetugas.setText(petugas.getTable().getValueAt(petugas.getTable().getSelectedRow(),1).toString());
+                    }  
+                    BtnPetugas.requestFocus();
+                    petugas=null;
+                }
+            });
 
-    private void btnPetugasKeyPressed(java.awt.event.KeyEvent evt) {//GEN-FIRST:event_btnPetugasKeyPressed
+            petugas.setSize(internalFrame1.getWidth()-20,internalFrame1.getHeight()-20);
+            petugas.setLocationRelativeTo(internalFrame1);
+        }
+        if (petugas == null) return;
+        if (!petugas.isVisible()) {
+            petugas.isCek();    
+            petugas.emptTeks();
+        }
+        
+        if (petugas.isVisible()) {
+            petugas.toFront();
+            return;
+        }
+        petugas.setVisible(true); 
+    }//GEN-LAST:event_BtnPetugasActionPerformed
+
+    private void BtnPetugasKeyPressed(java.awt.event.KeyEvent evt) {//GEN-FIRST:event_BtnPetugasKeyPressed
         Valid.pindah(evt,Detik,FaktorStatik1);
-    }//GEN-LAST:event_btnPetugasKeyPressed
+    }//GEN-LAST:event_BtnPetugasKeyPressed
 
     private void MnPenilaianTambahanBunuhDiriActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_MnPenilaianTambahanBunuhDiriActionPerformed
         if(tbObat.getSelectedRow()>-1){
@@ -1817,178 +1758,34 @@ public final class RMPenilaianTambahanBunuhDiri extends javax.swing.JDialog {
         }
     }//GEN-LAST:event_MnPenilaianTambahanBunuhDiriActionPerformed
 
-    private void FaktorStatik1ItemStateChanged(java.awt.event.ItemEvent evt) {//GEN-FIRST:event_FaktorStatik1ItemStateChanged
-        if(FaktorStatik1.getSelectedIndex()==1){
-            SkorStatik1.setText("1");
-        }else{
-            SkorStatik1.setText("0");
+    private void formWindowOpened(java.awt.event.WindowEvent evt) {//GEN-FIRST:event_formWindowOpened
+        if(koneksiDB.CARICEPAT().equals("aktif")){
+            TCari.getDocument().addDocumentListener(new javax.swing.event.DocumentListener(){
+                @Override
+                public void insertUpdate(DocumentEvent e) {
+                    if(TCari.getText().length()>2){
+                        runBackground(() ->tampil());
+                    }
+                }
+                @Override
+                public void removeUpdate(DocumentEvent e) {
+                    if(TCari.getText().length()>2){
+                        runBackground(() ->tampil());
+                    }
+                }
+                @Override
+                public void changedUpdate(DocumentEvent e) {
+                    if(TCari.getText().length()>2){
+                        runBackground(() ->tampil());
+                    }
+                }
+            });
         }
-        isTotalSkor();
-    }//GEN-LAST:event_FaktorStatik1ItemStateChanged
+    }//GEN-LAST:event_formWindowOpened
 
-    private void FaktorStatik1KeyPressed(java.awt.event.KeyEvent evt) {//GEN-FIRST:event_FaktorStatik1KeyPressed
-        Valid.pindah(evt,btnPetugas,FaktorStatik2);
-    }//GEN-LAST:event_FaktorStatik1KeyPressed
-
-    private void FaktorStatik2ItemStateChanged(java.awt.event.ItemEvent evt) {//GEN-FIRST:event_FaktorStatik2ItemStateChanged
-        if(FaktorStatik2.getSelectedIndex()==1){
-            SkorStatik2.setText("1");
-        }else{
-            SkorStatik2.setText("0");
-        }
-        isTotalSkor();
-    }//GEN-LAST:event_FaktorStatik2ItemStateChanged
-
-    private void FaktorStatik2KeyPressed(java.awt.event.KeyEvent evt) {//GEN-FIRST:event_FaktorStatik2KeyPressed
-        Valid.pindah(evt,FaktorStatik1,FaktorStatik3);
-    }//GEN-LAST:event_FaktorStatik2KeyPressed
-
-    private void FaktorStatik3ItemStateChanged(java.awt.event.ItemEvent evt) {//GEN-FIRST:event_FaktorStatik3ItemStateChanged
-        if(FaktorStatik3.getSelectedIndex()==1){
-            SkorStatik3.setText("1");
-        }else{
-            SkorStatik3.setText("0");
-        }
-        isTotalSkor();
-    }//GEN-LAST:event_FaktorStatik3ItemStateChanged
-
-    private void FaktorStatik3KeyPressed(java.awt.event.KeyEvent evt) {//GEN-FIRST:event_FaktorStatik3KeyPressed
-        Valid.pindah(evt,FaktorStatik2,FaktorStatik4);
-    }//GEN-LAST:event_FaktorStatik3KeyPressed
-
-    private void FaktorStatik4ItemStateChanged(java.awt.event.ItemEvent evt) {//GEN-FIRST:event_FaktorStatik4ItemStateChanged
-        if(FaktorStatik4.getSelectedIndex()==1){
-            SkorStatik4.setText("1");
-        }else{
-            SkorStatik4.setText("0");
-        }
-        isTotalSkor();
-    }//GEN-LAST:event_FaktorStatik4ItemStateChanged
-
-    private void FaktorStatik4KeyPressed(java.awt.event.KeyEvent evt) {//GEN-FIRST:event_FaktorStatik4KeyPressed
-        Valid.pindah(evt,FaktorStatik3,FaktorStatik5);
-    }//GEN-LAST:event_FaktorStatik4KeyPressed
-
-    private void FaktorStatik5ItemStateChanged(java.awt.event.ItemEvent evt) {//GEN-FIRST:event_FaktorStatik5ItemStateChanged
-        if(FaktorStatik5.getSelectedIndex()==1){
-            SkorStatik5.setText("1");
-        }else{
-            SkorStatik5.setText("0");
-        }
-        isTotalSkor();
-    }//GEN-LAST:event_FaktorStatik5ItemStateChanged
-
-    private void FaktorStatik5KeyPressed(java.awt.event.KeyEvent evt) {//GEN-FIRST:event_FaktorStatik5KeyPressed
-        Valid.pindah(evt,FaktorStatik4,FaktorStatik6);
-    }//GEN-LAST:event_FaktorStatik5KeyPressed
-
-    private void FaktorStatik6ItemStateChanged(java.awt.event.ItemEvent evt) {//GEN-FIRST:event_FaktorStatik6ItemStateChanged
-        if(FaktorStatik6.getSelectedIndex()==1){
-            SkorStatik6.setText("1");
-        }else{
-            SkorStatik6.setText("0");
-        }
-        isTotalSkor();
-    }//GEN-LAST:event_FaktorStatik6ItemStateChanged
-
-    private void FaktorStatik6KeyPressed(java.awt.event.KeyEvent evt) {//GEN-FIRST:event_FaktorStatik6KeyPressed
-        Valid.pindah(evt,FaktorStatik5,FaktorStatik7);
-    }//GEN-LAST:event_FaktorStatik6KeyPressed
-
-    private void FaktorPencegahanKeyPressed(java.awt.event.KeyEvent evt) {//GEN-FIRST:event_FaktorPencegahanKeyPressed
-        Valid.pindah2(evt,FaktorDinamis7,BtnSimpan);
-    }//GEN-LAST:event_FaktorPencegahanKeyPressed
-
-    private void FaktorStatik7ItemStateChanged(java.awt.event.ItemEvent evt) {//GEN-FIRST:event_FaktorStatik7ItemStateChanged
-        if(FaktorStatik7.getSelectedIndex()==1){
-            SkorStatik7.setText("1");
-        }else{
-            SkorStatik7.setText("0");
-        }
-        isTotalSkor();
-    }//GEN-LAST:event_FaktorStatik7ItemStateChanged
-
-    private void FaktorStatik7KeyPressed(java.awt.event.KeyEvent evt) {//GEN-FIRST:event_FaktorStatik7KeyPressed
-        Valid.pindah(evt,FaktorStatik6,FaktorDinamis1);
-    }//GEN-LAST:event_FaktorStatik7KeyPressed
-
-    private void FaktorDinamis1ItemStateChanged(java.awt.event.ItemEvent evt) {//GEN-FIRST:event_FaktorDinamis1ItemStateChanged
-        if(FaktorDinamis1.getSelectedIndex()==1){
-            SkorDinamis1.setText("2");
-        }else{
-            SkorDinamis1.setText("0");
-        }
-        isTotalSkor();
-    }//GEN-LAST:event_FaktorDinamis1ItemStateChanged
-
-    private void FaktorDinamis1KeyPressed(java.awt.event.KeyEvent evt) {//GEN-FIRST:event_FaktorDinamis1KeyPressed
-        Valid.pindah(evt,FaktorStatik7,FaktorDinamis2);
-    }//GEN-LAST:event_FaktorDinamis1KeyPressed
-
-    private void FaktorDinamis2ItemStateChanged(java.awt.event.ItemEvent evt) {//GEN-FIRST:event_FaktorDinamis2ItemStateChanged
-        if(FaktorDinamis2.getSelectedIndex()==1){
-            SkorDinamis2.setText("2");
-        }else{
-            SkorDinamis2.setText("0");
-        }
-        isTotalSkor();
-    }//GEN-LAST:event_FaktorDinamis2ItemStateChanged
-
-    private void FaktorDinamis2KeyPressed(java.awt.event.KeyEvent evt) {//GEN-FIRST:event_FaktorDinamis2KeyPressed
-        Valid.pindah(evt,FaktorDinamis1,FaktorDinamis3);
-    }//GEN-LAST:event_FaktorDinamis2KeyPressed
-
-    private void FaktorDinamis3ItemStateChanged(java.awt.event.ItemEvent evt) {//GEN-FIRST:event_FaktorDinamis3ItemStateChanged
-        if(FaktorDinamis3.getSelectedIndex()==1){
-            SkorDinamis3.setText("2");
-        }else{
-            SkorDinamis3.setText("0");
-        }
-        isTotalSkor();
-    }//GEN-LAST:event_FaktorDinamis3ItemStateChanged
-
-    private void FaktorDinamis3KeyPressed(java.awt.event.KeyEvent evt) {//GEN-FIRST:event_FaktorDinamis3KeyPressed
-        Valid.pindah(evt,FaktorDinamis2,FaktorDinamis4);
-    }//GEN-LAST:event_FaktorDinamis3KeyPressed
-
-    private void FaktorDinamis4ItemStateChanged(java.awt.event.ItemEvent evt) {//GEN-FIRST:event_FaktorDinamis4ItemStateChanged
-        if(FaktorDinamis4.getSelectedIndex()==1){
-            SkorDinamis4.setText("2");
-        }else{
-            SkorDinamis4.setText("0");
-        }
-        isTotalSkor();
-    }//GEN-LAST:event_FaktorDinamis4ItemStateChanged
-
-    private void FaktorDinamis4KeyPressed(java.awt.event.KeyEvent evt) {//GEN-FIRST:event_FaktorDinamis4KeyPressed
-        Valid.pindah(evt,FaktorDinamis3,FaktorDinamis5);
-    }//GEN-LAST:event_FaktorDinamis4KeyPressed
-
-    private void FaktorDinamis5ItemStateChanged(java.awt.event.ItemEvent evt) {//GEN-FIRST:event_FaktorDinamis5ItemStateChanged
-        if(FaktorDinamis5.getSelectedIndex()==1){
-            SkorDinamis5.setText("2");
-        }else{
-            SkorDinamis5.setText("0");
-        }
-        isTotalSkor();
-    }//GEN-LAST:event_FaktorDinamis5ItemStateChanged
-
-    private void FaktorDinamis5KeyPressed(java.awt.event.KeyEvent evt) {//GEN-FIRST:event_FaktorDinamis5KeyPressed
-        Valid.pindah(evt,FaktorDinamis4,FaktorDinamis6);
-    }//GEN-LAST:event_FaktorDinamis5KeyPressed
-
-    private void FaktorDinamis6ItemStateChanged(java.awt.event.ItemEvent evt) {//GEN-FIRST:event_FaktorDinamis6ItemStateChanged
-        if(FaktorDinamis6.getSelectedIndex()==1){
-            SkorDinamis6.setText("2");
-        }else{
-            SkorDinamis6.setText("0");
-        }
-        isTotalSkor();
-    }//GEN-LAST:event_FaktorDinamis6ItemStateChanged
-
-    private void FaktorDinamis6KeyPressed(java.awt.event.KeyEvent evt) {//GEN-FIRST:event_FaktorDinamis6KeyPressed
-        Valid.pindah(evt,FaktorDinamis5,FaktorDinamis7);
-    }//GEN-LAST:event_FaktorDinamis6KeyPressed
+    private void FaktorDinamis7KeyPressed(java.awt.event.KeyEvent evt) {//GEN-FIRST:event_FaktorDinamis7KeyPressed
+        Valid.pindah(evt,FaktorDinamis6,FaktorPencegahan);
+    }//GEN-LAST:event_FaktorDinamis7KeyPressed
 
     private void FaktorDinamis7ItemStateChanged(java.awt.event.ItemEvent evt) {//GEN-FIRST:event_FaktorDinamis7ItemStateChanged
         if(FaktorDinamis7.getSelectedIndex()==1){
@@ -1999,9 +1796,178 @@ public final class RMPenilaianTambahanBunuhDiri extends javax.swing.JDialog {
         isTotalSkor();
     }//GEN-LAST:event_FaktorDinamis7ItemStateChanged
 
-    private void FaktorDinamis7KeyPressed(java.awt.event.KeyEvent evt) {//GEN-FIRST:event_FaktorDinamis7KeyPressed
-        Valid.pindah(evt,FaktorDinamis6,FaktorPencegahan);
-    }//GEN-LAST:event_FaktorDinamis7KeyPressed
+    private void FaktorDinamis6KeyPressed(java.awt.event.KeyEvent evt) {//GEN-FIRST:event_FaktorDinamis6KeyPressed
+        Valid.pindah(evt,FaktorDinamis5,FaktorDinamis7);
+    }//GEN-LAST:event_FaktorDinamis6KeyPressed
+
+    private void FaktorDinamis6ItemStateChanged(java.awt.event.ItemEvent evt) {//GEN-FIRST:event_FaktorDinamis6ItemStateChanged
+        if(FaktorDinamis6.getSelectedIndex()==1){
+            SkorDinamis6.setText("2");
+        }else{
+            SkorDinamis6.setText("0");
+        }
+        isTotalSkor();
+    }//GEN-LAST:event_FaktorDinamis6ItemStateChanged
+
+    private void FaktorDinamis5KeyPressed(java.awt.event.KeyEvent evt) {//GEN-FIRST:event_FaktorDinamis5KeyPressed
+        Valid.pindah(evt,FaktorDinamis4,FaktorDinamis6);
+    }//GEN-LAST:event_FaktorDinamis5KeyPressed
+
+    private void FaktorDinamis5ItemStateChanged(java.awt.event.ItemEvent evt) {//GEN-FIRST:event_FaktorDinamis5ItemStateChanged
+        if(FaktorDinamis5.getSelectedIndex()==1){
+            SkorDinamis5.setText("2");
+        }else{
+            SkorDinamis5.setText("0");
+        }
+        isTotalSkor();
+    }//GEN-LAST:event_FaktorDinamis5ItemStateChanged
+
+    private void FaktorDinamis4KeyPressed(java.awt.event.KeyEvent evt) {//GEN-FIRST:event_FaktorDinamis4KeyPressed
+        Valid.pindah(evt,FaktorDinamis3,FaktorDinamis5);
+    }//GEN-LAST:event_FaktorDinamis4KeyPressed
+
+    private void FaktorDinamis4ItemStateChanged(java.awt.event.ItemEvent evt) {//GEN-FIRST:event_FaktorDinamis4ItemStateChanged
+        if(FaktorDinamis4.getSelectedIndex()==1){
+            SkorDinamis4.setText("2");
+        }else{
+            SkorDinamis4.setText("0");
+        }
+        isTotalSkor();
+    }//GEN-LAST:event_FaktorDinamis4ItemStateChanged
+
+    private void FaktorDinamis3KeyPressed(java.awt.event.KeyEvent evt) {//GEN-FIRST:event_FaktorDinamis3KeyPressed
+        Valid.pindah(evt,FaktorDinamis2,FaktorDinamis4);
+    }//GEN-LAST:event_FaktorDinamis3KeyPressed
+
+    private void FaktorDinamis3ItemStateChanged(java.awt.event.ItemEvent evt) {//GEN-FIRST:event_FaktorDinamis3ItemStateChanged
+        if(FaktorDinamis3.getSelectedIndex()==1){
+            SkorDinamis3.setText("2");
+        }else{
+            SkorDinamis3.setText("0");
+        }
+        isTotalSkor();
+    }//GEN-LAST:event_FaktorDinamis3ItemStateChanged
+
+    private void FaktorDinamis2KeyPressed(java.awt.event.KeyEvent evt) {//GEN-FIRST:event_FaktorDinamis2KeyPressed
+        Valid.pindah(evt,FaktorDinamis1,FaktorDinamis3);
+    }//GEN-LAST:event_FaktorDinamis2KeyPressed
+
+    private void FaktorDinamis2ItemStateChanged(java.awt.event.ItemEvent evt) {//GEN-FIRST:event_FaktorDinamis2ItemStateChanged
+        if(FaktorDinamis2.getSelectedIndex()==1){
+            SkorDinamis2.setText("2");
+        }else{
+            SkorDinamis2.setText("0");
+        }
+        isTotalSkor();
+    }//GEN-LAST:event_FaktorDinamis2ItemStateChanged
+
+    private void FaktorDinamis1KeyPressed(java.awt.event.KeyEvent evt) {//GEN-FIRST:event_FaktorDinamis1KeyPressed
+        Valid.pindah(evt,FaktorStatik7,FaktorDinamis2);
+    }//GEN-LAST:event_FaktorDinamis1KeyPressed
+
+    private void FaktorDinamis1ItemStateChanged(java.awt.event.ItemEvent evt) {//GEN-FIRST:event_FaktorDinamis1ItemStateChanged
+        if(FaktorDinamis1.getSelectedIndex()==1){
+            SkorDinamis1.setText("2");
+        }else{
+            SkorDinamis1.setText("0");
+        }
+        isTotalSkor();
+    }//GEN-LAST:event_FaktorDinamis1ItemStateChanged
+
+    private void FaktorStatik7KeyPressed(java.awt.event.KeyEvent evt) {//GEN-FIRST:event_FaktorStatik7KeyPressed
+        Valid.pindah(evt,FaktorStatik6,FaktorDinamis1);
+    }//GEN-LAST:event_FaktorStatik7KeyPressed
+
+    private void FaktorStatik7ItemStateChanged(java.awt.event.ItemEvent evt) {//GEN-FIRST:event_FaktorStatik7ItemStateChanged
+        if(FaktorStatik7.getSelectedIndex()==1){
+            SkorStatik7.setText("1");
+        }else{
+            SkorStatik7.setText("0");
+        }
+        isTotalSkor();
+    }//GEN-LAST:event_FaktorStatik7ItemStateChanged
+
+    private void FaktorPencegahanKeyPressed(java.awt.event.KeyEvent evt) {//GEN-FIRST:event_FaktorPencegahanKeyPressed
+        Valid.pindah2(evt,FaktorDinamis7,BtnSimpan);
+    }//GEN-LAST:event_FaktorPencegahanKeyPressed
+
+    private void FaktorStatik6KeyPressed(java.awt.event.KeyEvent evt) {//GEN-FIRST:event_FaktorStatik6KeyPressed
+        Valid.pindah(evt,FaktorStatik5,FaktorStatik7);
+    }//GEN-LAST:event_FaktorStatik6KeyPressed
+
+    private void FaktorStatik6ItemStateChanged(java.awt.event.ItemEvent evt) {//GEN-FIRST:event_FaktorStatik6ItemStateChanged
+        if(FaktorStatik6.getSelectedIndex()==1){
+            SkorStatik6.setText("1");
+        }else{
+            SkorStatik6.setText("0");
+        }
+        isTotalSkor();
+    }//GEN-LAST:event_FaktorStatik6ItemStateChanged
+
+    private void FaktorStatik5KeyPressed(java.awt.event.KeyEvent evt) {//GEN-FIRST:event_FaktorStatik5KeyPressed
+        Valid.pindah(evt,FaktorStatik4,FaktorStatik6);
+    }//GEN-LAST:event_FaktorStatik5KeyPressed
+
+    private void FaktorStatik5ItemStateChanged(java.awt.event.ItemEvent evt) {//GEN-FIRST:event_FaktorStatik5ItemStateChanged
+        if(FaktorStatik5.getSelectedIndex()==1){
+            SkorStatik5.setText("1");
+        }else{
+            SkorStatik5.setText("0");
+        }
+        isTotalSkor();
+    }//GEN-LAST:event_FaktorStatik5ItemStateChanged
+
+    private void FaktorStatik4KeyPressed(java.awt.event.KeyEvent evt) {//GEN-FIRST:event_FaktorStatik4KeyPressed
+        Valid.pindah(evt,FaktorStatik3,FaktorStatik5);
+    }//GEN-LAST:event_FaktorStatik4KeyPressed
+
+    private void FaktorStatik4ItemStateChanged(java.awt.event.ItemEvent evt) {//GEN-FIRST:event_FaktorStatik4ItemStateChanged
+        if(FaktorStatik4.getSelectedIndex()==1){
+            SkorStatik4.setText("1");
+        }else{
+            SkorStatik4.setText("0");
+        }
+        isTotalSkor();
+    }//GEN-LAST:event_FaktorStatik4ItemStateChanged
+
+    private void FaktorStatik3KeyPressed(java.awt.event.KeyEvent evt) {//GEN-FIRST:event_FaktorStatik3KeyPressed
+        Valid.pindah(evt,FaktorStatik2,FaktorStatik4);
+    }//GEN-LAST:event_FaktorStatik3KeyPressed
+
+    private void FaktorStatik3ItemStateChanged(java.awt.event.ItemEvent evt) {//GEN-FIRST:event_FaktorStatik3ItemStateChanged
+        if(FaktorStatik3.getSelectedIndex()==1){
+            SkorStatik3.setText("1");
+        }else{
+            SkorStatik3.setText("0");
+        }
+        isTotalSkor();
+    }//GEN-LAST:event_FaktorStatik3ItemStateChanged
+
+    private void FaktorStatik2KeyPressed(java.awt.event.KeyEvent evt) {//GEN-FIRST:event_FaktorStatik2KeyPressed
+        Valid.pindah(evt,FaktorStatik1,FaktorStatik3);
+    }//GEN-LAST:event_FaktorStatik2KeyPressed
+
+    private void FaktorStatik2ItemStateChanged(java.awt.event.ItemEvent evt) {//GEN-FIRST:event_FaktorStatik2ItemStateChanged
+        if(FaktorStatik2.getSelectedIndex()==1){
+            SkorStatik2.setText("1");
+        }else{
+            SkorStatik2.setText("0");
+        }
+        isTotalSkor();
+    }//GEN-LAST:event_FaktorStatik2ItemStateChanged
+
+    private void FaktorStatik1KeyPressed(java.awt.event.KeyEvent evt) {//GEN-FIRST:event_FaktorStatik1KeyPressed
+        Valid.pindah(evt,BtnPetugas,FaktorStatik2);
+    }//GEN-LAST:event_FaktorStatik1KeyPressed
+
+    private void FaktorStatik1ItemStateChanged(java.awt.event.ItemEvent evt) {//GEN-FIRST:event_FaktorStatik1ItemStateChanged
+        if(FaktorStatik1.getSelectedIndex()==1){
+            SkorStatik1.setText("1");
+        }else{
+            SkorStatik1.setText("0");
+        }
+        isTotalSkor();
+    }//GEN-LAST:event_FaktorStatik1ItemStateChanged
 
     /**
     * @param args the command line arguments
@@ -2026,6 +1992,7 @@ public final class RMPenilaianTambahanBunuhDiri extends javax.swing.JDialog {
     private widget.Button BtnEdit;
     private widget.Button BtnHapus;
     private widget.Button BtnKeluar;
+    private widget.Button BtnPetugas;
     private widget.Button BtnPrint;
     private widget.Button BtnSimpan;
     private widget.CekBox ChkInput;
@@ -2051,13 +2018,13 @@ public final class RMPenilaianTambahanBunuhDiri extends javax.swing.JDialog {
     private widget.PanelBiasa FormInput;
     private widget.TextBox JK;
     private widget.ComboBox Jam;
+    private widget.TextBox KdPetugas;
     private widget.Label LCount;
     private widget.Label Level;
     private widget.editorpane LoadHTML;
     private widget.ComboBox Menit;
     private javax.swing.JMenuItem MnPenilaianTambahanBunuhDiri;
-    private widget.TextBox NIP;
-    private widget.TextBox NamaPetugas;
+    private widget.TextBox NmPetugas;
     private javax.swing.JPanel PanelInput;
     private widget.ScrollPane Scroll;
     private widget.TextBox SkorDinamis1;
@@ -2083,7 +2050,6 @@ public final class RMPenilaianTambahanBunuhDiri extends javax.swing.JDialog {
     private widget.TextBox TglLahir;
     private widget.TextBox TotalDinamis;
     private widget.TextBox TotalStatik;
-    private widget.Button btnPetugas;
     private widget.InternalFrame internalFrame1;
     private widget.Label jLabel16;
     private widget.Label jLabel18;
@@ -2141,10 +2107,10 @@ public final class RMPenilaianTambahanBunuhDiri extends javax.swing.JDialog {
     private widget.Table tbObat;
     // End of variables declaration//GEN-END:variables
     
-    public void tampil() {
+    private void tampil() {
         Valid.tabelKosong(tabMode);
         try{
-            if(TCari.getText().toString().trim().equals("")){
+            if(TCari.getText().trim().equals("")){
                 ps=koneksi.prepareStatement(
                     "select reg_periksa.no_rawat,pasien.no_rkm_medis,pasien.nm_pasien,pasien.jk,pasien.tgl_lahir,penilaian_tambahan_bunuh_diri.tanggal,"+
                     "penilaian_tambahan_bunuh_diri.statik_hidup_sendiri,penilaian_tambahan_bunuh_diri.statik_skorhidup_sendiri,penilaian_tambahan_bunuh_diri.statik_upaya_suicide,"+
@@ -2186,7 +2152,7 @@ public final class RMPenilaianTambahanBunuhDiri extends javax.swing.JDialog {
             }
                 
             try {
-                if(TCari.getText().toString().trim().equals("")){
+                if(TCari.getText().trim().equals("")){
                     ps.setString(1,Valid.SetTgl(DTPCari1.getSelectedItem()+"")+" 00:00:00");
                     ps.setString(2,Valid.SetTgl(DTPCari2.getSelectedItem()+"")+" 23:59:59");
                 }else{
@@ -2356,6 +2322,7 @@ public final class RMPenilaianTambahanBunuhDiri extends javax.swing.JDialog {
         isPsien();
         ChkInput.setSelected(true);
         isForm();
+        runBackground(() ->tampil());
     }
     
     private void isForm(){
@@ -2385,12 +2352,12 @@ public final class RMPenilaianTambahanBunuhDiri extends javax.swing.JDialog {
         BtnEdit.setEnabled(akses.getpenilaian_tambahan_bunuh_diri());
         BtnPrint.setEnabled(akses.getpenilaian_tambahan_bunuh_diri()); 
         if(akses.getjml2()>=1){
-            NIP.setEditable(false);
-            btnPetugas.setEnabled(false);
-            NIP.setText(akses.getkode());
-            NamaPetugas.setText(petugas.tampil3(NIP.getText()));
-            if(NamaPetugas.getText().equals("")){
-                NIP.setText("");
+            KdPetugas.setEditable(false);
+            BtnPetugas.setEnabled(false);
+            KdPetugas.setText(akses.getkode());
+            NmPetugas.setText(Sequel.CariPetugas(KdPetugas.getText()));
+            if(NmPetugas.getText().equals("")){
+                KdPetugas.setText("");
                 JOptionPane.showMessageDialog(null,"User login bukan petugas...!!");
             }
         }            
@@ -2456,7 +2423,7 @@ public final class RMPenilaianTambahanBunuhDiri extends javax.swing.JDialog {
                 "dinamis_skoride_bunuh_diri=?,dinamis_maksud_suicide=?,dinamis_skormaksud_suicide=?,dinamis_stress_berat=?,dinamis_skorstress_berat=?,dinamis_keputusasaan=?,dinamis_skorkeputusasaan=?,"+
                 "dinamis_kejadian_signifikan=?,dinamis_skorkejadian_signifikan=?,dinamis_kehilangan_kontrol=?,dinamis_skorkehilangan_kontrol=?,dinamis_penggunaan_napza=?,dinamis_skorpenggunaan_napza=?,"+
                 "dinamis_skortotal=?,faktor_faktor_pencegahan=?,total_skor=?,level_skor=?",37,new String[]{
-                TNoRw.getText(),Valid.SetTgl(Tanggal.getSelectedItem()+"")+" "+Jam.getSelectedItem()+":"+Menit.getSelectedItem()+":"+Detik.getSelectedItem(),NIP.getText(),
+                TNoRw.getText(),Valid.SetTgl(Tanggal.getSelectedItem()+"")+" "+Jam.getSelectedItem()+":"+Menit.getSelectedItem()+":"+Detik.getSelectedItem(),KdPetugas.getText(),
                 FaktorStatik1.getSelectedItem().toString(),SkorStatik1.getText(),FaktorStatik2.getSelectedItem().toString(),SkorStatik2.getText(),FaktorStatik3.getSelectedItem().toString(),SkorStatik3.getText(),
                 FaktorStatik4.getSelectedItem().toString(),SkorStatik4.getText(),FaktorStatik5.getSelectedItem().toString(),SkorStatik5.getText(),FaktorStatik6.getSelectedItem().toString(),SkorStatik6.getText(), 
                 FaktorStatik7.getSelectedItem().toString(),SkorStatik7.getText(),TotalStatik.getText(),FaktorDinamis1.getSelectedItem().toString(),SkorDinamis1.getText(), 
@@ -2503,8 +2470,8 @@ public final class RMPenilaianTambahanBunuhDiri extends javax.swing.JDialog {
             tbObat.setValueAt(FaktorPencegahan.getText(),tbObat.getSelectedRow(),36);
             tbObat.setValueAt(SkorTotal.getText(),tbObat.getSelectedRow(),37);
             tbObat.setValueAt(Level.getText(),tbObat.getSelectedRow(),38);
-            tbObat.setValueAt(NIP.getText(),tbObat.getSelectedRow(),39);
-            tbObat.setValueAt(NamaPetugas.getText(),tbObat.getSelectedRow(),40);
+            tbObat.setValueAt(KdPetugas.getText(),tbObat.getSelectedRow(),39);
+            tbObat.setValueAt(NmPetugas.getText(),tbObat.getSelectedRow(),40);
             emptTeks();
         }
     }
@@ -2537,5 +2504,37 @@ public final class RMPenilaianTambahanBunuhDiri extends javax.swing.JDialog {
             SkorTotal.setText("0");
             Level.setText("Rendah(<7)");
         }
+    }
+    
+    private void runBackground(Runnable task) {
+        if (ceksukses) return;
+        if (executor.isShutdown() || executor.isTerminated()) return;
+        if (!isDisplayable()) return;
+
+        ceksukses = true;
+        setCursor(Cursor.getPredefinedCursor(Cursor.WAIT_CURSOR));
+
+        try {
+            executor.submit(() -> {
+                try {
+                    task.run();
+                } finally {
+                    ceksukses = false;
+                    SwingUtilities.invokeLater(() -> {
+                        if (isDisplayable()) {
+                            setCursor(Cursor.getDefaultCursor());
+                        }
+                    });
+                }
+            });
+        } catch (RejectedExecutionException ex) {
+            ceksukses = false;
+        }
+    }
+    
+    @Override
+    public void dispose() {
+        executor.shutdownNow();
+        super.dispose();
     }
 }

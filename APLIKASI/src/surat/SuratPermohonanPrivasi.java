@@ -1735,6 +1735,15 @@ public final class SuratPermohonanPrivasi extends javax.swing.JDialog {
         executor.shutdownNow();
         super.dispose();
     }
+    
+    public void setNoRm(String norwt,String norm,String nama) {
+        TNoRw.setText(norwt);
+        TNoRM.setText(norm);
+        TPasien.setText(nama);
+        isRawat();
+        ChkInput.setSelected(true);
+        isForm();
+    }
 }
 
 

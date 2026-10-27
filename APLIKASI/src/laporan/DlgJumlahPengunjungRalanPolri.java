@@ -12,6 +12,10 @@ import java.io.FileWriter;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.RejectedExecutionException;
+import javax.swing.SwingUtilities;
 import javax.swing.text.Document;
 import javax.swing.text.html.HTMLEditorKit;
 import javax.swing.text.html.StyleSheet;
@@ -20,11 +24,13 @@ public class DlgJumlahPengunjungRalanPolri extends javax.swing.JDialog {
     private final sekuel Sequel=new sekuel();
     private final validasi Valid=new validasi();
     private final Connection koneksi=koneksiDB.condb();
-    private PreparedStatement ps,ps2,ps3;
-    private ResultSet rs,rs2,rs3;
+    private PreparedStatement ps;
+    private ResultSet rs;
     private String[] kodecari,kodebayar;
     private StringBuilder htmlContent;
-    private int kolom=0,jumlahcari=0,jumlahcarabayar=0,total=0,i=0,no=0;
+    private final ExecutorService executor = Executors.newSingleThreadExecutor();
+    private volatile boolean ceksukses = false;
+    private int kolom=0,jumlahcari=0,jumlahcarabayar=0,total=0,i=0;
     
     /** Creates new form DlgProgramStudi
      * @param parent
@@ -77,7 +83,7 @@ public class DlgJumlahPengunjungRalanPolri extends javax.swing.JDialog {
         label9 = new widget.Label();
         BtnPrint = new widget.Button();
         BtnKeluar = new widget.Button();
-        TabRawat = new javax.swing.JTabbedPane();
+        TabRawat = new widget.TabPane();
         Scroll = new widget.ScrollPane();
         LoadHTML = new widget.editorpane();
         Scroll1 = new widget.ScrollPane();
@@ -359,13 +365,13 @@ private void btnCariKeyPressed(java.awt.event.KeyEvent evt) {//GEN-FIRST:event_b
 
     private void TabRawatMouseClicked(java.awt.event.MouseEvent evt) {//GEN-FIRST:event_TabRawatMouseClicked
         if(TabRawat.getSelectedIndex()==0){
-            prosesCari();
+            runBackground(() ->tampil());
         }else if(TabRawat.getSelectedIndex()==1){
-            prosesCari2();
+            runBackground(() ->tampil2());
         }else if(TabRawat.getSelectedIndex()==2){
-            prosesCari3();
+            runBackground(() ->tampil3());
         }else if(TabRawat.getSelectedIndex()==3){
-            prosesCari4();
+            runBackground(() ->tampil4());
         }
     }//GEN-LAST:event_TabRawatMouseClicked
 
@@ -397,7 +403,7 @@ private void btnCariKeyPressed(java.awt.event.KeyEvent evt) {//GEN-FIRST:event_b
     private widget.ScrollPane Scroll1;
     private widget.ScrollPane Scroll2;
     private widget.ScrollPane Scroll3;
-    private javax.swing.JTabbedPane TabRawat;
+    private widget.TabPane TabRawat;
     private widget.Tanggal Tgl1;
     private widget.Tanggal Tgl2;
     private widget.Button btnCari;
@@ -408,7 +414,7 @@ private void btnCariKeyPressed(java.awt.event.KeyEvent evt) {//GEN-FIRST:event_b
     private widget.panelisi panelisi1;
     // End of variables declaration//GEN-END:variables
 
-    private void prosesCari() {
+    private void tampil() {
         this.setCursor(Cursor.getPredefinedCursor(Cursor.WAIT_CURSOR));
         try {
             jumlahcari=Sequel.cariInteger("select count(golongan_polri.id) from golongan_polri order by golongan_polri.id");
@@ -416,17 +422,8 @@ private void btnCariKeyPressed(java.awt.event.KeyEvent evt) {//GEN-FIRST:event_b
             jumlahcarabayar=Sequel.cariInteger("select count(penjab.kd_pj) from penjab where penjab.status='1' order by penjab.kd_pj");
             kodebayar=new String[jumlahcarabayar];
             htmlContent = new StringBuilder();
-            htmlContent.append(                             
-                "<tr class='isi'>"+
-                    "<td valign='middle' bgcolor='#FFFAFA' align='center' rowspan='2' width='80px'>Pengunjung / Kunjungan</td>"+
-                    "<td valign='middle' bgcolor='#FFFAFA' align='center' colspan='"+(jumlahcari)+"'>PASIEN POLRI</td>"+
-                    "<td valign='middle' bgcolor='#FFFAFA' align='center' colspan='"+(jumlahcarabayar)+"'>PASIEN UMUM</td>"+
-                    "<td valign='middle' bgcolor='#FFFAFA' align='center' rowspan='2' width='50px'>Total</td>"+
-                "</tr>"
-            );
-            
-            htmlContent.append(                             
-                "<tr class='isi'>");
+            htmlContent.append("<tr class='isi'><td valign='middle' bgcolor='#FFFAFA' align='center' rowspan='2' width='80px'>Pengunjung / Kunjungan</td><td valign='middle' bgcolor='#FFFAFA' align='center' colspan='").append(jumlahcari).append("'>PASIEN POLRI</td><td valign='middle' bgcolor='#FFFAFA' align='center' colspan='").append(jumlahcarabayar).append("'>PASIEN UMUM</td><td valign='middle' bgcolor='#FFFAFA' align='center' rowspan='2' width='50px'>Total</td></tr>");
+            htmlContent.append("<tr class='isi'>");
             kolom=0;
             ps=koneksi.prepareStatement("select golongan_polri.id,golongan_polri.nama_golongan from golongan_polri order by golongan_polri.id");
             try {
@@ -434,7 +431,7 @@ private void btnCariKeyPressed(java.awt.event.KeyEvent evt) {//GEN-FIRST:event_b
                 while(rs.next()){
                     kodecari[kolom]=rs.getString("id");
                     kolom++;
-                    htmlContent.append("<td valign='middle' bgcolor='#FFFFF8' align='center' width='70px'>"+rs.getString("nama_golongan")+"</td>");
+                    htmlContent.append("<td valign='middle' bgcolor='#FFFFF8' align='center' width='70px'>").append(rs.getString("nama_golongan")).append("</td>");
                 }
             } catch (Exception e) {
                 System.out.println("Akun Bayar : "+e);
@@ -453,7 +450,7 @@ private void btnCariKeyPressed(java.awt.event.KeyEvent evt) {//GEN-FIRST:event_b
                 while(rs.next()){
                     kodebayar[kolom]=rs.getString("kd_pj");
                     kolom++;
-                    htmlContent.append("<td valign='middle' bgcolor='#FFFFF8' align='center' width='70px'>"+rs.getString("png_jawab")+"</td>");
+                    htmlContent.append("<td valign='middle' bgcolor='#FFFFF8' align='center' width='70px'>").append(rs.getString("png_jawab")).append("</td>");
                 }
             } catch (Exception e) {
                 System.out.println("Akun Bayar : "+e);
@@ -465,9 +462,7 @@ private void btnCariKeyPressed(java.awt.event.KeyEvent evt) {//GEN-FIRST:event_b
                     ps.close();
                 }
             } 
-            htmlContent.append(   
-                "</tr>"
-            );
+            htmlContent.append("</tr>");
             
             htmlContent.append(
                 "<tr class='isi'>"+
@@ -476,68 +471,38 @@ private void btnCariKeyPressed(java.awt.event.KeyEvent evt) {//GEN-FIRST:event_b
             total=0;
             for(i=0;i<jumlahcari;i++){
                 kolom=Sequel.cariInteger(
-                       "select count(reg_periksa.no_rkm_medis) from reg_periksa inner join pasien_polri on reg_periksa.no_rkm_medis=pasien_polri.no_rkm_medis "+
-                       "where pasien_polri.golongan_polri=? and reg_periksa.status_lanjut='Ralan' and reg_periksa.tgl_registrasi between '"+Valid.SetTgl(Tgl1.getSelectedItem()+"")+"' and '"+Valid.SetTgl(Tgl2.getSelectedItem()+"")+"' "+
-                       "group by reg_periksa.no_rkm_medis",kodecari[i]);
+                       "select count(distinct reg_periksa.no_rkm_medis) from reg_periksa inner join pasien_polri on reg_periksa.no_rkm_medis=pasien_polri.no_rkm_medis "+
+                       "where pasien_polri.golongan_polri=? and reg_periksa.status_lanjut='Ralan' and reg_periksa.tgl_registrasi between '"+Valid.SetTgl(Tgl1.getSelectedItem()+"")+"' and '"+Valid.SetTgl(Tgl2.getSelectedItem()+"")+"' ",
+                        kodecari[i]);
                 total=total+kolom;
-                htmlContent.append(
-                    "<td valign='middle' align='center'>"+
-                        Valid.SetAngka(kolom)+
-                    "</td>"
-                );
+                htmlContent.append("<td valign='middle' align='center'>").append(Valid.SetAngka(kolom)).append("</td>");
             }
             for(i=0;i<jumlahcarabayar;i++){
                 kolom=Sequel.cariInteger(
-                       "select count(reg_periksa.no_rkm_medis) from reg_periksa where reg_periksa.no_rkm_medis not in (select pasien_polri.no_rkm_medis from pasien_polri) and reg_periksa.status_lanjut='Ralan' "+
-                       "and reg_periksa.kd_pj=? and reg_periksa.tgl_registrasi between '"+Valid.SetTgl(Tgl1.getSelectedItem()+"")+"' and '"+Valid.SetTgl(Tgl2.getSelectedItem()+"")+"' "+
-                       "group by reg_periksa.no_rkm_medis",kodebayar[i]);
+                       "select count(distinct reg_periksa.no_rkm_medis) from reg_periksa where reg_periksa.no_rkm_medis not in (select pasien_polri.no_rkm_medis from pasien_polri) and reg_periksa.status_lanjut='Ralan' "+
+                       "and reg_periksa.kd_pj=? and reg_periksa.tgl_registrasi between '"+Valid.SetTgl(Tgl1.getSelectedItem()+"")+"' and '"+Valid.SetTgl(Tgl2.getSelectedItem()+"")+"' ",
+                        kodebayar[i]);
                 total=total+kolom;
-                htmlContent.append(
-                    "<td valign='middle' align='center'>"+
-                        Valid.SetAngka(kolom)+
-                    "</td>"
-                );
+                htmlContent.append("<td valign='middle' align='center'>").append(Valid.SetAngka(kolom)).append("</td>");
             }
-            htmlContent.append(
-                    "<td valign='middle' align='center'>"+
-                        Valid.SetAngka(total)+
-                    "</td>"+
-                "</tr>"
-            );
-            
-            htmlContent.append(
-                "<tr class='isi'>"+
-                    "<td valign='middle' align='center'>Kunjungan</td>"
-            );    
+            htmlContent.append("<td valign='middle' align='center'>").append(Valid.SetAngka(total)).append("</td></tr>");
+            htmlContent.append("<tr class='isi'><td valign='middle' align='center'>Kunjungan</td>");    
             total=0;
             for(i=0;i<jumlahcari;i++){
                 kolom=Sequel.cariInteger(
-                       "select count(reg_periksa.no_rkm_medis) from reg_periksa inner join pasien_polri on reg_periksa.no_rkm_medis=pasien_polri.no_rkm_medis "+
+                       "select count(distinct reg_periksa.no_rawat) from reg_periksa inner join pasien_polri on reg_periksa.no_rkm_medis=pasien_polri.no_rkm_medis "+
                        "where pasien_polri.golongan_polri=? and reg_periksa.status_lanjut='Ralan' and reg_periksa.tgl_registrasi between '"+Valid.SetTgl(Tgl1.getSelectedItem()+"")+"' and '"+Valid.SetTgl(Tgl2.getSelectedItem()+"")+"' ",kodecari[i]);
                 total=total+kolom;
-                htmlContent.append(
-                    "<td valign='middle' align='center'>"+
-                        Valid.SetAngka(kolom)+
-                    "</td>"
-                );
+                htmlContent.append("<td valign='middle' align='center'>").append(Valid.SetAngka(kolom)).append("</td>");
             }
             for(i=0;i<jumlahcarabayar;i++){
                 kolom=Sequel.cariInteger(
-                       "select count(reg_periksa.no_rkm_medis) from reg_periksa where reg_periksa.no_rkm_medis not in (select pasien_polri.no_rkm_medis from pasien_polri) and reg_periksa.status_lanjut='Ralan' "+
+                       "select count(distinct reg_periksa.no_rawat)  from reg_periksa where reg_periksa.no_rkm_medis not in (select pasien_polri.no_rkm_medis from pasien_polri) and reg_periksa.status_lanjut='Ralan' "+
                        "and reg_periksa.kd_pj=? and reg_periksa.tgl_registrasi between '"+Valid.SetTgl(Tgl1.getSelectedItem()+"")+"' and '"+Valid.SetTgl(Tgl2.getSelectedItem()+"")+"' ",kodebayar[i]);
                 total=total+kolom;
-                htmlContent.append(
-                    "<td valign='middle' align='center'>"+
-                        Valid.SetAngka(kolom)+
-                    "</td>"
-                );
+                htmlContent.append("<td valign='middle' align='center'>").append(Valid.SetAngka(kolom)).append("</td>");
             }
-            htmlContent.append(
-                    "<td valign='middle' align='center'>"+
-                        Valid.SetAngka(total)+
-                    "</td>"+
-                "</tr>"
-            );
+            htmlContent.append("<td valign='middle' align='center'>").append(Valid.SetAngka(total)).append("</td></tr>");
             LoadHTML.setText(
                     "<html>"+
                       "<table width='"+(80+((jumlahcari+jumlahcarabayar)*70))+"px' border='0' align='left' cellpadding='3px' cellspacing='0' class='tbl_form'>"+
@@ -550,7 +515,7 @@ private void btnCariKeyPressed(java.awt.event.KeyEvent evt) {//GEN-FIRST:event_b
         this.setCursor(Cursor.getDefaultCursor());
     }
     
-    private void prosesCari2() {
+    private void tampil2() {
         this.setCursor(Cursor.getPredefinedCursor(Cursor.WAIT_CURSOR));
         try {
             jumlahcari=Sequel.cariInteger("select count(satuan_polri.id) from satuan_polri order by satuan_polri.id");
@@ -558,17 +523,8 @@ private void btnCariKeyPressed(java.awt.event.KeyEvent evt) {//GEN-FIRST:event_b
             jumlahcarabayar=Sequel.cariInteger("select count(penjab.kd_pj) from penjab where penjab.status='1' order by penjab.kd_pj");
             kodebayar=new String[jumlahcarabayar];
             htmlContent = new StringBuilder();
-            htmlContent.append(                             
-                "<tr class='isi'>"+
-                    "<td valign='middle' bgcolor='#FFFAFA' align='center' rowspan='2' width='80px'>Pengunjung / Kunjungan</td>"+
-                    "<td valign='middle' bgcolor='#FFFAFA' align='center' colspan='"+(jumlahcari)+"'>PASIEN POLRI</td>"+
-                    "<td valign='middle' bgcolor='#FFFAFA' align='center' colspan='"+(jumlahcarabayar)+"'>PASIEN UMUM</td>"+
-                    "<td valign='middle' bgcolor='#FFFAFA' align='center' rowspan='2' width='50px'>Total</td>"+
-                "</tr>"
-            );
-            
-            htmlContent.append(                             
-                "<tr class='isi'>");
+            htmlContent.append("<tr class='isi'><td valign='middle' bgcolor='#FFFAFA' align='center' rowspan='2' width='80px'>Pengunjung / Kunjungan</td><td valign='middle' bgcolor='#FFFAFA' align='center' colspan='").append(jumlahcari).append("'>PASIEN POLRI</td><td valign='middle' bgcolor='#FFFAFA' align='center' colspan='").append(jumlahcarabayar).append("'>PASIEN UMUM</td><td valign='middle' bgcolor='#FFFAFA' align='center' rowspan='2' width='50px'>Total</td></tr>");
+            htmlContent.append("<tr class='isi'>");
             kolom=0;
             ps=koneksi.prepareStatement("select satuan_polri.id,satuan_polri.nama_satuan from satuan_polri order by satuan_polri.id");
             try {
@@ -576,7 +532,7 @@ private void btnCariKeyPressed(java.awt.event.KeyEvent evt) {//GEN-FIRST:event_b
                 while(rs.next()){
                     kodecari[kolom]=rs.getString("id");
                     kolom++;
-                    htmlContent.append("<td valign='middle' bgcolor='#FFFFF8' align='center' width='70px'>"+rs.getString("nama_satuan")+"</td>");
+                    htmlContent.append("<td valign='middle' bgcolor='#FFFFF8' align='center' width='70px'>").append(rs.getString("nama_satuan")).append("</td>");
                 }
             } catch (Exception e) {
                 System.out.println("Akun Bayar : "+e);
@@ -595,7 +551,7 @@ private void btnCariKeyPressed(java.awt.event.KeyEvent evt) {//GEN-FIRST:event_b
                 while(rs.next()){
                     kodebayar[kolom]=rs.getString("kd_pj");
                     kolom++;
-                    htmlContent.append("<td valign='middle' bgcolor='#FFFFF8' align='center' width='70px'>"+rs.getString("png_jawab")+"</td>");
+                    htmlContent.append("<td valign='middle' bgcolor='#FFFFF8' align='center' width='70px'>").append(rs.getString("png_jawab")).append("</td>");
                 }
             } catch (Exception e) {
                 System.out.println("Akun Bayar : "+e);
@@ -611,75 +567,40 @@ private void btnCariKeyPressed(java.awt.event.KeyEvent evt) {//GEN-FIRST:event_b
                 "</tr>"
             );
             
-            htmlContent.append(
-                "<tr class='isi'>"+
-                    "<td valign='middle' align='center'>Pengunjung</td>"
-            );    
+            htmlContent.append("<tr class='isi'><td valign='middle' align='center'>Pengunjung</td>");    
             total=0;
             for(i=0;i<jumlahcari;i++){
                 kolom=Sequel.cariInteger(
-                       "select count(reg_periksa.no_rkm_medis) from reg_periksa inner join pasien_polri on reg_periksa.no_rkm_medis=pasien_polri.no_rkm_medis "+
-                       "where pasien_polri.satuan_polri=? and reg_periksa.status_lanjut='Ralan' and reg_periksa.tgl_registrasi between '"+Valid.SetTgl(Tgl1.getSelectedItem()+"")+"' and '"+Valid.SetTgl(Tgl2.getSelectedItem()+"")+"' "+
-                       "group by reg_periksa.no_rkm_medis",kodecari[i]);
-                total=total+kolom;
-                htmlContent.append(
-                    "<td valign='middle' align='center'>"+
-                        Valid.SetAngka(kolom)+
-                    "</td>"
-                );
-            }
-            for(i=0;i<jumlahcarabayar;i++){
-                kolom=Sequel.cariInteger(
-                       "select count(reg_periksa.no_rkm_medis) from reg_periksa where reg_periksa.no_rkm_medis not in (select pasien_polri.no_rkm_medis from pasien_polri) and reg_periksa.status_lanjut='Ralan' "+
-                       "and reg_periksa.kd_pj=? and reg_periksa.tgl_registrasi between '"+Valid.SetTgl(Tgl1.getSelectedItem()+"")+"' and '"+Valid.SetTgl(Tgl2.getSelectedItem()+"")+"' "+
-                       "group by reg_periksa.no_rkm_medis",kodebayar[i]);
-                total=total+kolom;
-                htmlContent.append(
-                    "<td valign='middle' align='center'>"+
-                        Valid.SetAngka(kolom)+
-                    "</td>"
-                );
-            }
-            htmlContent.append(
-                    "<td valign='middle' align='center'>"+
-                        Valid.SetAngka(total)+
-                    "</td>"+
-                "</tr>"
-            );
-            
-            htmlContent.append(
-                "<tr class='isi'>"+
-                    "<td valign='middle' align='center'>Kunjungan</td>"
-            );    
-            total=0;
-            for(i=0;i<jumlahcari;i++){
-                kolom=Sequel.cariInteger(
-                       "select count(reg_periksa.no_rkm_medis) from reg_periksa inner join pasien_polri on reg_periksa.no_rkm_medis=pasien_polri.no_rkm_medis "+
+                       "select count(distinct reg_periksa.no_rkm_medis) from reg_periksa inner join pasien_polri on reg_periksa.no_rkm_medis=pasien_polri.no_rkm_medis "+
                        "where pasien_polri.satuan_polri=? and reg_periksa.status_lanjut='Ralan' and reg_periksa.tgl_registrasi between '"+Valid.SetTgl(Tgl1.getSelectedItem()+"")+"' and '"+Valid.SetTgl(Tgl2.getSelectedItem()+"")+"' ",kodecari[i]);
                 total=total+kolom;
-                htmlContent.append(
-                    "<td valign='middle' align='center'>"+
-                        Valid.SetAngka(kolom)+
-                    "</td>"
-                );
+                htmlContent.append("<td valign='middle' align='center'>").append(Valid.SetAngka(kolom)).append("</td>");
             }
             for(i=0;i<jumlahcarabayar;i++){
                 kolom=Sequel.cariInteger(
-                       "select count(reg_periksa.no_rkm_medis) from reg_periksa where reg_periksa.no_rkm_medis not in (select pasien_polri.no_rkm_medis from pasien_polri) and reg_periksa.status_lanjut='Ralan' "+
+                       "select count(distinct reg_periksa.no_rkm_medis) from reg_periksa where reg_periksa.no_rkm_medis not in (select pasien_polri.no_rkm_medis from pasien_polri) and reg_periksa.status_lanjut='Ralan' "+
                        "and reg_periksa.kd_pj=? and reg_periksa.tgl_registrasi between '"+Valid.SetTgl(Tgl1.getSelectedItem()+"")+"' and '"+Valid.SetTgl(Tgl2.getSelectedItem()+"")+"' ",kodebayar[i]);
                 total=total+kolom;
-                htmlContent.append(
-                    "<td valign='middle' align='center'>"+
-                        Valid.SetAngka(kolom)+
-                    "</td>"
-                );
+                htmlContent.append("<td valign='middle' align='center'>").append(Valid.SetAngka(kolom)).append("</td>");
             }
-            htmlContent.append(
-                    "<td valign='middle' align='center'>"+
-                        Valid.SetAngka(total)+
-                    "</td>"+
-                "</tr>"
-            );
+            htmlContent.append("<td valign='middle' align='center'>").append(Valid.SetAngka(total)).append("</td></tr>");
+            htmlContent.append("<tr class='isi'><td valign='middle' align='center'>Kunjungan</td>");    
+            total=0;
+            for(i=0;i<jumlahcari;i++){
+                kolom=Sequel.cariInteger(
+                       "select count(distinct reg_periksa.no_rawat) from reg_periksa inner join pasien_polri on reg_periksa.no_rkm_medis=pasien_polri.no_rkm_medis "+
+                       "where pasien_polri.satuan_polri=? and reg_periksa.status_lanjut='Ralan' and reg_periksa.tgl_registrasi between '"+Valid.SetTgl(Tgl1.getSelectedItem()+"")+"' and '"+Valid.SetTgl(Tgl2.getSelectedItem()+"")+"' ",kodecari[i]);
+                total=total+kolom;
+                htmlContent.append("<td valign='middle' align='center'>").append(Valid.SetAngka(kolom)).append("</td>");
+            }
+            for(i=0;i<jumlahcarabayar;i++){
+                kolom=Sequel.cariInteger(
+                       "select count(distinct reg_periksa.no_rawat) from reg_periksa where reg_periksa.no_rkm_medis not in (select pasien_polri.no_rkm_medis from pasien_polri) and reg_periksa.status_lanjut='Ralan' "+
+                       "and reg_periksa.kd_pj=? and reg_periksa.tgl_registrasi between '"+Valid.SetTgl(Tgl1.getSelectedItem()+"")+"' and '"+Valid.SetTgl(Tgl2.getSelectedItem()+"")+"' ",kodebayar[i]);
+                total=total+kolom;
+                htmlContent.append("<td valign='middle' align='center'>").append(Valid.SetAngka(kolom)).append("</td>");
+            }
+            htmlContent.append("<td valign='middle' align='center'>").append(Valid.SetAngka(total)).append("</td></tr>");
             LoadHTML.setText(
                     "<html>"+
                       "<table width='"+(80+((jumlahcari+jumlahcarabayar)*70))+"px' border='0' align='left' cellpadding='3px' cellspacing='0' class='tbl_form'>"+
@@ -692,7 +613,7 @@ private void btnCariKeyPressed(java.awt.event.KeyEvent evt) {//GEN-FIRST:event_b
         this.setCursor(Cursor.getDefaultCursor());
     }
     
-    private void prosesCari3() {
+    private void tampil3() {
          this.setCursor(Cursor.getPredefinedCursor(Cursor.WAIT_CURSOR));
         try {
             jumlahcari=Sequel.cariInteger("select count(pangkat_polri.id) from pangkat_polri order by pangkat_polri.id");
@@ -700,17 +621,8 @@ private void btnCariKeyPressed(java.awt.event.KeyEvent evt) {//GEN-FIRST:event_b
             jumlahcarabayar=Sequel.cariInteger("select count(penjab.kd_pj) from penjab where penjab.status='1' order by penjab.kd_pj");
             kodebayar=new String[jumlahcarabayar];
             htmlContent = new StringBuilder();
-            htmlContent.append(                             
-                "<tr class='isi'>"+
-                    "<td valign='middle' bgcolor='#FFFAFA' align='center' rowspan='2' width='80px'>Pengunjung / Kunjungan</td>"+
-                    "<td valign='middle' bgcolor='#FFFAFA' align='center' colspan='"+(jumlahcari)+"'>PASIEN POLRI</td>"+
-                    "<td valign='middle' bgcolor='#FFFAFA' align='center' colspan='"+(jumlahcarabayar)+"'>PASIEN UMUM</td>"+
-                    "<td valign='middle' bgcolor='#FFFAFA' align='center' rowspan='2' width='50px'>Total</td>"+
-                "</tr>"
-            );
-            
-            htmlContent.append(                             
-                "<tr class='isi'>");
+            htmlContent.append("<tr class='isi'><td valign='middle' bgcolor='#FFFAFA' align='center' rowspan='2' width='80px'>Pengunjung / Kunjungan</td><td valign='middle' bgcolor='#FFFAFA' align='center' colspan='").append(jumlahcari).append("'>PASIEN POLRI</td><td valign='middle' bgcolor='#FFFAFA' align='center' colspan='").append(jumlahcarabayar).append("'>PASIEN UMUM</td><td valign='middle' bgcolor='#FFFAFA' align='center' rowspan='2' width='50px'>Total</td></tr>");
+            htmlContent.append("<tr class='isi'>");
             kolom=0;
             ps=koneksi.prepareStatement("select pangkat_polri.id,pangkat_polri.nama_pangkat from pangkat_polri order by pangkat_polri.id");
             try {
@@ -718,7 +630,7 @@ private void btnCariKeyPressed(java.awt.event.KeyEvent evt) {//GEN-FIRST:event_b
                 while(rs.next()){
                     kodecari[kolom]=rs.getString("id");
                     kolom++;
-                    htmlContent.append("<td valign='middle' bgcolor='#FFFFF8' align='center' width='70px'>"+rs.getString("nama_pangkat")+"</td>");
+                    htmlContent.append("<td valign='middle' bgcolor='#FFFFF8' align='center' width='70px'>").append(rs.getString("nama_pangkat")).append("</td>");
                 }
             } catch (Exception e) {
                 System.out.println("Akun Bayar : "+e);
@@ -737,7 +649,7 @@ private void btnCariKeyPressed(java.awt.event.KeyEvent evt) {//GEN-FIRST:event_b
                 while(rs.next()){
                     kodebayar[kolom]=rs.getString("kd_pj");
                     kolom++;
-                    htmlContent.append("<td valign='middle' bgcolor='#FFFFF8' align='center' width='70px'>"+rs.getString("png_jawab")+"</td>");
+                    htmlContent.append("<td valign='middle' bgcolor='#FFFFF8' align='center' width='70px'>").append(rs.getString("png_jawab")).append("</td>");
                 }
             } catch (Exception e) {
                 System.out.println("Akun Bayar : "+e);
@@ -749,79 +661,42 @@ private void btnCariKeyPressed(java.awt.event.KeyEvent evt) {//GEN-FIRST:event_b
                     ps.close();
                 }
             } 
-            htmlContent.append(   
-                "</tr>"
-            );
-            
-            htmlContent.append(
-                "<tr class='isi'>"+
-                    "<td valign='middle' align='center'>Pengunjung</td>"
-            );    
+            htmlContent.append("</tr>");
+            htmlContent.append("<tr class='isi'><td valign='middle' align='center'>Pengunjung</td>");    
             total=0;
             for(i=0;i<jumlahcari;i++){
                 kolom=Sequel.cariInteger(
-                       "select count(reg_periksa.no_rkm_medis) from reg_periksa inner join pasien_polri on reg_periksa.no_rkm_medis=pasien_polri.no_rkm_medis "+
-                       "where pasien_polri.pangkat_polri=? and reg_periksa.status_lanjut='Ralan' and reg_periksa.tgl_registrasi between '"+Valid.SetTgl(Tgl1.getSelectedItem()+"")+"' and '"+Valid.SetTgl(Tgl2.getSelectedItem()+"")+"' "+
-                       "group by reg_periksa.no_rkm_medis",kodecari[i]);
-                total=total+kolom;
-                htmlContent.append(
-                    "<td valign='middle' align='center'>"+
-                        Valid.SetAngka(kolom)+
-                    "</td>"
-                );
-            }
-            for(i=0;i<jumlahcarabayar;i++){
-                kolom=Sequel.cariInteger(
-                       "select count(reg_periksa.no_rkm_medis) from reg_periksa where reg_periksa.no_rkm_medis not in (select pasien_polri.no_rkm_medis from pasien_polri) and reg_periksa.status_lanjut='Ralan' "+
-                       "and reg_periksa.kd_pj=? and reg_periksa.tgl_registrasi between '"+Valid.SetTgl(Tgl1.getSelectedItem()+"")+"' and '"+Valid.SetTgl(Tgl2.getSelectedItem()+"")+"' "+
-                       "group by reg_periksa.no_rkm_medis",kodebayar[i]);
-                total=total+kolom;
-                htmlContent.append(
-                    "<td valign='middle' align='center'>"+
-                        Valid.SetAngka(kolom)+
-                    "</td>"
-                );
-            }
-            htmlContent.append(
-                    "<td valign='middle' align='center'>"+
-                        Valid.SetAngka(total)+
-                    "</td>"+
-                "</tr>"
-            );
-            
-            htmlContent.append(
-                "<tr class='isi'>"+
-                    "<td valign='middle' align='center'>Kunjungan</td>"
-            );    
-            total=0;
-            for(i=0;i<jumlahcari;i++){
-                kolom=Sequel.cariInteger(
-                       "select count(reg_periksa.no_rkm_medis) from reg_periksa inner join pasien_polri on reg_periksa.no_rkm_medis=pasien_polri.no_rkm_medis "+
+                       "select count(distinct reg_periksa.no_rkm_medis) from reg_periksa inner join pasien_polri on reg_periksa.no_rkm_medis=pasien_polri.no_rkm_medis "+
                        "where pasien_polri.pangkat_polri=? and reg_periksa.status_lanjut='Ralan' and reg_periksa.tgl_registrasi between '"+Valid.SetTgl(Tgl1.getSelectedItem()+"")+"' and '"+Valid.SetTgl(Tgl2.getSelectedItem()+"")+"' ",kodecari[i]);
                 total=total+kolom;
-                htmlContent.append(
-                    "<td valign='middle' align='center'>"+
-                        Valid.SetAngka(kolom)+
-                    "</td>"
-                );
+                htmlContent.append("<td valign='middle' align='center'>").append(Valid.SetAngka(kolom)).append("</td>");
             }
             for(i=0;i<jumlahcarabayar;i++){
                 kolom=Sequel.cariInteger(
-                       "select count(reg_periksa.no_rkm_medis) from reg_periksa where reg_periksa.no_rkm_medis not in (select pasien_polri.no_rkm_medis from pasien_polri) and reg_periksa.status_lanjut='Ralan' "+
+                       "select count(distinct reg_periksa.no_rkm_medis) from reg_periksa where reg_periksa.no_rkm_medis not in (select pasien_polri.no_rkm_medis from pasien_polri) and reg_periksa.status_lanjut='Ralan' "+
                        "and reg_periksa.kd_pj=? and reg_periksa.tgl_registrasi between '"+Valid.SetTgl(Tgl1.getSelectedItem()+"")+"' and '"+Valid.SetTgl(Tgl2.getSelectedItem()+"")+"' ",kodebayar[i]);
                 total=total+kolom;
-                htmlContent.append(
-                    "<td valign='middle' align='center'>"+
-                        Valid.SetAngka(kolom)+
-                    "</td>"
-                );
+                htmlContent.append("<td valign='middle' align='center'>").append(Valid.SetAngka(kolom)).append("</td>");
             }
-            htmlContent.append(
-                    "<td valign='middle' align='center'>"+
-                        Valid.SetAngka(total)+
-                    "</td>"+
-                "</tr>"
-            );
+            htmlContent.append("<td valign='middle' align='center'>").append(Valid.SetAngka(total)).append("</td></tr>");
+            
+            htmlContent.append("<tr class='isi'><td valign='middle' align='center'>Kunjungan</td>");    
+            total=0;
+            for(i=0;i<jumlahcari;i++){
+                kolom=Sequel.cariInteger(
+                       "select count(distinct reg_periksa.no_rawat) from reg_periksa inner join pasien_polri on reg_periksa.no_rkm_medis=pasien_polri.no_rkm_medis "+
+                       "where pasien_polri.pangkat_polri=? and reg_periksa.status_lanjut='Ralan' and reg_periksa.tgl_registrasi between '"+Valid.SetTgl(Tgl1.getSelectedItem()+"")+"' and '"+Valid.SetTgl(Tgl2.getSelectedItem()+"")+"' ",kodecari[i]);
+                total=total+kolom;
+                htmlContent.append("<td valign='middle' align='center'>").append(Valid.SetAngka(kolom)).append("</td>");
+            }
+            for(i=0;i<jumlahcarabayar;i++){
+                kolom=Sequel.cariInteger(
+                       "select count(distinct reg_periksa.no_rawat) from reg_periksa where reg_periksa.no_rkm_medis not in (select pasien_polri.no_rkm_medis from pasien_polri) and reg_periksa.status_lanjut='Ralan' "+
+                       "and reg_periksa.kd_pj=? and reg_periksa.tgl_registrasi between '"+Valid.SetTgl(Tgl1.getSelectedItem()+"")+"' and '"+Valid.SetTgl(Tgl2.getSelectedItem()+"")+"' ",kodebayar[i]);
+                total=total+kolom;
+                htmlContent.append("<td valign='middle' align='center'>").append(Valid.SetAngka(kolom)).append("</td>");
+            }
+            htmlContent.append("<td valign='middle' align='center'>").append(Valid.SetAngka(total)).append("</td></tr>");
             LoadHTML.setText(
                     "<html>"+
                       "<table width='"+(80+((jumlahcari+jumlahcarabayar)*70))+"px' border='0' align='left' cellpadding='3px' cellspacing='0' class='tbl_form'>"+
@@ -834,7 +709,7 @@ private void btnCariKeyPressed(java.awt.event.KeyEvent evt) {//GEN-FIRST:event_b
         this.setCursor(Cursor.getDefaultCursor());
     }
     
-    private void prosesCari4() {
+    private void tampil4() {
         this.setCursor(Cursor.getPredefinedCursor(Cursor.WAIT_CURSOR));
         try {
             jumlahcari=Sequel.cariInteger("select count(jabatan_polri.id) from jabatan_polri order by jabatan_polri.id");
@@ -842,17 +717,15 @@ private void btnCariKeyPressed(java.awt.event.KeyEvent evt) {//GEN-FIRST:event_b
             jumlahcarabayar=Sequel.cariInteger("select count(penjab.kd_pj) from penjab where penjab.status='1' order by penjab.kd_pj");
             kodebayar=new String[jumlahcarabayar];
             htmlContent = new StringBuilder();
-            htmlContent.append(                             
-                "<tr class='isi'>"+
-                    "<td valign='middle' bgcolor='#FFFAFA' align='center' rowspan='2' width='80px'>Pengunjung / Kunjungan</td>"+
-                    "<td valign='middle' bgcolor='#FFFAFA' align='center' colspan='"+(jumlahcari)+"'>PASIEN POLRI</td>"+
-                    "<td valign='middle' bgcolor='#FFFAFA' align='center' colspan='"+(jumlahcarabayar)+"'>PASIEN UMUM</td>"+
-                    "<td valign='middle' bgcolor='#FFFAFA' align='center' rowspan='2' width='50px'>Total</td>"+
-                "</tr>"
-            );
-            
-            htmlContent.append(                             
-                "<tr class='isi'>");
+            htmlContent
+                .append("<tr class='isi'>")
+                    .append("<td valign='middle' bgcolor='#FFFAFA' align='center' rowspan='2' width='80px'>Pengunjung / Kunjungan</td>")
+                    .append("<td valign='middle' bgcolor='#FFFAFA' align='center' colspan='"+(jumlahcari)+"'>PASIEN POLRI</td>")
+                    .append("<td valign='middle' bgcolor='#FFFAFA' align='center' colspan='"+(jumlahcarabayar)+"'>PASIEN UMUM</td>")
+                    .append("<td valign='middle' bgcolor='#FFFAFA' align='center' rowspan='2' width='50px'>Total</td>")
+                .append("</tr>")
+                .append("<tr class='isi'>");
+
             kolom=0;
             ps=koneksi.prepareStatement("select jabatan_polri.id,jabatan_polri.nama_jabatan from jabatan_polri order by jabatan_polri.id");
             try {
@@ -865,13 +738,10 @@ private void btnCariKeyPressed(java.awt.event.KeyEvent evt) {//GEN-FIRST:event_b
             } catch (Exception e) {
                 System.out.println("Akun Bayar : "+e);
             } finally{
-                if(rs!=null){
-                    rs.close();
-                }
-                if(ps!=null){
-                    ps.close();
-                }
-            } 
+                if(rs!=null) rs.close();
+                if(ps!=null) ps.close();
+            }
+
             kolom=0;
             ps=koneksi.prepareStatement("select penjab.kd_pj,penjab.png_jawab from penjab where penjab.status='1' order by penjab.kd_pj");
             try {
@@ -884,95 +754,67 @@ private void btnCariKeyPressed(java.awt.event.KeyEvent evt) {//GEN-FIRST:event_b
             } catch (Exception e) {
                 System.out.println("Akun Bayar : "+e);
             } finally{
-                if(rs!=null){
-                    rs.close();
-                }
-                if(ps!=null){
-                    ps.close();
-                }
-            } 
-            htmlContent.append(   
-                "</tr>"
-            );
-            
-            htmlContent.append(
-                "<tr class='isi'>"+
-                    "<td valign='middle' align='center'>Pengunjung</td>"
-            );    
+                if(rs!=null) rs.close();
+                if(ps!=null) ps.close();
+            }
+
+            htmlContent.append("</tr>");
+
+            // --- PENGUNJUNG ---
+            htmlContent
+                .append("<tr class='isi'>")
+                .append("<td valign='middle' align='center'>Pengunjung</td>");
             total=0;
             for(i=0;i<jumlahcari;i++){
                 kolom=Sequel.cariInteger(
-                       "select count(reg_periksa.no_rkm_medis) from reg_periksa inner join pasien_polri on reg_periksa.no_rkm_medis=pasien_polri.no_rkm_medis "+
-                       "where pasien_polri.jabatan_polri=? and reg_periksa.status_lanjut='Ralan' and reg_periksa.tgl_registrasi between '"+Valid.SetTgl(Tgl1.getSelectedItem()+"")+"' and '"+Valid.SetTgl(Tgl2.getSelectedItem()+"")+"' "+
-                       "group by reg_periksa.no_rkm_medis",kodecari[i]);
+                    "select count(distinct reg_periksa.no_rkm_medis) from reg_periksa inner join pasien_polri on reg_periksa.no_rkm_medis=pasien_polri.no_rkm_medis "+
+                    "where pasien_polri.jabatan_polri=? and reg_periksa.status_lanjut='Ralan' and reg_periksa.tgl_registrasi between '"+Valid.SetTgl(Tgl1.getSelectedItem()+"")+"' and '"+Valid.SetTgl(Tgl2.getSelectedItem()+"")+"' ",kodecari[i]);
                 total=total+kolom;
-                htmlContent.append(
-                    "<td valign='middle' align='center'>"+
-                        Valid.SetAngka(kolom)+
-                    "</td>"
-                );
+                htmlContent.append("<td valign='middle' align='center'>"+Valid.SetAngka(kolom)+"</td>");
             }
             for(i=0;i<jumlahcarabayar;i++){
                 kolom=Sequel.cariInteger(
-                       "select count(reg_periksa.no_rkm_medis) from reg_periksa where reg_periksa.no_rkm_medis not in (select pasien_polri.no_rkm_medis from pasien_polri) and reg_periksa.status_lanjut='Ralan' "+
-                       "and reg_periksa.kd_pj=? and reg_periksa.tgl_registrasi between '"+Valid.SetTgl(Tgl1.getSelectedItem()+"")+"' and '"+Valid.SetTgl(Tgl2.getSelectedItem()+"")+"' "+
-                       "group by reg_periksa.no_rkm_medis",kodebayar[i]);
+                    "select count(distinct reg_periksa.no_rkm_medis) from reg_periksa where reg_periksa.no_rkm_medis not in (select pasien_polri.no_rkm_medis from pasien_polri) and reg_periksa.status_lanjut='Ralan' "+
+                    "and reg_periksa.kd_pj=? and reg_periksa.tgl_registrasi between '"+Valid.SetTgl(Tgl1.getSelectedItem()+"")+"' and '"+Valid.SetTgl(Tgl2.getSelectedItem()+"")+"' ",kodebayar[i]);
                 total=total+kolom;
-                htmlContent.append(
-                    "<td valign='middle' align='center'>"+
-                        Valid.SetAngka(kolom)+
-                    "</td>"
-                );
+                htmlContent.append("<td valign='middle' align='center'>"+Valid.SetAngka(kolom)+"</td>");
             }
-            htmlContent.append(
-                    "<td valign='middle' align='center'>"+
-                        Valid.SetAngka(total)+
-                    "</td>"+
-                "</tr>"
-            );
-            
-            htmlContent.append(
-                "<tr class='isi'>"+
-                    "<td valign='middle' align='center'>Kunjungan</td>"
-            );    
+            htmlContent
+                .append("<td valign='middle' align='center'>"+Valid.SetAngka(total)+"</td>")
+                .append("</tr>");
+
+            // --- KUNJUNGAN ---
+            htmlContent
+                .append("<tr class='isi'>")
+                .append("<td valign='middle' align='center'>Kunjungan</td>");
             total=0;
             for(i=0;i<jumlahcari;i++){
                 kolom=Sequel.cariInteger(
-                       "select count(reg_periksa.no_rkm_medis) from reg_periksa inner join pasien_polri on reg_periksa.no_rkm_medis=pasien_polri.no_rkm_medis "+
-                       "where pasien_polri.jabatan_polri=? and reg_periksa.status_lanjut='Ralan' and reg_periksa.tgl_registrasi between '"+Valid.SetTgl(Tgl1.getSelectedItem()+"")+"' and '"+Valid.SetTgl(Tgl2.getSelectedItem()+"")+"' ",kodecari[i]);
+                    "select count(distinct reg_periksa.no_rawat) from reg_periksa inner join pasien_polri on reg_periksa.no_rkm_medis=pasien_polri.no_rkm_medis "+
+                    "where pasien_polri.jabatan_polri=? and reg_periksa.status_lanjut='Ralan' and reg_periksa.tgl_registrasi between '"+Valid.SetTgl(Tgl1.getSelectedItem()+"")+"' and '"+Valid.SetTgl(Tgl2.getSelectedItem()+"")+"' ",kodecari[i]);
                 total=total+kolom;
-                htmlContent.append(
-                    "<td valign='middle' align='center'>"+
-                        Valid.SetAngka(kolom)+
-                    "</td>"
-                );
+                htmlContent.append("<td valign='middle' align='center'>"+Valid.SetAngka(kolom)+"</td>");
             }
             for(i=0;i<jumlahcarabayar;i++){
                 kolom=Sequel.cariInteger(
-                       "select count(reg_periksa.no_rkm_medis) from reg_periksa where reg_periksa.no_rkm_medis not in (select pasien_polri.no_rkm_medis from pasien_polri) and reg_periksa.status_lanjut='Ralan' "+
-                       "and reg_periksa.kd_pj=? and reg_periksa.tgl_registrasi between '"+Valid.SetTgl(Tgl1.getSelectedItem()+"")+"' and '"+Valid.SetTgl(Tgl2.getSelectedItem()+"")+"' ",kodebayar[i]);
+                    "select count(distinct reg_periksa.no_rawat) from reg_periksa where reg_periksa.no_rkm_medis not in (select pasien_polri.no_rkm_medis from pasien_polri) and reg_periksa.status_lanjut='Ralan' "+
+                    "and reg_periksa.kd_pj=? and reg_periksa.tgl_registrasi between '"+Valid.SetTgl(Tgl1.getSelectedItem()+"")+"' and '"+Valid.SetTgl(Tgl2.getSelectedItem()+"")+"' ",kodebayar[i]);
                 total=total+kolom;
-                htmlContent.append(
-                    "<td valign='middle' align='center'>"+
-                        Valid.SetAngka(kolom)+
-                    "</td>"
-                );
+                htmlContent.append("<td valign='middle' align='center'>"+Valid.SetAngka(kolom)+"</td>");
             }
-            htmlContent.append(
-                    "<td valign='middle' align='center'>"+
-                        Valid.SetAngka(total)+
-                    "</td>"+
-                "</tr>"
-            );
+            htmlContent
+                .append("<td valign='middle' align='center'>"+Valid.SetAngka(total)+"</td>")
+                .append("</tr>");
+
             LoadHTML.setText(
-                    "<html>"+
-                      "<table width='"+(80+((jumlahcari+jumlahcarabayar)*70))+"px' border='0' align='left' cellpadding='3px' cellspacing='0' class='tbl_form'>"+
-                       htmlContent.toString()+
-                      "</table>"+
-                    "</html>");
+                "<html>"+
+                  "<table width='"+(80+((jumlahcari+jumlahcarabayar)*70))+"px' border='0' align='left' cellpadding='3px' cellspacing='0' class='tbl_form'>"+
+                   htmlContent.toString()+
+                  "</table>"+
+                "</html>");
         } catch (Exception e) {
             System.out.println("Notif : "+e);
-        } 
+        }
         this.setCursor(Cursor.getDefaultCursor());
     }
     
@@ -980,4 +822,35 @@ private void btnCariKeyPressed(java.awt.event.KeyEvent evt) {//GEN-FIRST:event_b
         BtnPrint.setEnabled(akses.getjumlah_pengunjung_ralan_polri());
     }
     
+    private void runBackground(Runnable task) {
+        if (ceksukses) return;
+        if (executor.isShutdown() || executor.isTerminated()) return;
+        if (!isDisplayable()) return;
+
+        ceksukses = true;
+        setCursor(Cursor.getPredefinedCursor(Cursor.WAIT_CURSOR));
+
+        try {
+            executor.submit(() -> {
+                try {
+                    task.run();
+                } finally {
+                    ceksukses = false;
+                    SwingUtilities.invokeLater(() -> {
+                        if (isDisplayable()) {
+                            setCursor(Cursor.getDefaultCursor());
+                        }
+                    });
+                }
+            });
+        } catch (RejectedExecutionException ex) {
+            ceksukses = false;
+        }
+    }
+    
+    @Override
+    public void dispose() {
+        executor.shutdownNow();
+        super.dispose();
+    }
 }

@@ -356,11 +356,14 @@ app.all('/api.php', async (req, res) => {
         }
 
         if (action === 'get_booking_data') {
+            const excludedClinics = ['MCU', 'Poli Sepesialis', 'Unit Fisioterapi', 'Unit IGD', 'Unit Laboratorium', 'Unit Radiologi'];
             const [clinicRows] = await pool.query(`select kd_poli, nm_poli from poliklinik where status='1' order by nm_poli`);
-            const clinics = clinicRows.map(r => ({ id: r.kd_poli, name: r.nm_poli }));
+            const clinics = clinicRows
+                .filter(r => !excludedClinics.includes(r.nm_poli))
+                .map(r => ({ id: r.kd_poli, name: r.nm_poli }));
 
             const [scheduleRows] = await pool.query(
-                `select jadwal.kd_dokter, dokter.nm_dokter, jadwal.kd_poli, poliklinik.registrasi from jadwal inner join dokter on jadwal.kd_dokter=dokter.kd_dokter inner join poliklinik on jadwal.kd_poli=poliklinik.kd_poli`
+                `select jadwal.kd_dokter, dokter.nm_dokter, jadwal.kd_poli, jadwal.hari_kerja, poliklinik.registrasi from jadwal inner join dokter on jadwal.kd_dokter=dokter.kd_dokter inner join poliklinik on jadwal.kd_poli=poliklinik.kd_poli`
             );
 
             const doctors = {};
@@ -369,13 +372,18 @@ app.all('/api.php', async (req, res) => {
                 if (!doctors[kd_poli]) {
                     doctors[kd_poli] = [];
                 }
-                const exists = doctors[kd_poli].some(d => d.id === r.kd_dokter);
-                if (!exists) {
+                const docIdx = doctors[kd_poli].findIndex(d => d.id === r.kd_dokter);
+                if (docIdx === -1) {
                     doctors[kd_poli].push({
                         id: r.kd_dokter,
                         name: r.nm_dokter,
-                        fee: 'Rp. ' + Number(r.registrasi).toLocaleString('id-ID')
+                        fee: 'Rp. ' + Number(r.registrasi).toLocaleString('id-ID'),
+                        days: [r.hari_kerja]
                     });
+                } else {
+                    if (!doctors[kd_poli][docIdx].days.includes(r.hari_kerja)) {
+                        doctors[kd_poli][docIdx].days.push(r.hari_kerja);
+                    }
                 }
             });
 
@@ -514,14 +522,15 @@ app.all('/api.php', async (req, res) => {
                         const waMessage = 
 `*BUKTI PENDAFTARAN ONLINE*
 
-Halo *${p.nm_pasien}*, pendaftaran online Anda telah berhasil disimpan. Berikut rincian kunjungan Anda:
+Assalamualaikum *${p.nm_pasien}*, pendaftaran online Anda telah berhasil disimpan. Berikut rincian kunjungan Anda:
 
+• *Nomor Antrean:* ${noReg}
 • *No. RM:* ${norm}
 • *No. Rawat:* ${no_rawat}
 • *Poliklinik:* ${poliRes.nm_poli}
 • *Dokter:* ${docRes.nm_dokter}
 • *Tanggal Periksa:* ${formattedDate}
-• *Nomor Antrean:* ${noReg}
+
 
 Silakan datang 15-30 menit sebelum jadwal untuk verifikasi berkas dan pembayaran. Tunjukkan pesan pendaftaran ini kepada petugas saat check-in.
 
@@ -1194,6 +1203,99 @@ Terima kasih atas kepercayaan Anda.
                 console.error('save_consent error:', err);
                 return res.status(500).json({ success: false, message: 'Gagal menyimpan persetujuan: ' + err.message });
             }
+        }
+
+        if (action === 'get_notifications') {
+            const notifs = [];
+
+            // 1. Lab Results (Last 7 days)
+            const [labRows] = await pool.query(
+                `select periksa_lab.tgl_periksa, periksa_lab.jam, dokter.nm_dokter from periksa_lab inner join reg_periksa on periksa_lab.no_rawat=reg_periksa.no_rawat inner join dokter on periksa_lab.kd_dokter=dokter.kd_dokter where reg_periksa.no_rkm_medis=? and periksa_lab.tgl_periksa >= DATE_SUB(CURDATE(), INTERVAL 7 DAY) order by periksa_lab.tgl_periksa desc, periksa_lab.jam desc limit 3`,
+                [norm]
+            );
+            labRows.forEach(r => {
+                notifs.push({
+                    type: 'lab',
+                    title: 'Hasil Lab PK Tersedia',
+                    desc: `Hasil laboratorium oleh ${r.nm_dokter} sudah keluar.`,
+                    time: new Date(`${r.tgl_periksa}T${r.jam}`).getTime()
+                });
+            });
+
+            // 2. Radiology Results (Last 7 days)
+            const [radRows] = await pool.query(
+                `select periksa_radiologi.tgl_periksa, periksa_radiologi.jam, dokter.nm_dokter from periksa_radiologi inner join reg_periksa on periksa_radiologi.no_rawat=reg_periksa.no_rawat inner join dokter on periksa_radiologi.kd_dokter=dokter.kd_dokter where reg_periksa.no_rkm_medis=? and periksa_radiologi.tgl_periksa >= DATE_SUB(CURDATE(), INTERVAL 7 DAY) order by periksa_radiologi.tgl_periksa desc, periksa_radiologi.jam desc limit 3`,
+                [norm]
+            );
+            radRows.forEach(r => {
+                notifs.push({
+                    type: 'rad',
+                    title: 'Hasil Radiologi Tersedia',
+                    desc: `Hasil radiologi oleh ${r.nm_dokter} sudah keluar.`,
+                    time: new Date(`${r.tgl_periksa}T${r.jam}`).getTime()
+                });
+            });
+
+            // 3. Upcoming Bookings
+            const [bookingRows] = await pool.query(
+                `select reg_periksa.tgl_registrasi, reg_periksa.jam_reg, poliklinik.nm_poli from reg_periksa inner join poliklinik on reg_periksa.kd_poli=poliklinik.kd_poli where reg_periksa.no_rkm_medis=? and reg_periksa.tgl_registrasi >= CURDATE() and reg_periksa.stts='Belum'`
+                , [norm]
+            );
+            bookingRows.forEach(r => {
+                let fDate = r.tgl_registrasi;
+                if (fDate instanceof Date) fDate = fDate.toLocaleDateString('id-ID', { day: '2-digit', month: 'short', year: 'numeric' });
+                notifs.push({
+                    type: 'booking',
+                    title: 'Pengingat Jadwal',
+                    desc: `Jadwal antrean Anda di ${r.nm_poli} pada ${fDate}.`,
+                    time: new Date(`${r.tgl_registrasi}T${r.jam_reg}`).getTime()
+                });
+            });
+
+            // 4. Canceled Bookings
+            const [batalRows] = await pool.query(
+                `select reg_periksa.tgl_registrasi, reg_periksa.jam_reg, poliklinik.nm_poli from reg_periksa inner join poliklinik on reg_periksa.kd_poli=poliklinik.kd_poli where reg_periksa.no_rkm_medis=? and reg_periksa.tgl_registrasi >= CURDATE() and reg_periksa.stts='Batal'`,
+                [norm]
+            );
+            batalRows.forEach(r => {
+                let fDate = r.tgl_registrasi;
+                if (fDate instanceof Date) fDate = fDate.toLocaleDateString('id-ID', { day: '2-digit', month: 'short', year: 'numeric' });
+                notifs.push({
+                    type: 'batal',
+                    title: 'Jadwal Dibatalkan',
+                    desc: `Mohon maaf, kunjungan Anda di ${r.nm_poli} tanggal ${fDate} telah dibatalkan.`,
+                    time: new Date(`${r.tgl_registrasi}T${r.jam_reg}`).getTime()
+                });
+            });
+
+            // Sort descending (newest first) and limit to 3 items
+            notifs.sort((a, b) => b.time - a.time);
+            
+            const finalNotifs = notifs.slice(0, 3).map((n, i) => {
+                const now = new Date().getTime();
+                const diffMs = Math.abs(now - n.time);
+                const diffMins = Math.floor(diffMs / 60000);
+                const diffHours = Math.floor(diffMins / 60);
+                const diffDays = Math.floor(diffHours / 24);
+                let timeStr = '';
+                
+                if (n.type === 'booking') {
+                    timeStr = (now < n.time) ? 'Mendatang' : 'Hari ini';
+                } else {
+                    if (diffMins < 60) timeStr = `${diffMins}m ago`;
+                    else if (diffHours < 24) timeStr = `${diffHours}h ago`;
+                    else timeStr = `${diffDays}d ago`;
+                }
+
+                return {
+                    id: i + 1,
+                    title: n.title,
+                    desc: n.desc,
+                    time: timeStr
+                };
+            });
+
+            return res.json({ success: true, notifications: finalNotifs });
         }
 
         return res.json({ success: false, message: 'Aksi API tidak valid.' });

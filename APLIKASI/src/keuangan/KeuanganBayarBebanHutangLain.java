@@ -35,6 +35,9 @@ import java.sql.ResultSet;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.RejectedExecutionException;
 import javax.swing.JButton;
 import javax.swing.JOptionPane;
 import javax.swing.JTable;
@@ -42,6 +45,7 @@ import javax.swing.JTextField;
 import javax.swing.event.DocumentEvent;
 import javax.swing.table.DefaultTableModel;
 import javax.swing.table.TableColumn;
+import javax.swing.SwingUtilities;
 
 /**
  *
@@ -64,6 +68,8 @@ public final class KeuanganBayarBebanHutangLain extends javax.swing.JDialog {
     private JsonNode root;
     private JsonNode response;
     private FileReader myObj;
+    private final ExecutorService executor = Executors.newSingleThreadExecutor();
+    private volatile boolean ceksukses = false;
     
     /** Creates new form DlgPenyakit
      * @param parent
@@ -74,7 +80,7 @@ public final class KeuanganBayarBebanHutangLain extends javax.swing.JDialog {
         DlgBayarMandiri.setSize(562,163);
 
         tabMode=new DefaultTableModel(null,new Object[]{
-            "Tgl.Bayar","Kode","Pemberi Hutang","Cicilan(Rp)","Keterangan","No.Hutang","Kode Akun","Akun Bayar","No.Nukti"}){
+            "Tgl.Bayar","Kode","Pemberi Hutang","Cicilan(Rp)","Keterangan","No.Hutang","Kode Akun","Akun Bayar","No.Bukti"}){
              @Override public boolean isCellEditable(int rowIndex, int colIndex){return false;}
              Class[] types = new Class[] {
                 java.lang.Object.class, java.lang.Object.class, java.lang.Object.class, java.lang.Double.class,
@@ -119,7 +125,7 @@ public final class KeuanganBayarBebanHutangLain extends javax.swing.JDialog {
         NoHutang.setDocument(new batasInput((byte)17).getKata(NoHutang));
         Cicilan.setDocument(new batasInput((byte)15).getOnlyAngka(Cicilan));
         Sisa.setDocument(new batasInput((byte)15).getOnlyAngka(Sisa));
-        NoBukti.setDocument(new batasInput((byte)30).getOnlyAngka(NoBukti));
+        NoBukti.setDocument(new batasInput((byte)30).getKata(NoBukti));
         Keterangan.setDocument(new batasInput((byte)100).getKata(Keterangan));
         KdPemberiHutang.setDocument(new batasInput((byte)5).getKata(KdPemberiHutang));
         NoRekening.setDocument(new batasInput((byte)20).getKata(NoRekening));
@@ -127,29 +133,6 @@ public final class KeuanganBayarBebanHutangLain extends javax.swing.JDialog {
         KotaAtasNamaRekening.setDocument(new batasInput((byte)20).getKata(KotaAtasNamaRekening));
         
         TCari.setDocument(new batasInput((byte)100).getKata(TCari));
-        if(koneksiDB.CARICEPAT().equals("aktif")){
-            TCari.getDocument().addDocumentListener(new javax.swing.event.DocumentListener(){
-                @Override
-                public void insertUpdate(DocumentEvent e) {
-                    if(TCari.getText().length()>2){
-                        tampil();
-                    }
-                }
-                @Override
-                public void removeUpdate(DocumentEvent e) {
-                    if(TCari.getText().length()>2){
-                        tampil();
-                    }
-                }
-                @Override
-                public void changedUpdate(DocumentEvent e) {
-                    if(TCari.getText().length()>2){
-                        tampil();
-                    }
-                }
-            });
-        } 
-        
         Cicilan.getDocument().addDocumentListener(new javax.swing.event.DocumentListener(){
             @Override
             public void insertUpdate(DocumentEvent e) {
@@ -213,6 +196,8 @@ public final class KeuanganBayarBebanHutangLain extends javax.swing.JDialog {
         KodeBank = new widget.TextBox();
         BankTujuan = new widget.TextBox();
         KodeTransaksi = new widget.TextBox();
+        Popup = new javax.swing.JPopupMenu();
+        cetakbukti = new widget.MenuItem();
         internalFrame1 = new widget.InternalFrame();
         Scroll = new widget.ScrollPane();
         tbKamar = new widget.Table();
@@ -396,6 +381,22 @@ public final class KeuanganBayarBebanHutangLain extends javax.swing.JDialog {
 
         DlgBayarMandiri.getContentPane().add(internalFrame4, java.awt.BorderLayout.CENTER);
 
+        Popup.setName("Popup"); // NOI18N
+
+        cetakbukti.setBackground(new java.awt.Color(255, 255, 254));
+        cetakbukti.setFont(new java.awt.Font("Tahoma", 0, 11)); // NOI18N
+        cetakbukti.setForeground(java.awt.Color.darkGray);
+        cetakbukti.setIcon(new javax.swing.ImageIcon(getClass().getResource("/picture/category.png"))); // NOI18N
+        cetakbukti.setText("Cetak Bukti Kas Keluar");
+        cetakbukti.setName("cetakbukti"); // NOI18N
+        cetakbukti.setPreferredSize(new java.awt.Dimension(180, 25));
+        cetakbukti.addActionListener(new java.awt.event.ActionListener() {
+            public void actionPerformed(java.awt.event.ActionEvent evt) {
+                cetakbuktiActionPerformed(evt);
+            }
+        });
+        Popup.add(cetakbukti);
+
         setDefaultCloseOperation(javax.swing.WindowConstants.DISPOSE_ON_CLOSE);
         setUndecorated(true);
         setResizable(false);
@@ -412,6 +413,7 @@ public final class KeuanganBayarBebanHutangLain extends javax.swing.JDialog {
         Scroll.setName("Scroll"); // NOI18N
         Scroll.setOpaque(true);
 
+        tbKamar.setComponentPopupMenu(Popup);
         tbKamar.setName("tbKamar"); // NOI18N
         tbKamar.addMouseListener(new java.awt.event.MouseAdapter() {
             public void mouseClicked(java.awt.event.MouseEvent evt) {
@@ -839,7 +841,7 @@ public final class KeuanganBayarBebanHutangLain extends javax.swing.JDialog {
         }else{         
             if(Sequel.cariInteger("select count(beban_hutang_lain.no_hutang) from beban_hutang_lain where beban_hutang_lain.no_hutang=? and beban_hutang_lain.kode_pemberi_hutang=?",NoHutang.getText(),KdPemberiHutang.getText())>0){
                 sisahutang=(Sequel.cariIsiAngka("SELECT beban_hutang_lain.sisahutang FROM beban_hutang_lain where beban_hutang_lain.no_hutang=?",NoHutang.getText())-Double.parseDouble(Cicilan.getText()));
-                if(sisahutang>0){
+                if(sisahutang>=0){
                     koderekening="";
                     try {
                         myObj = new FileReader("./cache/akunbayarhutang.iyem");
@@ -855,6 +857,10 @@ public final class KeuanganBayarBebanHutangLain extends javax.swing.JDialog {
                         myObj.close();
                     } catch (Exception e) {
                         sukses=false;
+                    } finally {
+                        if (myObj != null) try { myObj.close(); } catch (Exception e) {}
+                        response = null;
+                        root = null;
                     } 
                     if(koderekening.equals("")){
                         JOptionPane.showMessageDialog(null,"Terjadi kesalahan akun bayar, silahkan hubungi administrator..!!");
@@ -881,6 +887,10 @@ public final class KeuanganBayarBebanHutangLain extends javax.swing.JDialog {
                                 myObj.close();
                             } catch (Exception e) {
                                 sukses=false;
+                            } finally {
+                                if (myObj != null) try { myObj.close(); } catch (Exception e) {}
+                                response = null;
+                                root = null;
                             }
 
                             Sequel.AutoComitFalse();
@@ -918,7 +928,12 @@ public final class KeuanganBayarBebanHutangLain extends javax.swing.JDialog {
                             Sequel.AutoComitTrue();
 
                             if(sukses==true){
-                                BtnCariActionPerformed(evt);
+                                tabMode.addRow(new Object[]{
+                                    Valid.SetTgl(Tanggal.getSelectedItem()+""),KdPemberiHutang.getText(),NmPemberiHutang.getText(),Double.parseDouble(Cicilan.getText()),Keterangan.getText(),NoHutang.getText(),koderekening,AkunBayar.getSelectedItem().toString(),NoBukti.getText()
+                                });
+                                LCount.setText(""+tabMode.getRowCount());
+                                total=total+Double.parseDouble(Cicilan.getText());
+                                LTotal.setText(Valid.SetAngka(total));
                                 emptTeks();
                             }
                         }
@@ -967,6 +982,10 @@ public final class KeuanganBayarBebanHutangLain extends javax.swing.JDialog {
                     myObj.close();
                 } catch (Exception e) {
                     sukses=false;
+                } finally {
+                    if (myObj != null) try { myObj.close(); } catch (Exception e) {}
+                    response = null;
+                    root = null;
                 }
                 Sequel.mengedit("beban_hutang_lain","no_hutang='"+tbKamar.getValueAt(tbKamar.getSelectedRow(),5).toString()+"'","status='Belum Lunas', sisahutang=sisahutang+"+tbKamar.getValueAt(tbKamar.getSelectedRow(),3).toString());                      
                 Sequel.queryu("delete from tampjurnal");                    
@@ -993,7 +1012,10 @@ public final class KeuanganBayarBebanHutangLain extends javax.swing.JDialog {
             Sequel.AutoComitTrue();
 
             if(sukses==true){
-                BtnCariActionPerformed(evt);
+                total=total-Double.parseDouble(tbKamar.getValueAt(tbKamar.getSelectedRow(),3).toString());
+                LTotal.setText(Valid.SetAngka(total));
+                tabMode.removeRow(tbKamar.getSelectedRow());
+                LCount.setText(""+tabMode.getRowCount());
                 emptTeks();
             }
         }else{
@@ -1066,7 +1088,7 @@ public final class KeuanganBayarBebanHutangLain extends javax.swing.JDialog {
 }//GEN-LAST:event_TCariKeyPressed
 
     private void BtnCariActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_BtnCariActionPerformed
-        tampil();
+        runBackground(() ->tampil());
 }//GEN-LAST:event_BtnCariActionPerformed
 
     private void BtnCariKeyPressed(java.awt.event.KeyEvent evt) {//GEN-FIRST:event_BtnCariKeyPressed
@@ -1140,7 +1162,7 @@ private void KeteranganKeyPressed(java.awt.event.KeyEvent evt) {//GEN-FIRST:even
 
     private void BtnAllActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_BtnAllActionPerformed
         TCari.setText("");
-        tampil();
+        runBackground(() ->tampil());
     }//GEN-LAST:event_BtnAllActionPerformed
 
     private void SisaKeyPressed(java.awt.event.KeyEvent evt) {//GEN-FIRST:event_SisaKeyPressed
@@ -1221,22 +1243,44 @@ private void BtnPeminjamActionPerformed(java.awt.event.ActionEvent evt) {//GEN-F
 
     private void formWindowOpened(java.awt.event.WindowEvent evt) {//GEN-FIRST:event_formWindowOpened
         try {
-            if(Valid.daysOld("./cache/akunbayarhutang.iyem")<8){
-                tampilAkunBayar2();
-            }else{
-                tampilAkunBayar();
-            }
-            
-        } catch (Exception e) {
-        }
-        
-        try {
             if(Valid.daysOld("./cache/akunbankmandiri.iyem")<30){
                 tampilAkunBankMandiri2();
             }else{
                 tampilAkunBankMandiri();
             }
         } catch (Exception e) {
+        }
+        
+        try {
+            if(Valid.daysOld("./cache/akunbayarhutang.iyem")<8){
+                runBackground(() ->tampilAkunBayar2());
+            }else{
+                runBackground(() ->tampilAkunBayar());
+            }
+        } catch (Exception e) {
+        }
+        
+        if(koneksiDB.CARICEPAT().equals("aktif")){
+            TCari.getDocument().addDocumentListener(new javax.swing.event.DocumentListener(){
+                @Override
+                public void insertUpdate(DocumentEvent e) {
+                    if(TCari.getText().length()>2){
+                        runBackground(() ->tampil());
+                    }
+                }
+                @Override
+                public void removeUpdate(DocumentEvent e) {
+                    if(TCari.getText().length()>2){
+                        runBackground(() ->tampil());
+                    }
+                }
+                @Override
+                public void changedUpdate(DocumentEvent e) {
+                    if(TCari.getText().length()>2){
+                        runBackground(() ->tampil());
+                    }
+                }
+            });
         }
     }//GEN-LAST:event_formWindowOpened
 
@@ -1249,8 +1293,8 @@ private void BtnPeminjamActionPerformed(java.awt.event.ActionEvent evt) {//GEN-F
     }//GEN-LAST:event_KdPemberiHutangKeyPressed
 
     private void BtnAll1ActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_BtnAll1ActionPerformed
-        tampilAkunBayar();
         tampilAkunBankMandiri();
+        runBackground(() ->tampilAkunBayar());
     }//GEN-LAST:event_BtnAll1ActionPerformed
 
     private void NoBuktiKeyPressed(java.awt.event.KeyEvent evt) {//GEN-FIRST:event_NoBuktiKeyPressed
@@ -1392,6 +1436,14 @@ private void BtnPeminjamActionPerformed(java.awt.event.ActionEvent evt) {//GEN-F
         this.setCursor(Cursor.getDefaultCursor());
     }//GEN-LAST:event_BtnPetugas1ActionPerformed
 
+    private void cetakbuktiActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_cetakbuktiActionPerformed
+        if(tbKamar.getSelectedRow()>-1){
+            Valid.panggilUrl("billing/LaporanBuktiKasKeluar.php?kode="+NoBukti.getText()+"&tanggal="+Valid.SetTgl(Tanggal.getSelectedItem()+"")+"&akunbayar="+AkunBayar.getSelectedItem().toString().replaceAll(" ","_")+"&petugas="+akses.getkode().replaceAll(" ","_")+Sequel.cariIsi("select pegawai.nama from pegawai where pegawai.nik=?",akses.getkode()).replaceAll(" ","_")+"&dibayarkankepada="+tbKamar.getValueAt(tbKamar.getSelectedRow(),2).toString().replaceAll(" ","_")+"&keterangan="+Keterangan.getText().replaceAll(" ","_")+"&notagihan="+NoHutang.getText().replaceAll(" ","_")+"&nominal="+Cicilan.getText()+"&usere="+koneksiDB.USERHYBRIDWEB()+"&passwordte="+koneksiDB.PASHYBRIDWEB());
+        }else{
+            JOptionPane.showMessageDialog(null,"Maaf, pilih dulu data yang mau dicetak bukti kas keluarnya.\nKlik data pada table untuk memilih...!!!!");
+        }
+    }//GEN-LAST:event_cetakbuktiActionPerformed
+
     /**
     * @param args the command line arguments
     */
@@ -1443,6 +1495,7 @@ private void BtnPeminjamActionPerformed(java.awt.event.ActionEvent evt) {//GEN-F
     private widget.TextBox NoHutang;
     private widget.TextBox NoRekening;
     private javax.swing.JPanel PanelInput;
+    private javax.swing.JPopupMenu Popup;
     private widget.TextBox RekeningAtasNama;
     private widget.ScrollPane Scroll;
     private widget.TextBox Sisa;
@@ -1450,6 +1503,7 @@ private void BtnPeminjamActionPerformed(java.awt.event.ActionEvent evt) {//GEN-F
     private widget.Tanggal Tanggal;
     private widget.Tanggal Tgl1;
     private widget.Tanggal Tgl2;
+    private widget.MenuItem cetakbukti;
     private widget.InternalFrame internalFrame1;
     private widget.InternalFrame internalFrame4;
     private widget.Label jLabel10;
@@ -1475,7 +1529,7 @@ private void BtnPeminjamActionPerformed(java.awt.event.ActionEvent evt) {//GEN-F
     private widget.Table tbKamar;
     // End of variables declaration//GEN-END:variables
 
-    public void tampil() {
+    private void tampil() {
         Valid.tabelKosong(tabMode);
         try{    
             ps=koneksi.prepareStatement(
@@ -1516,6 +1570,10 @@ private void BtnPeminjamActionPerformed(java.awt.event.ActionEvent evt) {//GEN-F
         LCount.setText(""+tabMode.getRowCount());
         LTotal.setText(Valid.SetAngka(total));
     }
+    
+    public void tampil2() {
+        runBackground(() ->tampil());
+    }
 
     public void emptTeks() {
         Kd2.setText("");
@@ -1548,7 +1606,7 @@ private void BtnPeminjamActionPerformed(java.awt.event.ActionEvent evt) {//GEN-F
         if(row!= -1){
             KdPemberiHutang.setText(tbKamar.getValueAt(row,1).toString());
             NmPemberiHutang.setText(tbKamar.getValueAt(row,2).toString());
-            Cicilan.setText(tbKamar.getValueAt(row,3).toString());
+            Cicilan.setText(Valid.SetAngka5(Double.parseDouble(tbKamar.getValueAt(row,3).toString())));
             Keterangan.setText(tbKamar.getValueAt(row,4).toString());
             NoHutang.setText(tbKamar.getValueAt(row,5).toString());
             NoBukti.setText(tbKamar.getValueAt(row,8).toString());
@@ -1619,6 +1677,8 @@ private void BtnPeminjamActionPerformed(java.awt.event.ActionEvent evt) {//GEN-F
              iyembuilder=null;
         } catch (Exception e) {
             System.out.println("Notifikasi : "+e);
+        } finally {
+            if (fileWriter != null) try { fileWriter.close(); } catch (Exception e) {}
         }
     }
     
@@ -1639,6 +1699,10 @@ private void BtnPeminjamActionPerformed(java.awt.event.ActionEvent evt) {//GEN-F
             }else{
                 System.out.println("Notifikasi : "+ex);
             }
+        } finally {
+            if (myObj != null) try { myObj.close(); } catch (Exception e) {}
+            response = null;
+            root = null;
         }
     }
     
@@ -1649,16 +1713,22 @@ private void BtnPeminjamActionPerformed(java.awt.event.ActionEvent evt) {//GEN-F
             try {
                 rs=ps.executeQuery();
                 if(rs.next()){
-                    file=new File("./cache/akunbankmandiri.iyem");
-                    file.createNewFile();
-                    fileWriter = new FileWriter(file);
-                    Host_to_Host_Bank_Mandiri=rs.getString("kd_rek");
-                    Akun_Biaya_Mandiri=rs.getString("kd_rek_biaya");
-                    kodemcm=rs.getString("kode_mcm");
-                    norekening=rs.getString("no_rekening");
-                    fileWriter.write("{\"akunbankmandiri\":\""+Host_to_Host_Bank_Mandiri+"\",\"kodemcm\":\""+kodemcm+"\",\"akunbiayabankmandiri\":\""+Akun_Biaya_Mandiri+"\",\"norekening\":\""+norekening+"\"}");
-                    fileWriter.flush();
-                    fileWriter.close();
+                    try{
+                        file=new File("./cache/akunbankmandiri.iyem");
+                        file.createNewFile();
+                        fileWriter = new FileWriter(file);
+                        Host_to_Host_Bank_Mandiri=rs.getString("kd_rek");
+                        Akun_Biaya_Mandiri=rs.getString("kd_rek_biaya");
+                        kodemcm=rs.getString("kode_mcm");
+                        norekening=rs.getString("no_rekening");
+                        fileWriter.write("{\"akunbankmandiri\":\""+Host_to_Host_Bank_Mandiri+"\",\"kodemcm\":\""+kodemcm+"\",\"akunbiayabankmandiri\":\""+Akun_Biaya_Mandiri+"\",\"norekening\":\""+norekening+"\"}");
+                        fileWriter.flush();
+                        fileWriter.close();
+                    } catch (Exception e) {
+                        System.out.println("Notifikasi : "+e);
+                    } finally {
+                        if (fileWriter != null) try { fileWriter.close(); } catch (Exception e) {}
+                    }
                 }
             } catch (Exception e) {
                 Host_to_Host_Bank_Mandiri="";
@@ -1700,6 +1770,42 @@ private void BtnPeminjamActionPerformed(java.awt.event.ActionEvent evt) {//GEN-F
              Akun_Biaya_Mandiri="";
              kodemcm="";
              norekening="";
+        } finally {
+            if (myObj != null) try { myObj.close(); } catch (Exception e) {}
+            response = null;
+            root = null;
         }
+    }
+    
+    private void runBackground(Runnable task) {
+        if (ceksukses) return;
+        if (executor.isShutdown() || executor.isTerminated()) return;
+        if (!isDisplayable()) return;
+
+        ceksukses = true;
+        setCursor(Cursor.getPredefinedCursor(Cursor.WAIT_CURSOR));
+
+        try {
+            executor.submit(() -> {
+                try {
+                    task.run();
+                } finally {
+                    ceksukses = false;
+                    SwingUtilities.invokeLater(() -> {
+                        if (isDisplayable()) {
+                            setCursor(Cursor.getDefaultCursor());
+                        }
+                    });
+                }
+            });
+        } catch (RejectedExecutionException ex) {
+            ceksukses = false;
+        }
+    }
+    
+    @Override
+    public void dispose() {
+        executor.shutdownNow();
+        super.dispose();
     }
 }

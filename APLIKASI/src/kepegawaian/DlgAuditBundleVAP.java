@@ -24,8 +24,12 @@ import java.util.Calendar;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.RejectedExecutionException;
 import javax.swing.JOptionPane;
 import javax.swing.JTable;
+import javax.swing.SwingUtilities;
 import javax.swing.Timer;
 import javax.swing.event.DocumentEvent;
 import javax.swing.table.DefaultTableModel;
@@ -44,8 +48,10 @@ public final class DlgAuditBundleVAP extends javax.swing.JDialog {
     private PreparedStatement ps;
     private ResultSet rs;
     private int i=0;    
-     private DlgCariRuangAuditKepatuhan ruang=new DlgCariRuangAuditKepatuhan(null,false);
-    private double posisi_kepala=0,pengkajian_setiap_hari=0,hand_hygiene=0,oral_hygiene=0,suction_manajemen_sekresi=0,profilaksis_peptic_ulcer=0,dvt_profiklasisi=0,penggunaan_apd_sesuai=0,
+    private final ExecutorService executor = Executors.newSingleThreadExecutor();
+    private volatile boolean ceksukses = false;
+    private double posisi_kepala=0,pengkajian_setiap_hari=0,hand_hygiene=0,oral_hygiene=0,suction_manajemen_sekresi=0,profilaksis_peptic_ulcer=0,dvt_profiklasisi=0,penggunaan_apd_sesuai=0,pembagi=0,
+                   naposisi_kepala=0,napengkajian_setiap_hari=0,nahand_hygiene=0,naoral_hygiene=0,nasuction_manajemen_sekresi=0,naprofilaksis_peptic_ulcer=0,nadvt_profiklasisi=0,napenggunaan_apd_sesuai=0,
                    ttlposisi_kepala=0,ttlpengkajian_setiap_hari=0,ttlhand_hygiene=0,ttloral_hygiene=0,ttlsuction_manajemen_sekresi=0,ttlprofilaksis_peptic_ulcer=0,ttldvt_profiklasisi=0,ttlpenggunaan_apd_sesuai=0,ttlpenilaian=0;
     
     
@@ -104,54 +110,8 @@ public final class DlgAuditBundleVAP extends javax.swing.JDialog {
         KdRuang.setDocument(new batasInput((byte)20).getKata(KdRuang));
         TCari.setDocument(new batasInput((int)100).getKata(TCari));
         
-        if(koneksiDB.CARICEPAT().equals("aktif")){
-            TCari.getDocument().addDocumentListener(new javax.swing.event.DocumentListener(){
-                @Override
-                public void insertUpdate(DocumentEvent e) {
-                    if(TCari.getText().length()>2){
-                        tampil();
-                    }
-                }
-                @Override
-                public void removeUpdate(DocumentEvent e) {
-                    if(TCari.getText().length()>2){
-                        tampil();
-                    }
-                }
-                @Override
-                public void changedUpdate(DocumentEvent e) {
-                    if(TCari.getText().length()>2){
-                        tampil();
-                    }
-                }
-            });
-        }
-        
-        ruang.addWindowListener(new WindowListener() {
-            @Override
-            public void windowOpened(WindowEvent e) {}
-            @Override
-            public void windowClosing(WindowEvent e) {}
-            @Override
-            public void windowClosed(WindowEvent e) {
-                if(ruang.getTable().getSelectedRow()!= -1){                   
-                    KdRuang.setText(ruang.getTable().getValueAt(ruang.getTable().getSelectedRow(),0).toString());
-                    NmRuang.setText(ruang.getTable().getValueAt(ruang.getTable().getSelectedRow(),1).toString());
-                }  
-                KdRuang.requestFocus();
-            }
-            @Override
-            public void windowIconified(WindowEvent e) {}
-            @Override
-            public void windowDeiconified(WindowEvent e) {}
-            @Override
-            public void windowActivated(WindowEvent e) {}
-            @Override
-            public void windowDeactivated(WindowEvent e) {}
-        }); 
         ChkInput.setSelected(false);
         isForm();
-        
         jam();
     }
 
@@ -222,6 +182,11 @@ public final class DlgAuditBundleVAP extends javax.swing.JDialog {
         setDefaultCloseOperation(javax.swing.WindowConstants.DISPOSE_ON_CLOSE);
         setUndecorated(true);
         setResizable(false);
+        addWindowListener(new java.awt.event.WindowAdapter() {
+            public void windowOpened(java.awt.event.WindowEvent evt) {
+                formWindowOpened(evt);
+            }
+        });
 
         internalFrame1.setBorder(javax.swing.BorderFactory.createTitledBorder(javax.swing.BorderFactory.createLineBorder(new java.awt.Color(240, 245, 235)), "::[ Audit Bundle VAP ]::", javax.swing.border.TitledBorder.DEFAULT_JUSTIFICATION, javax.swing.border.TitledBorder.DEFAULT_POSITION, new java.awt.Font("Tahoma", 0, 11), new java.awt.Color(50, 50, 50))); // NOI18N
         internalFrame1.setFont(new java.awt.Font("Tahoma", 2, 12)); // NOI18N
@@ -388,7 +353,7 @@ public final class DlgAuditBundleVAP extends javax.swing.JDialog {
         panelGlass9.add(jLabel19);
 
         DTPCari1.setForeground(new java.awt.Color(50, 70, 50));
-        DTPCari1.setModel(new javax.swing.DefaultComboBoxModel(new String[] { "17-07-2022" }));
+        DTPCari1.setModel(new javax.swing.DefaultComboBoxModel(new String[] { "10-02-2026" }));
         DTPCari1.setDisplayFormat("dd-MM-yyyy");
         DTPCari1.setName("DTPCari1"); // NOI18N
         DTPCari1.setOpaque(false);
@@ -402,7 +367,7 @@ public final class DlgAuditBundleVAP extends javax.swing.JDialog {
         panelGlass9.add(jLabel21);
 
         DTPCari2.setForeground(new java.awt.Color(50, 70, 50));
-        DTPCari2.setModel(new javax.swing.DefaultComboBoxModel(new String[] { "17-07-2022" }));
+        DTPCari2.setModel(new javax.swing.DefaultComboBoxModel(new String[] { "10-02-2026" }));
         DTPCari2.setDisplayFormat("dd-MM-yyyy");
         DTPCari2.setName("DTPCari2"); // NOI18N
         DTPCari2.setOpaque(false);
@@ -496,7 +461,7 @@ public final class DlgAuditBundleVAP extends javax.swing.JDialog {
         FormInput.setLayout(null);
 
         Tanggal.setForeground(new java.awt.Color(50, 70, 50));
-        Tanggal.setModel(new javax.swing.DefaultComboBoxModel(new String[] { "17-07-2022" }));
+        Tanggal.setModel(new javax.swing.DefaultComboBoxModel(new String[] { "10-02-2026" }));
         Tanggal.setDisplayFormat("dd-MM-yyyy");
         Tanggal.setName("Tanggal"); // NOI18N
         Tanggal.setOpaque(false);
@@ -559,7 +524,7 @@ public final class DlgAuditBundleVAP extends javax.swing.JDialog {
         FormInput.add(jLabel14);
         jLabel14.setBounds(64, 40, 180, 23);
 
-        PosisiKepala.setModel(new javax.swing.DefaultComboBoxModel(new String[] { "Ya", "Tidak" }));
+        PosisiKepala.setModel(new javax.swing.DefaultComboBoxModel(new String[] { "Ya", "Tidak", "NA" }));
         PosisiKepala.setName("PosisiKepala"); // NOI18N
         PosisiKepala.addKeyListener(new java.awt.event.KeyAdapter() {
             public void keyPressed(java.awt.event.KeyEvent evt) {
@@ -575,7 +540,7 @@ public final class DlgAuditBundleVAP extends javax.swing.JDialog {
         FormInput.add(jLabel17);
         jLabel17.setBounds(410, 40, 280, 23);
 
-        PengkajianSetiapHari.setModel(new javax.swing.DefaultComboBoxModel(new String[] { "Ya", "Tidak" }));
+        PengkajianSetiapHari.setModel(new javax.swing.DefaultComboBoxModel(new String[] { "Ya", "Tidak", "NA" }));
         PengkajianSetiapHari.setName("PengkajianSetiapHari"); // NOI18N
         PengkajianSetiapHari.addKeyListener(new java.awt.event.KeyAdapter() {
             public void keyPressed(java.awt.event.KeyEvent evt) {
@@ -591,7 +556,7 @@ public final class DlgAuditBundleVAP extends javax.swing.JDialog {
         FormInput.add(jLabel23);
         jLabel23.setBounds(64, 70, 180, 23);
 
-        HandHygiene.setModel(new javax.swing.DefaultComboBoxModel(new String[] { "Ya", "Tidak" }));
+        HandHygiene.setModel(new javax.swing.DefaultComboBoxModel(new String[] { "Ya", "Tidak", "NA" }));
         HandHygiene.setName("HandHygiene"); // NOI18N
         HandHygiene.addKeyListener(new java.awt.event.KeyAdapter() {
             public void keyPressed(java.awt.event.KeyEvent evt) {
@@ -618,7 +583,7 @@ public final class DlgAuditBundleVAP extends javax.swing.JDialog {
         FormInput.add(jLabel20);
         jLabel20.setBounds(64, 100, 180, 23);
 
-        Profilaksis.setModel(new javax.swing.DefaultComboBoxModel(new String[] { "Ya", "Tidak" }));
+        Profilaksis.setModel(new javax.swing.DefaultComboBoxModel(new String[] { "Ya", "Tidak", "NA" }));
         Profilaksis.setName("Profilaksis"); // NOI18N
         Profilaksis.addKeyListener(new java.awt.event.KeyAdapter() {
             public void keyPressed(java.awt.event.KeyEvent evt) {
@@ -628,7 +593,7 @@ public final class DlgAuditBundleVAP extends javax.swing.JDialog {
         FormInput.add(Profilaksis);
         Profilaksis.setBounds(709, 100, 78, 23);
 
-        Suction.setModel(new javax.swing.DefaultComboBoxModel(new String[] { "Ya", "Tidak" }));
+        Suction.setModel(new javax.swing.DefaultComboBoxModel(new String[] { "Ya", "Tidak", "NA" }));
         Suction.setName("Suction"); // NOI18N
         Suction.addKeyListener(new java.awt.event.KeyAdapter() {
             public void keyPressed(java.awt.event.KeyEvent evt) {
@@ -644,7 +609,7 @@ public final class DlgAuditBundleVAP extends javax.swing.JDialog {
         FormInput.add(jLabel22);
         jLabel22.setBounds(410, 70, 280, 23);
 
-        OralHygiene.setModel(new javax.swing.DefaultComboBoxModel(new String[] { "Ya", "Tidak" }));
+        OralHygiene.setModel(new javax.swing.DefaultComboBoxModel(new String[] { "Ya", "Tidak", "NA" }));
         OralHygiene.setName("OralHygiene"); // NOI18N
         OralHygiene.addKeyListener(new java.awt.event.KeyAdapter() {
             public void keyPressed(java.awt.event.KeyEvent evt) {
@@ -660,7 +625,7 @@ public final class DlgAuditBundleVAP extends javax.swing.JDialog {
         FormInput.add(jLabel24);
         jLabel24.setBounds(410, 100, 280, 23);
 
-        PenggunaanApd.setModel(new javax.swing.DefaultComboBoxModel(new String[] { "Ya", "Tidak" }));
+        PenggunaanApd.setModel(new javax.swing.DefaultComboBoxModel(new String[] { "Ya", "Tidak", "NA" }));
         PenggunaanApd.setName("PenggunaanApd"); // NOI18N
         PenggunaanApd.addKeyListener(new java.awt.event.KeyAdapter() {
             public void keyPressed(java.awt.event.KeyEvent evt) {
@@ -676,7 +641,7 @@ public final class DlgAuditBundleVAP extends javax.swing.JDialog {
         FormInput.add(jLabel25);
         jLabel25.setBounds(64, 130, 180, 23);
 
-        Dvt.setModel(new javax.swing.DefaultComboBoxModel(new String[] { "Ya", "Tidak" }));
+        Dvt.setModel(new javax.swing.DefaultComboBoxModel(new String[] { "Ya", "Tidak", "NA" }));
         Dvt.setName("Dvt"); // NOI18N
         Dvt.addKeyListener(new java.awt.event.KeyAdapter() {
             public void keyPressed(java.awt.event.KeyEvent evt) {
@@ -744,7 +709,7 @@ public final class DlgAuditBundleVAP extends javax.swing.JDialog {
                 PengkajianSetiapHari.getSelectedItem().toString(),HandHygiene.getSelectedItem().toString(),OralHygiene.getSelectedItem().toString(),Suction.getSelectedItem().toString(),
                 Profilaksis.getSelectedItem().toString(),Dvt.getSelectedItem().toString(),PenggunaanApd.getSelectedItem().toString()
             })==true){
-                tampil();
+                runBackground(() ->tampil());
                 emptTeks();
             }  
         }
@@ -775,7 +740,7 @@ public final class DlgAuditBundleVAP extends javax.swing.JDialog {
             if(Sequel.queryu2tf("delete from audit_bundle_vap where id_ruang=? and tanggal=?",2,new String[]{
                 tbObat.getValueAt(tbObat.getSelectedRow(),1).toString(),tbObat.getValueAt(tbObat.getSelectedRow(),0).toString()
             })==true){
-                tampil();
+                runBackground(() ->tampil());
                 emptTeks();
             }else{
                 JOptionPane.showMessageDialog(null,"Gagal menghapus..!!");
@@ -800,7 +765,7 @@ public final class DlgAuditBundleVAP extends javax.swing.JDialog {
                  Valid.SetTgl(Tanggal.getSelectedItem()+"")+" "+Jam.getSelectedItem()+":"+Menit.getSelectedItem()+":"+Detik.getSelectedItem(),KdRuang.getText(),PosisiKepala.getSelectedItem().toString(),PengkajianSetiapHari.getSelectedItem().toString(),HandHygiene.getSelectedItem().toString(),
                 OralHygiene.getSelectedItem().toString(),Suction.getSelectedItem().toString(),Profilaksis.getSelectedItem().toString(),Dvt.getSelectedItem().toString(),PenggunaanApd.getSelectedItem().toString(),tbObat.getValueAt(tbObat.getSelectedRow(),1).toString(),tbObat.getValueAt(tbObat.getSelectedRow(),0).toString()
             });
-            if(tabMode.getRowCount()!=0){tampil();}
+            if(tabMode.getRowCount()!=0){runBackground(() ->tampil());}
             emptTeks();
         }
 }//GEN-LAST:event_BtnEditActionPerformed
@@ -814,7 +779,6 @@ public final class DlgAuditBundleVAP extends javax.swing.JDialog {
 }//GEN-LAST:event_BtnEditKeyPressed
 
     private void BtnKeluarActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_BtnKeluarActionPerformed
-        ruang.dispose();
         dispose();
 }//GEN-LAST:event_BtnKeluarActionPerformed
 
@@ -879,7 +843,7 @@ public final class DlgAuditBundleVAP extends javax.swing.JDialog {
 }//GEN-LAST:event_TCariKeyPressed
 
     private void BtnCariActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_BtnCariActionPerformed
-        tampil();
+        runBackground(() ->tampil());
 }//GEN-LAST:event_BtnCariActionPerformed
 
     private void BtnCariKeyPressed(java.awt.event.KeyEvent evt) {//GEN-FIRST:event_BtnCariKeyPressed
@@ -892,13 +856,13 @@ public final class DlgAuditBundleVAP extends javax.swing.JDialog {
 
     private void BtnAllActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_BtnAllActionPerformed
         TCari.setText("");
-        tampil();
+        runBackground(() ->tampil());
 }//GEN-LAST:event_BtnAllActionPerformed
 
     private void BtnAllKeyPressed(java.awt.event.KeyEvent evt) {//GEN-FIRST:event_BtnAllKeyPressed
         if(evt.getKeyCode()==KeyEvent.VK_SPACE){
             TCari.setText("");
-            tampil();
+            runBackground(() ->tampil());
         }else{
             //Valid.pindah(evt, BtnCari, TPasien);
         }
@@ -987,6 +951,29 @@ public final class DlgAuditBundleVAP extends javax.swing.JDialog {
     }//GEN-LAST:event_KdRuangKeyPressed
 
     private void btnPetugasActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_btnPetugasActionPerformed
+        DlgCariRuangAuditKepatuhan ruang=new DlgCariRuangAuditKepatuhan(null,false);
+        ruang.addWindowListener(new WindowListener() {
+            @Override
+            public void windowOpened(WindowEvent e) {}
+            @Override
+            public void windowClosing(WindowEvent e) {}
+            @Override
+            public void windowClosed(WindowEvent e) {
+                if(ruang.getTable().getSelectedRow()!= -1){                   
+                    KdRuang.setText(ruang.getTable().getValueAt(ruang.getTable().getSelectedRow(),0).toString());
+                    NmRuang.setText(ruang.getTable().getValueAt(ruang.getTable().getSelectedRow(),1).toString());
+                }  
+                KdRuang.requestFocus();
+            }
+            @Override
+            public void windowIconified(WindowEvent e) {}
+            @Override
+            public void windowDeiconified(WindowEvent e) {}
+            @Override
+            public void windowActivated(WindowEvent e) {}
+            @Override
+            public void windowDeactivated(WindowEvent e) {}
+        }); 
         ruang.emptTeks();
         ruang.setSize(internalFrame1.getWidth()-20,internalFrame1.getHeight()-20);
         ruang.setLocationRelativeTo(internalFrame1);
@@ -996,6 +983,31 @@ public final class DlgAuditBundleVAP extends javax.swing.JDialog {
     private void btnPetugasKeyPressed(java.awt.event.KeyEvent evt) {//GEN-FIRST:event_btnPetugasKeyPressed
         //Valid.pindah(evt,Detik,BB);
     }//GEN-LAST:event_btnPetugasKeyPressed
+
+    private void formWindowOpened(java.awt.event.WindowEvent evt) {//GEN-FIRST:event_formWindowOpened
+        if(koneksiDB.CARICEPAT().equals("aktif")){
+            TCari.getDocument().addDocumentListener(new javax.swing.event.DocumentListener(){
+                @Override
+                public void insertUpdate(DocumentEvent e) {
+                    if(TCari.getText().length()>2){
+                        runBackground(() ->tampil());
+                    }
+                }
+                @Override
+                public void removeUpdate(DocumentEvent e) {
+                    if(TCari.getText().length()>2){
+                        runBackground(() ->tampil());
+                    }
+                }
+                @Override
+                public void changedUpdate(DocumentEvent e) {
+                    if(TCari.getText().length()>2){
+                        runBackground(() ->tampil());
+                    }
+                }
+            });
+        }
+    }//GEN-LAST:event_formWindowOpened
 
     /**
     * @param args the command line arguments
@@ -1072,7 +1084,7 @@ public final class DlgAuditBundleVAP extends javax.swing.JDialog {
     private void tampil() {
         Valid.tabelKosong(tabMode);
         try{
-            if(TCari.getText().toString().trim().equals("")){
+            if(TCari.getText().trim().equals("")){
                 ps=koneksi.prepareStatement(
                     "select audit_bundle_vap.id_ruang,ruang_audit_kepatuhan.nama_ruang,audit_bundle_vap.tanggal,audit_bundle_vap.posisi_kepala,"+
                     "audit_bundle_vap.pengkajian_setiap_hari,audit_bundle_vap.hand_hygiene,audit_bundle_vap.oral_hygiene,audit_bundle_vap.suction_manajemen_sekresi,"+
@@ -1088,9 +1100,9 @@ public final class DlgAuditBundleVAP extends javax.swing.JDialog {
                     "where audit_bundle_vap.tanggal between ? and ? "+
                     "and (audit_bundle_vap.id_ruang like ? or ruang_audit_kepatuhan.nama_ruang like ?) order by audit_bundle_vap.tanggal");
             }
-                
+
             try {
-                if(TCari.getText().toString().trim().equals("")){
+                if(TCari.getText().trim().equals("")){
                     ps.setString(1,Valid.SetTgl(DTPCari1.getSelectedItem()+"")+" 00:00:00");
                     ps.setString(2,Valid.SetTgl(DTPCari2.getSelectedItem()+"")+" 23:59:59");
                 }else{
@@ -1099,47 +1111,103 @@ public final class DlgAuditBundleVAP extends javax.swing.JDialog {
                     ps.setString(3,"%"+TCari.getText()+"%");
                     ps.setString(4,"%"+TCari.getText()+"%");
                 }
-                    
+
                 rs=ps.executeQuery();
                 ttlposisi_kepala=0;ttlpengkajian_setiap_hari=0;ttlhand_hygiene=0;ttloral_hygiene=0;ttlsuction_manajemen_sekresi=0;ttlprofilaksis_peptic_ulcer=0;ttldvt_profiklasisi=0;ttlpenggunaan_apd_sesuai=0;ttlpenilaian=0;
+                naposisi_kepala=0;napengkajian_setiap_hari=0;nahand_hygiene=0;naoral_hygiene=0;nasuction_manajemen_sekresi=0;naprofilaksis_peptic_ulcer=0;nadvt_profiklasisi=0;napenggunaan_apd_sesuai=0;
                 i=1;
                 while(rs.next()){
-                    posisi_kepala=Double.parseDouble(rs.getString("posisi_kepala").replaceAll("Ya","1").replaceAll("Tidak","0"));
-                    ttlposisi_kepala=ttlposisi_kepala+posisi_kepala;
-                    pengkajian_setiap_hari=Double.parseDouble(rs.getString("pengkajian_setiap_hari").replaceAll("Ya","1").replaceAll("Tidak","0"));
-                    ttlpengkajian_setiap_hari=ttlpengkajian_setiap_hari+pengkajian_setiap_hari;
-                    hand_hygiene=Double.parseDouble(rs.getString("hand_hygiene").replaceAll("Ya","1").replaceAll("Tidak","0"));
-                    ttlhand_hygiene=ttlhand_hygiene+hand_hygiene;
-                    oral_hygiene=Double.parseDouble(rs.getString("oral_hygiene").replaceAll("Ya","1").replaceAll("Tidak","0"));
-                    ttloral_hygiene=ttloral_hygiene+oral_hygiene;
-                    suction_manajemen_sekresi=Double.parseDouble(rs.getString("suction_manajemen_sekresi").replaceAll("Ya","1").replaceAll("Tidak","0"));
-                    ttlsuction_manajemen_sekresi=ttlsuction_manajemen_sekresi+suction_manajemen_sekresi;
-                    profilaksis_peptic_ulcer=Double.parseDouble(rs.getString("profilaksis_peptic_ulcer").replaceAll("Ya","1").replaceAll("Tidak","0"));
-                    ttlprofilaksis_peptic_ulcer=ttlprofilaksis_peptic_ulcer+profilaksis_peptic_ulcer;
-                    dvt_profiklasisi=Double.parseDouble(rs.getString("dvt_profiklasisi").replaceAll("Ya","1").replaceAll("Tidak","0"));
-                    ttldvt_profiklasisi=ttldvt_profiklasisi+dvt_profiklasisi;
-                    penggunaan_apd_sesuai=Double.parseDouble(rs.getString("penggunaan_apd_sesuai").replaceAll("Ya","1").replaceAll("Tidak","0"));
-                    ttlpenggunaan_apd_sesuai=ttlpenggunaan_apd_sesuai+penggunaan_apd_sesuai;
-                    ttlpenilaian=ttlpenilaian+(((posisi_kepala+pengkajian_setiap_hari+hand_hygiene+oral_hygiene+suction_manajemen_sekresi+profilaksis_peptic_ulcer+dvt_profiklasisi+penggunaan_apd_sesuai)/8)*100);
+                    pembagi=0;
+                    posisi_kepala=0;pengkajian_setiap_hari=0;hand_hygiene=0;oral_hygiene=0;suction_manajemen_sekresi=0;profilaksis_peptic_ulcer=0;dvt_profiklasisi=0;penggunaan_apd_sesuai=0;
+
+                    if(!rs.getString("posisi_kepala").equals("NA")){
+                        posisi_kepala=Double.parseDouble(rs.getString("posisi_kepala").replaceAll("Ya","1").replaceAll("Tidak","0"));
+                        ttlposisi_kepala=ttlposisi_kepala+posisi_kepala;
+                        pembagi++;
+                    }else{
+                        naposisi_kepala++;
+                    }
+
+                    if(!rs.getString("pengkajian_setiap_hari").equals("NA")){
+                        pengkajian_setiap_hari=Double.parseDouble(rs.getString("pengkajian_setiap_hari").replaceAll("Ya","1").replaceAll("Tidak","0"));
+                        ttlpengkajian_setiap_hari=ttlpengkajian_setiap_hari+pengkajian_setiap_hari;
+                        pembagi++;
+                    }else{
+                        napengkajian_setiap_hari++;
+                    }
+
+                    if(!rs.getString("hand_hygiene").equals("NA")){
+                        hand_hygiene=Double.parseDouble(rs.getString("hand_hygiene").replaceAll("Ya","1").replaceAll("Tidak","0"));
+                        ttlhand_hygiene=ttlhand_hygiene+hand_hygiene;
+                        pembagi++;
+                    }else{
+                        nahand_hygiene++;
+                    }
+
+                    if(!rs.getString("oral_hygiene").equals("NA")){
+                        oral_hygiene=Double.parseDouble(rs.getString("oral_hygiene").replaceAll("Ya","1").replaceAll("Tidak","0"));
+                        ttloral_hygiene=ttloral_hygiene+oral_hygiene;
+                        pembagi++;
+                    }else{
+                        naoral_hygiene++;
+                    }
+
+                    if(!rs.getString("suction_manajemen_sekresi").equals("NA")){
+                        suction_manajemen_sekresi=Double.parseDouble(rs.getString("suction_manajemen_sekresi").replaceAll("Ya","1").replaceAll("Tidak","0"));
+                        ttlsuction_manajemen_sekresi=ttlsuction_manajemen_sekresi+suction_manajemen_sekresi;
+                        pembagi++;
+                    }else{
+                        nasuction_manajemen_sekresi++;
+                    }
+
+                    if(!rs.getString("profilaksis_peptic_ulcer").equals("NA")){
+                        profilaksis_peptic_ulcer=Double.parseDouble(rs.getString("profilaksis_peptic_ulcer").replaceAll("Ya","1").replaceAll("Tidak","0"));
+                        ttlprofilaksis_peptic_ulcer=ttlprofilaksis_peptic_ulcer+profilaksis_peptic_ulcer;
+                        pembagi++;
+                    }else{
+                        naprofilaksis_peptic_ulcer++;
+                    }
+
+                    if(!rs.getString("dvt_profiklasisi").equals("NA")){
+                        dvt_profiklasisi=Double.parseDouble(rs.getString("dvt_profiklasisi").replaceAll("Ya","1").replaceAll("Tidak","0"));
+                        ttldvt_profiklasisi=ttldvt_profiklasisi+dvt_profiklasisi;
+                        pembagi++;
+                    }else{
+                        nadvt_profiklasisi++;
+                    }
+
+                    if(!rs.getString("penggunaan_apd_sesuai").equals("NA")){
+                        penggunaan_apd_sesuai=Double.parseDouble(rs.getString("penggunaan_apd_sesuai").replaceAll("Ya","1").replaceAll("Tidak","0"));
+                        ttlpenggunaan_apd_sesuai=ttlpenggunaan_apd_sesuai+penggunaan_apd_sesuai;
+                        pembagi++;
+                    }else{
+                        napenggunaan_apd_sesuai++;
+                    }
+
+                    ttlpenilaian=ttlpenilaian+(((posisi_kepala+pengkajian_setiap_hari+hand_hygiene+oral_hygiene+suction_manajemen_sekresi+profilaksis_peptic_ulcer+dvt_profiklasisi+penggunaan_apd_sesuai)/pembagi)*100);
                     tabMode.addRow(new Object[]{
                         rs.getString("tanggal"),rs.getString("id_ruang"),rs.getString("nama_ruang"),rs.getString("posisi_kepala"),rs.getString("pengkajian_setiap_hari"),
                         rs.getString("hand_hygiene"),rs.getString("oral_hygiene"),rs.getString("suction_manajemen_sekresi"),rs.getString("profilaksis_peptic_ulcer"),rs.getString("dvt_profiklasisi"),rs.getString("penggunaan_apd_sesuai"),
-                        Math.round(((posisi_kepala+pengkajian_setiap_hari+hand_hygiene+oral_hygiene+suction_manajemen_sekresi+profilaksis_peptic_ulcer+dvt_profiklasisi+penggunaan_apd_sesuai)/8)*100)+" %"
+                        Math.round(((posisi_kepala+pengkajian_setiap_hari+hand_hygiene+oral_hygiene+suction_manajemen_sekresi+profilaksis_peptic_ulcer+dvt_profiklasisi+penggunaan_apd_sesuai)/pembagi)*100)+" %"
                     });
                     i++;
                 }
                 i=i-1;
                 if(i>0){
                     tabMode.addRow(new Object[]{
-                        "","Ya",":",""+ttlposisi_kepala,""+ttlpengkajian_setiap_hari,""+ttlhand_hygiene,""+ttloral_hygiene,""+ttlsuction_manajemen_sekresi,""+ttlprofilaksis_peptic_ulcer,""+ttldvt_profiklasisi,""+ttlpenggunaan_apd_sesuai,""+(posisi_kepala+pengkajian_setiap_hari+hand_hygiene+oral_hygiene+suction_manajemen_sekresi+profilaksis_peptic_ulcer+dvt_profiklasisi+penggunaan_apd_sesuai)
+                        "","NA",":",""+naposisi_kepala,""+napengkajian_setiap_hari,""+nahand_hygiene,""+naoral_hygiene,""+nasuction_manajemen_sekresi,""+naprofilaksis_peptic_ulcer,""+nadvt_profiklasisi,""+napenggunaan_apd_sesuai,
+                        ""+(naposisi_kepala+napengkajian_setiap_hari+nahand_hygiene+naoral_hygiene+nasuction_manajemen_sekresi+naprofilaksis_peptic_ulcer+nadvt_profiklasisi+napenggunaan_apd_sesuai)
                     });
                     tabMode.addRow(new Object[]{
-                        "","Tidak",":",""+(i-ttlposisi_kepala),""+(i-ttlpengkajian_setiap_hari),""+(i-ttlhand_hygiene),""+(i-ttloral_hygiene),""+(i-ttlsuction_manajemen_sekresi),""+(i-ttlprofilaksis_peptic_ulcer),""+(i-ttldvt_profiklasisi),""+(i-ttlpenggunaan_apd_sesuai),""+((i-ttlposisi_kepala)+
-                        (i-ttlpengkajian_setiap_hari)+(i-ttlhand_hygiene)+(i-ttloral_hygiene)+(i-ttlsuction_manajemen_sekresi)+(i-ttlprofilaksis_peptic_ulcer)+(i-ttldvt_profiklasisi)+(i-ttlpenggunaan_apd_sesuai))
+                        "","Ya",":",""+ttlposisi_kepala,""+ttlpengkajian_setiap_hari,""+ttlhand_hygiene,""+ttloral_hygiene,""+ttlsuction_manajemen_sekresi,""+ttlprofilaksis_peptic_ulcer,""+ttldvt_profiklasisi,""+ttlpenggunaan_apd_sesuai,""+(ttlposisi_kepala+ttlpengkajian_setiap_hari+ttlhand_hygiene+ttloral_hygiene+ttlsuction_manajemen_sekresi+ttlprofilaksis_peptic_ulcer+ttldvt_profiklasisi+ttlpenggunaan_apd_sesuai)
                     });
                     tabMode.addRow(new Object[]{
-                        "","Rata-rata",":",Math.round((ttlposisi_kepala/i)*100)+" %",Math.round((ttlpengkajian_setiap_hari/i)*100)+" %",Math.round((ttlhand_hygiene/i)*100)+" %",
-                        Math.round((ttloral_hygiene/i)*100)+" %",Math.round((ttlsuction_manajemen_sekresi/i)*100)+" %",Math.round((ttlprofilaksis_peptic_ulcer/i)*100)+" %",Math.round((ttldvt_profiklasisi/i)*100)+" %",Math.round((ttlpenggunaan_apd_sesuai/i)*100)+" %",Math.round(ttlpenilaian/i)+" %"
+                        "","Tidak",":",""+(i-ttlposisi_kepala-naposisi_kepala),""+(i-ttlpengkajian_setiap_hari-napengkajian_setiap_hari),""+(i-ttlhand_hygiene-nahand_hygiene),""+(i-ttloral_hygiene-naoral_hygiene),""+(i-ttlsuction_manajemen_sekresi-nasuction_manajemen_sekresi),""+(i-ttlprofilaksis_peptic_ulcer-naprofilaksis_peptic_ulcer),""+(i-ttldvt_profiklasisi-nadvt_profiklasisi),""+(i-ttlpenggunaan_apd_sesuai-napenggunaan_apd_sesuai),""+((i-ttlposisi_kepala-naposisi_kepala)+
+                        (i-ttlpengkajian_setiap_hari-napengkajian_setiap_hari)+(i-ttlhand_hygiene-nahand_hygiene)+(i-ttloral_hygiene-naoral_hygiene)+(i-ttlsuction_manajemen_sekresi-nasuction_manajemen_sekresi)+(i-ttlprofilaksis_peptic_ulcer-naprofilaksis_peptic_ulcer)+(i-ttldvt_profiklasisi-nadvt_profiklasisi)+(i-ttlpenggunaan_apd_sesuai-napenggunaan_apd_sesuai))
+                    });
+                    tabMode.addRow(new Object[]{
+                        "","Rata-rata",":",Math.round((ttlposisi_kepala/(i-naposisi_kepala))*100)+" %",Math.round((ttlpengkajian_setiap_hari/(i-napengkajian_setiap_hari))*100)+" %",Math.round((ttlhand_hygiene/(i-nahand_hygiene))*100)+" %",
+                        Math.round((ttloral_hygiene/(i-naoral_hygiene))*100)+" %",Math.round((ttlsuction_manajemen_sekresi/(i-nasuction_manajemen_sekresi))*100)+" %",Math.round((ttlprofilaksis_peptic_ulcer/(i-naprofilaksis_peptic_ulcer))*100)+" %",Math.round((ttldvt_profiklasisi/(i-nadvt_profiklasisi))*100)+" %",Math.round((ttlpenggunaan_apd_sesuai/(i-napenggunaan_apd_sesuai))*100)+" %",Math.round(ttlpenilaian/i)+" %"
                     });
                 }
             } catch (Exception e) {
@@ -1267,5 +1335,37 @@ public final class DlgAuditBundleVAP extends javax.swing.JDialog {
         };
         // Timer
         new Timer(1000, taskPerformer).start();
+    }
+    
+    private void runBackground(Runnable task) {
+        if (ceksukses) return;
+        if (executor.isShutdown() || executor.isTerminated()) return;
+        if (!isDisplayable()) return;
+
+        ceksukses = true;
+        setCursor(Cursor.getPredefinedCursor(Cursor.WAIT_CURSOR));
+
+        try {
+            executor.submit(() -> {
+                try {
+                    task.run();
+                } finally {
+                    ceksukses = false;
+                    SwingUtilities.invokeLater(() -> {
+                        if (isDisplayable()) {
+                            setCursor(Cursor.getDefaultCursor());
+                        }
+                    });
+                }
+            });
+        } catch (RejectedExecutionException ex) {
+            ceksukses = false;
+        }
+    }
+    
+    @Override
+    public void dispose() {
+        executor.shutdownNow();
+        super.dispose();
     }
 }
