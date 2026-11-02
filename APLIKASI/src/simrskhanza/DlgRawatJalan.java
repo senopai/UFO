@@ -1045,6 +1045,7 @@ public final class DlgRawatJalan extends javax.swing.JDialog {
         TCavumDouglas.setDocument(new batasInput((byte)50).getKata(TCavumDouglas));
         Catatan.setDocument(new batasInput((int)700).getKata(Catatan));
         
+        panelDiagnosa1.setSumberNoRawat(() -> TNoRw.getText()); // [FIX-SALINDX] No.Rawat tujuan salin diagnosa = yang sedang dipilih di form ini
         panelDiagnosa1.TabRawat.addMouseListener(new MouseListener() {
             @Override
             public void mouseClicked(MouseEvent e) {

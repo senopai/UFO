@@ -45,6 +45,7 @@ public class DlgDiagnosaPenyakit extends javax.swing.JDialog {
         TNoRw.setDocument(new batasInput((byte)17).getKata(TNoRw));
         TCari.setDocument(new batasInput((byte)100).getKata(TCari));       
         
+        panelDiagnosa1.setSumberNoRawat(() -> TNoRw.getText()); // [FIX-SALINDX] No.Rawat tujuan salin diagnosa = yang sedang dipilih di form ini
         panelDiagnosa1.tbDiagnosaPasien.addMouseListener(new MouseListener() {
             @Override
             public void mouseClicked(MouseEvent e) {

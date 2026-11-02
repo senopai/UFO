@@ -275,6 +275,7 @@ public final class DlgPeresepanDokter extends javax.swing.JDialog {
         tbDetailResepObatRacikan.setDefaultRenderer(Object.class,warna3);
         
         TCari.setDocument(new batasInput((byte)100).getKata(TCari));
+        pasangCariCepat(); // [FIX-CARICEPAT]
         jam();
         
         try {
@@ -1578,28 +1579,66 @@ private void ppBersihkanActionPerformed(java.awt.event.ActionEvent evt) {//GEN-F
         } 
         
         runBackground(() ->LoadPengaturan());
+        pasangCariCepat(); // [FIX-CARICEPAT] pindah ke helper di bawah
+    }
+    
+    private javax.swing.Timer timerCariCepat=null;
         
-        if(koneksiDB.CARICEPAT().equals("aktif")){
-            TCari.getDocument().addDocumentListener(new javax.swing.event.DocumentListener(){
-                @Override
-                public void insertUpdate(DocumentEvent e) {
-                    if(TCari.getText().length()>2){
-                        BtnCariActionPerformed(null);
+    private void pasangCariCepat(){
+        if(timerCariCepat!=null){
+            return; // sudah terpasang
+        }
+        if(!koneksiDB.CARICEPAT().equals("aktif")){
+            return;
+        }
+        // Jeda 300 ms setelah ketikan terakhir: cache obat dibaca dari file tiap pencarian, jadi tidak perlu jalan di tiap huruf.
+        timerCariCepat=new javax.swing.Timer(300,new java.awt.event.ActionListener(){
+            @Override
+            public void actionPerformed(java.awt.event.ActionEvent e) {
+                jalankanCariCepat();
+            }
+        });
+        timerCariCepat.setRepeats(false);
+        TCari.getDocument().addDocumentListener(new javax.swing.event.DocumentListener(){
+            @Override
+            public void insertUpdate(DocumentEvent e) {
+                timerCariCepat.restart();
+            }
+            @Override
+            public void removeUpdate(DocumentEvent e) {
+                timerCariCepat.restart();
+            }
+            @Override
+            public void changedUpdate(DocumentEvent e) {
+                timerCariCepat.restart();
+            }
+        });
+    }
+
+    private void jalankanCariCepat(){
+        int panjang=TCari.getText().trim().length();
+        if(panjang>0&&panjang<3){
+            return; // 1-2 huruf ditunggu dulu (minimal 3 huruf, sama seperti DlgKamarInap); kosong = tampilkan semua lagi
+        }
+        if(ceksukses){
+            timerCariCepat.restart(); // proses sebelumnya belum selesai (runBackground menolak panggilan saat sibuk), coba lagi sebentar
+            return;
+        }
+        if(TabRawat.getSelectedIndex()==0){
+            BtnCariActionPerformed(null);
+        }else if(TabRawat.getSelectedIndex()==1){
+            // Tab Racikan: BtnCari memunculkan dialog kalau racikan belum dipilih/lengkap. Saat mengetik itu mengganggu,
+            // jadi syaratnya dicek diam-diam dan pencarian hanya jalan kalau racikan sudah lengkap.
+            int baris=tbObatResepRacikan.getSelectedRow();
+            if(tbObatResepRacikan.getRowCount()>0&&baris!=-1){
+                for(int kolom=0;kolom<=6;kolom++){
+                    Object nilai=tbObatResepRacikan.getValueAt(baris,kolom);
+                    if(nilai==null||nilai.toString().equals("")){
+                        return;
                     }
                 }
-                @Override
-                public void removeUpdate(DocumentEvent e) {
-                    if(TCari.getText().length()>2){
-                        BtnCariActionPerformed(null);
-                    }
-                }
-                @Override
-                public void changedUpdate(DocumentEvent e) {
-                    if(TCari.getText().length()>2){
-                        BtnCariActionPerformed(null);
-                    }
-                }
-            });
+                BtnCariActionPerformed(null);
+            }
         }
     }//GEN-LAST:event_formWindowOpened
 
@@ -4340,6 +4379,9 @@ private void ppBersihkanActionPerformed(java.awt.event.ActionEvent evt) {//GEN-F
     
     @Override
     public void dispose() {
+        if(timerCariCepat!=null){
+            timerCariCepat.stop(); // [FIX-CARICEPAT]
+        }
         executor.shutdownNow();
         super.dispose();
     }

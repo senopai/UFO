@@ -16017,6 +16017,19 @@ private void MnDataPemberianObatActionPerformed(java.awt.event.ActionEvent evt) 
         }
     }
     
+    private void MnBelumTerbitSuratKontrolActionPerformed(java.awt.event.ActionEvent evt) {
+        terbitsep="and exists (select 1 from bridging_sep where bridging_sep.no_rawat=reg_periksa.no_rawat) "+
+                  "and not exists (select 1 from bridging_sep inner join bridging_surat_kontrol_bpjs on bridging_surat_kontrol_bpjs.no_sep=bridging_sep.no_sep "+
+                  "where bridging_sep.no_rawat=reg_periksa.no_rawat) ";
+        TabRawatMouseClicked(null);
+    }
+
+    private void MnSudahTerbitSuratKontrolActionPerformed(java.awt.event.ActionEvent evt) {
+        terbitsep="and exists (select 1 from bridging_sep inner join bridging_surat_kontrol_bpjs on bridging_surat_kontrol_bpjs.no_sep=bridging_sep.no_sep "+
+                  "where bridging_sep.no_rawat=reg_periksa.no_rawat) ";
+        TabRawatMouseClicked(null);
+    }
+    
     /**
     * @param args the command line arguments
     */
@@ -16466,7 +16479,7 @@ private void MnDataPemberianObatActionPerformed(java.awt.event.ActionEvent evt) 
                                   MnSkriningInstrumenMentalEmosional,MnCheckListKriteriaMasukNICU,MnCheckListKriteriaMasukPICU,MnSkriningInstrumenAMT,MnSkriningPneumoniaSeverityIndex,MnPenilaianAwalMedisRalanJantung,MnPenilaianAwalMedisRalanUrologi,
                                   MnHasilPemeriksaanTreadmill,MnHasilPemeriksaanECHOPediatrik,MnSkriningInstrumenESAT,MnSkriningCURB65,MnSkriningGiziKehamilan,MnSerahTerimaBarangAnggotaTubuh,MnPermintaanKonsultasiPerawat,
                                   MnPersetujuanBimbinganRohani,MnPermintaanPerlindunganDariKekerasan,MnSuratPermohonanPrivasi,MnSuratPermintaanSecondOpinion,MnCetakSuratKeteranganBerobat,MnSuratPenolakanResusitasi,MnCatatanObservasiRuangOperasi,
-                                  MnHasilPemeriksaanUSGAbdomen,MnIntervensiNyeriFarmakologi,MnIntervensiNyeriNonFarmakologi,MnPengajuanCutiPerawatanPasien,MnCheckListKriteriaMasukIsolasi,MnSkriningTOLAC,MnAdmisiSkoringTOLAC;
+                                  MnHasilPemeriksaanUSGAbdomen,MnIntervensiNyeriFarmakologi,MnIntervensiNyeriNonFarmakologi,MnPengajuanCutiPerawatanPasien,MnCheckListKriteriaMasukIsolasi,MnSkriningTOLAC,MnAdmisiSkoringTOLAC,MnBelumTerbitSuratKontrol,MnSudahTerbitSuratKontrol;
     private widget.Menu MnHasilUSG,MnHasilEndoskopi,MnRMSkrining,MnEdukasi,MnRehabMedik,MnRMSkriningRisikoKanker,MnRMSkriningKesehatanGigiMulut,MnSuratPersetujuan,MnSkriningInstrumen,MnSkriningParu;
     
     private void tampilkasir() { 
@@ -17760,6 +17773,30 @@ private void MnDataPemberianObatActionPerformed(java.awt.event.ActionEvent evt) 
         MnSudahTerbitSEP.setPreferredSize(new java.awt.Dimension(320, 26));
         MnSudahTerbitSEP.addActionListener(this::MnSudahTerbitSEPActionPerformed);
         
+        MnBelumTerbitSuratKontrol = new widget.MenuItem();
+        MnBelumTerbitSuratKontrol.setBackground(new java.awt.Color(255, 255, 254));
+        MnBelumTerbitSuratKontrol.setFont(new java.awt.Font("Tahoma", 0, 11)); 
+        MnBelumTerbitSuratKontrol.setForeground(new java.awt.Color(50, 50, 50));
+        MnBelumTerbitSuratKontrol.setIcon(new javax.swing.ImageIcon(getClass().getResource("/picture/category.png")));
+        MnBelumTerbitSuratKontrol.setText("Belum Terbit Surat Kontrol BPJS");
+        MnBelumTerbitSuratKontrol.setHorizontalAlignment(javax.swing.SwingConstants.LEFT);
+        MnBelumTerbitSuratKontrol.setHorizontalTextPosition(javax.swing.SwingConstants.RIGHT);
+        MnBelumTerbitSuratKontrol.setName("MnBelumTerbitSuratKontrol"); 
+        MnBelumTerbitSuratKontrol.setPreferredSize(new java.awt.Dimension(320, 26));
+        MnBelumTerbitSuratKontrol.addActionListener(this::MnBelumTerbitSuratKontrolActionPerformed);
+        
+        MnSudahTerbitSuratKontrol = new widget.MenuItem();
+        MnSudahTerbitSuratKontrol.setBackground(new java.awt.Color(255, 255, 254));
+        MnSudahTerbitSuratKontrol.setFont(new java.awt.Font("Tahoma", 0, 11)); 
+        MnSudahTerbitSuratKontrol.setForeground(new java.awt.Color(50, 50, 50));
+        MnSudahTerbitSuratKontrol.setIcon(new javax.swing.ImageIcon(getClass().getResource("/picture/category.png")));
+        MnSudahTerbitSuratKontrol.setText("Sudah Terbit Surat Kontrol BPJS");
+        MnSudahTerbitSuratKontrol.setHorizontalAlignment(javax.swing.SwingConstants.LEFT);
+        MnSudahTerbitSuratKontrol.setHorizontalTextPosition(javax.swing.SwingConstants.RIGHT);
+        MnSudahTerbitSuratKontrol.setName("MnSudahTerbitSuratKontrol"); 
+        MnSudahTerbitSuratKontrol.setPreferredSize(new java.awt.Dimension(320, 26));
+        MnSudahTerbitSuratKontrol.addActionListener(this::MnSudahTerbitSuratKontrolActionPerformed);
+        
         MnDataOperasi = new widget.MenuItem();
         MnDataOperasi.setBackground(new java.awt.Color(255, 255, 254));
         MnDataOperasi.setFont(new java.awt.Font("Tahoma", 0, 11)); 
@@ -18866,6 +18903,8 @@ private void MnDataPemberianObatActionPerformed(java.awt.event.ActionEvent evt) 
         MnBridging.add(ppDataIndukKecelakaan);
         MnBridging.add(MnBelumTerbitSEP);
         MnBridging.add(MnSudahTerbitSEP);
+        MnBridging.add(MnBelumTerbitSuratKontrol); // [FIX-SURKON]
+        MnBridging.add(MnSudahTerbitSuratKontrol); // [FIX-SURKON]
         MnBridging.add(MnSJP);
         MnBridging.add(MnPCare);
         MnBridging.add(MnRujukSisrute);

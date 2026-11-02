@@ -3771,6 +3771,8 @@ private void BtnSimpanActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIR
             Valid.textKosong(nmpangkatpolri,"Pangkat POLRI");
         }else if((chkPolri.isSelected()==true)&&nmjabatanpolri.getText().trim().equals("")){
             Valid.textKosong(nmjabatanpolri,"Jabatan POLRI");
+        }else if(cekDuplikatNikBpjs("",false)==true){ // [FIX-DUPLIKAT] NIK / No.BPJS sudah dipakai pasien lain; pesan ditampilkan di dalam method
+            return;
         }else{
             if(Kelurahan.isEditable()==true){
                 Sequel.queryu4("insert ignore into kelurahan values(?,?)",2,new String[]{"0",Kelurahan.getText()});
@@ -4117,6 +4119,8 @@ private void BtnEditActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST
             Valid.textKosong(nmpangkatpolri,"Pangkat POLRI");
         }else if((chkPolri.isSelected()==true)&&nmjabatanpolri.getText().trim().equals("")){
             Valid.textKosong(nmjabatanpolri,"Jabatan POLRI");
+        }else if(cekDuplikatNikBpjs(Kd2.getText(),true)==true){ // [FIX-DUPLIKAT] hanya dicek bila NIK/No.BPJS diubah; pesan ditampilkan di dalam method
+            return;
         }else{
             if(Kelurahan.isEditable()==true){
                 Sequel.queryu4("insert ignore into kelurahan values(?,?)",2,new String[]{"0",Kelurahan.getText()});
@@ -9599,6 +9603,100 @@ private void KabupatenMouseMoved(java.awt.event.MouseEvent evt) {//GEN-FIRST:eve
             }.execute(); 
         }
     }
+    
+    // [FIX-DUPLIKAT] ===================================================================================
+    // Cegah pasien dobel: NIK (no_ktp) dan No.Peserta BPJS (no_peserta) tidak boleh sama dengan pasien lain.
+    // - noRmSendiri : No.RM pasien yang sedang diedit (diabaikan saat membandingkan); kosong untuk pasien baru.
+    // - edit        : true = hanya cek kolom yang nilainya berubah, supaya data lama yang sudah terlanjur dobel masih bisa diedit.
+    // Return true bila ditemukan duplikat (pesan sudah ditampilkan, simpan harus dibatalkan).
+    private boolean cekDuplikatNikBpjs(String noRmSendiri,boolean edit) {
+        String nik=TKtp.getText().trim();
+        String bpjs=TNoPeserta.getText().trim();
+        try {
+            if(edit){
+                if(nik.equals(ambilNilaiPasien("no_ktp",noRmSendiri).trim())){
+                    nik="";
+                }
+                if(bpjs.equals(ambilNilaiPasien("no_peserta",noRmSendiri).trim())){
+                    bpjs="";
+                }
+            }
+            if(isIdentitasValid(nik)){
+                String pasienLain=cariPasienLain("no_ktp",nik,noRmSendiri);
+                if(!pasienLain.equals("")){
+                    JOptionPane.showMessageDialog(rootPane,"No.KTP/NIK "+nik+" sudah terdaftar atas pasien lain:\n"+pasienLain+
+                            "\n\nGunakan data pasien yang sudah ada, jangan membuat data baru..!!");
+                    TKtp.requestFocus();
+                    return true;
+                }
+            }
+            // bayi baru lahir (umur 0 tahun) boleh memakai No.Peserta BPJS ibunya, jadi tidak dicek
+            if(isIdentitasValid(bpjs)&&!TUmurTh.getText().trim().equals("0")){
+                String pasienLain=cariPasienLain("no_peserta",bpjs,noRmSendiri);
+                if(!pasienLain.equals("")){
+                    JOptionPane.showMessageDialog(rootPane,"No.Peserta BPJS "+bpjs+" sudah terdaftar atas pasien lain:\n"+pasienLain+
+                            "\n\nGunakan data pasien yang sudah ada, jangan membuat data baru..!!");
+                    TNoPeserta.requestFocus();
+                    return true;
+                }
+            }
+        } catch (Exception e) {
+            System.out.println("Notif Cek Duplikat NIK/BPJS : "+e);
+        }
+        return false;
+    }
+
+    // nilai kosong / strip / nol semua dianggap "belum diisi", jadi tidak ikut dicek (kalau tidak, semua pasien ber-NIK "-" akan terblokir)
+    private boolean isIdentitasValid(String nilai) {
+        return !nilai.matches("^[\\s\\-0.]*$");
+    }
+
+    // kolom hanya boleh "no_ktp" atau "no_peserta" (dipanggil dari kode di atas, bukan dari input pengguna)
+    private String cariPasienLain(String kolom,String nilai,String noRmSendiri) throws Exception {
+        String hasil="";
+        PreparedStatement psCek=null;
+        ResultSet rsCek=null;
+        try {
+            psCek=koneksi.prepareStatement("select pasien.no_rkm_medis,pasien.nm_pasien from pasien where pasien."+kolom+"=? and pasien.no_rkm_medis<>? limit 1");
+            psCek.setString(1,nilai);
+            psCek.setString(2,noRmSendiri);
+            rsCek=psCek.executeQuery();
+            if(rsCek.next()){
+                hasil="No.RM "+rsCek.getString("no_rkm_medis")+" - "+rsCek.getString("nm_pasien");
+            }
+        } finally {
+            if(rsCek!=null){
+                rsCek.close();
+            }
+            if(psCek!=null){
+                psCek.close();
+            }
+        }
+        return hasil;
+    }
+
+    private String ambilNilaiPasien(String kolom,String noRm) throws Exception {
+        String hasil="";
+        PreparedStatement psCek=null;
+        ResultSet rsCek=null;
+        try {
+            psCek=koneksi.prepareStatement("select pasien."+kolom+" from pasien where pasien.no_rkm_medis=?");
+            psCek.setString(1,noRm);
+            rsCek=psCek.executeQuery();
+            if(rsCek.next()&&rsCek.getString(1)!=null){
+                hasil=rsCek.getString(1);
+            }
+        } finally {
+            if(rsCek!=null){
+                rsCek.close();
+            }
+            if(psCek!=null){
+                psCek.close();
+            }
+        }
+        return hasil;
+    }
+    // ====================================================================================================
 
     public void emptTeks() {
         TNo.setText("");

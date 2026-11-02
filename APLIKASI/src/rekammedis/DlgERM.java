@@ -1,4 +1,5 @@
 package rekammedis;
+import bridging.BPJSSuratKontrol;
 import fungsi.koneksiDB;
 import fungsi.sekuel;
 import fungsi.validasi;
@@ -152,6 +153,7 @@ public class DlgERM extends javax.swing.JDialog {
         BtnRekon = new widget.ButtonBig();
         BtnNutrisiDewasa = new widget.ButtonBig();
         btnSkriningCURB65 = new widget.ButtonBig();
+        BtnSuratKontrol = new widget.ButtonBig();
         scrollInput1 = new widget.ScrollPane();
         FormInput1 = new widget.PanelBiasa();
         BtnPreOperasi = new widget.ButtonBig();
@@ -614,6 +616,19 @@ public class DlgERM extends javax.swing.JDialog {
             }
         });
         FormInput.add(btnSkriningCURB65);
+
+        BtnSuratKontrol.setForeground(new java.awt.Color(0, 0, 0));
+        BtnSuratKontrol.setIcon(new javax.swing.ImageIcon(getClass().getResource("/48x48/bpjs.png"))); // NOI18N
+        BtnSuratKontrol.setText("Surat Kontrol BPJS");
+        BtnSuratKontrol.setIconTextGap(0);
+        BtnSuratKontrol.setName("BtnSuratKontrol"); // NOI18N
+        BtnSuratKontrol.setPreferredSize(new java.awt.Dimension(200, 90));
+        BtnSuratKontrol.addActionListener(new java.awt.event.ActionListener() {
+            public void actionPerformed(java.awt.event.ActionEvent evt) {
+                BtnSuratKontrolActionPerformed(evt);
+            }
+        });
+        FormInput.add(BtnSuratKontrol);
 
         scrollInput.setViewportView(FormInput);
 
@@ -2035,6 +2050,46 @@ private void KdKeyPressed(java.awt.event.KeyEvent evt) {//GEN-FIRST:event_TKdKey
         }
     }//GEN-LAST:event_btnSkriningCURB65ActionPerformed
 
+    private void BtnSuratKontrolActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_BtnSuratKontrolActionPerformed
+        if (TNoRW.getText().equals("")) {
+            JOptionPane.showMessageDialog(null, "Maaf, Silahkan anda pilih dulu salah satu datanya pada tabel...!!!");
+        } else {
+            PreparedStatement psSep = null;
+            ResultSet rsSep = null;
+            try {
+                psSep = koneksi.prepareStatement("select bridging_sep.no_sep,bridging_sep.no_kartu,bridging_sep.tanggal_lahir,bridging_sep.jkel,bridging_sep.nmdiagnosaawal from bridging_sep where bridging_sep.no_rawat=?");
+                psSep.setString(1, TNoRW.getText());
+                rsSep = psSep.executeQuery();
+                if (rsSep.next()) {
+                    this.setCursor(Cursor.getPredefinedCursor(Cursor.WAIT_CURSOR));
+                    akses.setform("DlgERM");
+                    BPJSSuratKontrol form = new BPJSSuratKontrol(null, false);
+                    form.isCek();
+                    form.setNoRm(TNoRW.getText(), rsSep.getString("no_sep"), rsSep.getString("no_kartu"), TNoRM.getText(), TNmPasien.getText(), rsSep.getString("tanggal_lahir"), rsSep.getString("jkel"), rsSep.getString("nmdiagnosaawal"));
+                    form.setSize(internalFrame1.getWidth() - 20, internalFrame1.getHeight() - 20);
+                    form.setLocationRelativeTo(internalFrame1);
+                    form.setVisible(true);
+                } else {
+                    JOptionPane.showMessageDialog(null, "Pasien tersebut belum terbit SEP, silahkan hubungi bagian terkait..!!");
+                }
+            } catch (Exception e) {
+                System.out.println("Notif Surat Kontrol : " + e);
+            } finally {
+                try {
+                    if (rsSep != null) {
+                        rsSep.close();
+                    }
+                    if (psSep != null) {
+                        psSep.close();
+                    }
+                } catch (Exception e) {
+                    System.out.println("Notif : " + e);
+                }
+                this.setCursor(Cursor.getDefaultCursor());
+            }
+        }
+    }//GEN-LAST:event_BtnSuratKontrolActionPerformed
+
     /**
     * @param args the command line arguments
     */
@@ -2101,6 +2156,7 @@ private void KdKeyPressed(java.awt.event.KeyEvent evt) {//GEN-FIRST:event_TKdKey
     private widget.ButtonBig BtnSeconOpinion;
     private widget.ButtonBig BtnSerahterima;
     private widget.ButtonBig BtnSignInSbelummAnes;
+    private widget.ButtonBig BtnSuratKontrol;
     private widget.ButtonBig BtnTimeOutSblumInsisi;
     private widget.ButtonBig BtnTindakan;
     private widget.ButtonBig BtnTransferRuang;
@@ -2189,6 +2245,7 @@ private void KdKeyPressed(java.awt.event.KeyEvent evt) {//GEN-FIRST:event_TKdKey
         BtnInformasiEdukasi.setEnabled(akses.getpelaksanaan_informasi_edukasi());
         BtnMonitoringIntra.setEnabled(akses.getcatatan_anestesi_sedasi());
         BtnMonitoringPasca.setEnabled(akses.getcatatan_anestesi_sedasi());
+        BtnSuratKontrol.setEnabled(akses.getbpjs_surat_kontrol());
     }
     
     public void setData(String norw, String norm, String nmpasien,
@@ -2555,6 +2612,13 @@ private void KdKeyPressed(java.awt.event.KeyEvent evt) {//GEN-FIRST:event_TKdKey
         } else {
             BtnInformasiEdukasi.setIcon(new javax.swing.ImageIcon(getClass().getResource("/48x48/verif.png")));
             BtnInformasiEdukasi.setToolTipText("Informasi Edukasi SUDAH diisi..!!!");
+        }
+        if (Sequel.cariInteger("select count(-1) from bridging_surat_kontrol_bpjs inner join bridging_sep on bridging_surat_kontrol_bpjs.no_sep=bridging_sep.no_sep where bridging_sep.no_rawat='" + norawat + "'") == 0){
+            BtnSuratKontrol.setIcon(new javax.swing.ImageIcon(getClass().getResource("/48x48/bpjs.png")));
+            BtnSuratKontrol.setToolTipText("Informasi Edukasi BELUM diisi..!!!");
+        } else {
+            BtnSuratKontrol.setIcon(new javax.swing.ImageIcon(getClass().getResource("/48x48/verif.png")));
+            BtnSuratKontrol.setToolTipText("Informasi Edukasi SUDAH diisi..!!!");
         }
     }
 }

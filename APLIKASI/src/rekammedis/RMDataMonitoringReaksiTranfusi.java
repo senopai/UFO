@@ -144,11 +144,11 @@ public final class RMDataMonitoringReaksiTranfusi extends javax.swing.JDialog {
         isForm();
         jam();
         
-        try {
-            TANGGALMUNDUR=koneksiDB.TANGGALMUNDUR();
-        } catch (Exception e) {
-            TANGGALMUNDUR="yes";
-        }
+//        try {
+//            TANGGALMUNDUR=koneksiDB.TANGGALMUNDUR();
+//        } catch (Exception e) {
+//            TANGGALMUNDUR="yes";
+//        }
     }
 
 

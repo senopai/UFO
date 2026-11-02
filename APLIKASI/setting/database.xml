@@ -22,7 +22,7 @@
     <entry key="STOKKOSONGRESEP">yes</entry>
     <entry key="NOTIFMAKSIMALNOMINALRESEPRAJAL">yes</entry>
     <entry key="MAKSIMALNOMINALRESEPRAJAL">100000</entry>
-    <entry key="TAMPILKANCOPYRESEPDOKTERLAIN">no</entry>
+    <entry key="TAMPILKANCOPYRESEPDOKTERLAIN">yes</entry>
     <entry key="HPPFARMASI">dasar</entry>
     <entry key="HPPTOKO">dasar</entry>
     <entry key="KODEAKUNPENGELUARANHARIAN"></entry>

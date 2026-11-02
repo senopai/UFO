@@ -301,6 +301,7 @@ public class PanelDiagnosa extends widget.panelisi {
                 }
             });
         } 
+        siapkanTombolSalin(); // [FIX-SALINDX]
     }
 
     /**
@@ -1402,5 +1403,527 @@ public class PanelDiagnosa extends widget.panelisi {
         } catch (RejectedExecutionException ex) {
             ceksukses = false;
         }
+    }
+    
+    // ======================================================================================================
+    // [FIX-SALINDX] Salin diagnosa/prosedur dari kunjungan pasien sebelumnya.
+    // Hasil salinan hanya DICENTANG di tab "Input Data" (belum tersimpan). Dokter bisa memeriksa/mengubah dulu,
+    // lalu menyimpan lewat tombol Simpan seperti biasa. Status penyakit Baru/Lama dihitung ulang oleh simpan().
+    // Form induk sebaiknya memanggil setSumberNoRawat(() -> TNoRw.getText()) supaya No.Rawat tujuan selalu
+    // yang sedang dipilih di form induk; kalau tidak dipanggil, dipakai norawat dari setRM().
+    // ======================================================================================================
+    private widget.Button btnSalinDiagnosa;
+    private java.util.function.Supplier<String> sumberNoRawat=null;
+
+    private static class HasilSalin {
+        int dx=0,pros=0;
+        StringBuilder lewati=new StringBuilder();
+        void catatLewati(String kode,String alasan){
+            lewati.append("- ").append(kode).append(" : ").append(alasan).append("\n");
+        }
+    }
+
+    public void setSumberNoRawat(java.util.function.Supplier<String> sumber){
+        this.sumberNoRawat=sumber;
+    }
+
+    private void siapkanTombolSalin(){
+        btnSalinDiagnosa=new widget.Button();
+        btnSalinDiagnosa.setText("Salin dari Kunjungan Lalu");
+        btnSalinDiagnosa.setToolTipText("Salin diagnosa dari kunjungan pasien ini sebelumnya (belum tersimpan, bisa diperiksa dulu)");
+        btnSalinDiagnosa.setName("btnSalinDiagnosa");
+        btnSalinDiagnosa.addActionListener(new java.awt.event.ActionListener() {
+            @Override
+            public void actionPerformed(java.awt.event.ActionEvent evt) {
+                btnSalinDiagnosaActionPerformed();
+            }
+        });
+        // ruang di kanan kolom Diagnosa dipakai untuk tombol baru
+        Diagnosa.setBounds(71,10,484,23);
+        BtnCariPenyakit.setBounds(558,10,28,23);
+        btnTambahPenyakit.setBounds(589,10,28,23);
+        FormData.add(btnSalinDiagnosa);
+        btnSalinDiagnosa.setBounds(621,10,200,23);
+    }
+
+    private String noRawatTujuan(){
+        String hasil=null;
+        if(sumberNoRawat!=null){
+            try {
+                hasil=sumberNoRawat.get();
+            } catch (Exception e) {
+                hasil=null;
+            }
+        }
+        if(hasil==null||hasil.trim().equals("")){
+            hasil=norawat;
+        }
+        return hasil==null?"":hasil.trim();
+    }
+
+    private String n(String s){
+        return s==null?"":s;
+    }
+
+    private String esc(String s){
+        return n(s).replace("&","&amp;").replace("<","&lt;").replace(">","&gt;");
+    }
+
+    private String cariTeks(String sql,String... param){
+        String hasil="";
+        try(PreparedStatement ps=koneksi.prepareStatement(sql)){
+            for(int k=0;k<param.length;k++){
+                ps.setString(k+1,param[k]);
+            }
+            try(ResultSet r=ps.executeQuery()){
+                if(r.next()){
+                    hasil=n(r.getString(1));
+                }
+            }
+        }catch(Exception e){
+            System.out.println("Notifikasi : "+e);
+        }
+        return hasil;
+    }
+
+    private int cariAngka(String sql,String... param){
+        try{
+            return Integer.parseInt(cariTeks(sql,param).trim());
+        }catch(Exception e){
+            return 0;
+        }
+    }
+
+    private void btnSalinDiagnosaActionPerformed(){
+        if(!akses.getdiagnosa_pasien()){
+            JOptionPane.showMessageDialog(null,"Maaf, anda tidak punya hak akses untuk mengisi diagnosa...!!!");
+            return;
+        }
+        String noRawatBaru=noRawatTujuan();
+        if(noRawatBaru.equals("")){
+            JOptionPane.showMessageDialog(null,"Maaf, Silahkan anda pilih dulu pasiennya...!!!");
+            return;
+        }
+        String noRM=cariTeks("select reg_periksa.no_rkm_medis from reg_periksa where reg_periksa.no_rawat=?",noRawatBaru);
+        if(noRM.equals("")){
+            JOptionPane.showMessageDialog(null,"Maaf, No.Rawat "+noRawatBaru+" tidak ditemukan...!!!");
+            return;
+        }
+        String namaPasien=cariTeks("select pasien.nm_pasien from pasien where pasien.no_rkm_medis=?",noRM);
+        java.util.Map<String,java.util.List<String[]>> dxMap=new java.util.HashMap<String,java.util.List<String[]>>();
+        java.util.Map<String,java.util.List<String[]>> prosMap=new java.util.HashMap<String,java.util.List<String[]>>();
+        java.util.List<String[]> kunjungan=ambilKunjunganLalu(noRM,noRawatBaru,dxMap,prosMap);
+        if(kunjungan.isEmpty()){
+            JOptionPane.showMessageDialog(null,"Pasien "+namaPasien+" belum punya diagnosa/prosedur pada kunjungan sebelumnya...!!!");
+            return;
+        }
+
+        javax.swing.JDialog dlg=new javax.swing.JDialog(javax.swing.SwingUtilities.getWindowAncestor(this),
+                "Salin Diagnosa dari Kunjungan Sebelumnya",java.awt.Dialog.ModalityType.APPLICATION_MODAL);
+        dlg.getContentPane().add(buatPanelSalin(dlg,noRawatBaru,noRM,namaPasien,kunjungan,dxMap,prosMap));
+        dlg.setSize(900,520);
+        dlg.setLocationRelativeTo(this);
+        dlg.setVisible(true);
+    }
+
+    // 30 kunjungan terakhir pasien (selain kunjungan tujuan) yang punya diagnosa/prosedur, terbaru di atas.
+    private java.util.List<String[]> ambilKunjunganLalu(String noRM,String noRawatSekarang,
+            java.util.Map<String,java.util.List<String[]>> dxMap,java.util.Map<String,java.util.List<String[]>> prosMap){
+        java.util.List<String[]> kunjungan=new java.util.ArrayList<String[]>();
+        try(PreparedStatement ps=koneksi.prepareStatement(
+                "select reg_periksa.no_rawat,reg_periksa.tgl_registrasi,reg_periksa.jam_reg,poliklinik.nm_poli,dokter.nm_dokter,reg_periksa.status_lanjut "+
+                "from reg_periksa inner join poliklinik on reg_periksa.kd_poli=poliklinik.kd_poli "+
+                "inner join dokter on reg_periksa.kd_dokter=dokter.kd_dokter "+
+                "where reg_periksa.no_rkm_medis=? and reg_periksa.no_rawat<>? and "+
+                "(exists(select 1 from diagnosa_pasien where diagnosa_pasien.no_rawat=reg_periksa.no_rawat) or "+
+                "exists(select 1 from prosedur_pasien where prosedur_pasien.no_rawat=reg_periksa.no_rawat)) "+
+                "order by reg_periksa.tgl_registrasi desc,reg_periksa.jam_reg desc,reg_periksa.no_rawat desc limit 30")){
+            ps.setString(1,noRM);
+            ps.setString(2,noRawatSekarang);
+            try(ResultSet r=ps.executeQuery()){
+                while(r.next()){
+                    kunjungan.add(new String[]{n(r.getString(1)),n(r.getString(2)),n(r.getString(3)),n(r.getString(4)),n(r.getString(5)),n(r.getString(6))});
+                }
+            }
+        }catch(Exception e){
+            System.out.println("Notifikasi : "+e);
+        }
+
+        try(PreparedStatement ps=koneksi.prepareStatement(
+                "select diagnosa_pasien.no_rawat,diagnosa_pasien.kd_penyakit,penyakit.nm_penyakit,diagnosa_pasien.prioritas "+
+                "from diagnosa_pasien inner join reg_periksa on diagnosa_pasien.no_rawat=reg_periksa.no_rawat "+
+                "inner join penyakit on diagnosa_pasien.kd_penyakit=penyakit.kd_penyakit "+
+                "where reg_periksa.no_rkm_medis=? and reg_periksa.no_rawat<>? "+
+                "order by diagnosa_pasien.no_rawat,diagnosa_pasien.prioritas")){
+            ps.setString(1,noRM);
+            ps.setString(2,noRawatSekarang);
+            try(ResultSet r=ps.executeQuery()){
+                while(r.next()){
+                    String kunci=n(r.getString(1));
+                    if(!dxMap.containsKey(kunci)){
+                        dxMap.put(kunci,new java.util.ArrayList<String[]>());
+                    }
+                    dxMap.get(kunci).add(new String[]{kunci,n(r.getString(2)),n(r.getString(3)),n(r.getString(4))});
+                }
+            }
+        }catch(Exception e){
+            System.out.println("Notifikasi : "+e);
+        }
+
+        try(PreparedStatement ps=koneksi.prepareStatement(
+                "select prosedur_pasien.no_rawat,prosedur_pasien.kode,icd9.deskripsi_panjang,prosedur_pasien.jumlah "+
+                "from prosedur_pasien inner join reg_periksa on prosedur_pasien.no_rawat=reg_periksa.no_rawat "+
+                "inner join icd9 on prosedur_pasien.kode=icd9.kode "+
+                "where reg_periksa.no_rkm_medis=? and reg_periksa.no_rawat<>? "+
+                "order by prosedur_pasien.no_rawat,prosedur_pasien.prioritas")){
+            ps.setString(1,noRM);
+            ps.setString(2,noRawatSekarang);
+            try(ResultSet r=ps.executeQuery()){
+                while(r.next()){
+                    String kunci=n(r.getString(1));
+                    if(!prosMap.containsKey(kunci)){
+                        prosMap.put(kunci,new java.util.ArrayList<String[]>());
+                    }
+                    prosMap.get(kunci).add(new String[]{kunci,n(r.getString(2)),n(r.getString(3)),n(r.getString(4))});
+                }
+            }
+        }catch(Exception e){
+            System.out.println("Notifikasi : "+e);
+        }
+        return kunjungan;
+    }
+
+    private String ringkasDx(java.util.List<String[]> dx){
+        if(dx==null||dx.isEmpty()){
+            return "-";
+        }
+        String utama=dx.get(0)[2];
+        if(utama.length()>40){
+            utama=utama.substring(0,40)+"...";
+        }
+        StringBuilder sb=new StringBuilder(dx.get(0)[1]).append(" ").append(utama);
+        for(int k=1;k<dx.size()&&k<6;k++){
+            sb.append(", ").append(dx.get(k)[1]);
+        }
+        if(dx.size()>6){
+            sb.append(" +").append(dx.size()-6).append(" lagi");
+        }
+        return sb.toString();
+    }
+
+    private javax.swing.JPanel buatPanelSalin(final javax.swing.JDialog dlg,final String noRawatBaru,String noRM,String namaPasien,
+            final java.util.List<String[]> kunjungan,final java.util.Map<String,java.util.List<String[]>> dxMap,
+            final java.util.Map<String,java.util.List<String[]>> prosMap){
+        final javax.swing.JPanel isi=new javax.swing.JPanel(new java.awt.BorderLayout(5,5));
+        isi.setBorder(javax.swing.BorderFactory.createEmptyBorder(8,8,8,8));
+
+        javax.swing.JLabel info=new javax.swing.JLabel("<html>Pasien : <b>"+esc(namaPasien)+"</b> ("+esc(noRM)+") &nbsp;&nbsp; Disalin ke No.Rawat : <b>"+esc(noRawatBaru)+"</b><br>"+
+                "Klik salah satu kunjungan, centang diagnosa yang mau disalin. Hasilnya masuk ke tab Input Data dan <b>belum tersimpan</b>: periksa dulu, lalu klik Simpan.</html>");
+        info.setFont(new java.awt.Font("Tahoma",0,11));
+        isi.add(info,java.awt.BorderLayout.NORTH);
+
+        final DefaultTableModel modelKunjungan=new DefaultTableModel(null,new Object[]{"Tgl.Rawat","No.Rawat","Poli/Unit","Dokter","Status","Diagnosa"}){
+            @Override public boolean isCellEditable(int rowIndex, int colIndex){
+                return false;
+            }
+        };
+        for(String[] k:kunjungan){
+            modelKunjungan.addRow(new Object[]{k[1],k[0],k[3],k[4],k[5],ringkasDx(dxMap.get(k[0]))});
+        }
+        final widget.Table tbKunjungan=new widget.Table();
+        tbKunjungan.setModel(modelKunjungan);
+        tbKunjungan.setAutoResizeMode(JTable.AUTO_RESIZE_OFF);
+        tbKunjungan.setSelectionMode(javax.swing.ListSelectionModel.SINGLE_SELECTION);
+        int[] lebarKunjungan={80,135,140,160,50,315};
+        for(int c=0;c<lebarKunjungan.length;c++){
+            tbKunjungan.getColumnModel().getColumn(c).setPreferredWidth(lebarKunjungan[c]);
+        }
+        tbKunjungan.setDefaultRenderer(Object.class,new WarnaTable());
+        widget.ScrollPane scrollKunjungan=new widget.ScrollPane();
+        scrollKunjungan.setViewportView(tbKunjungan);
+
+        final DefaultTableModel modelItem=new DefaultTableModel(null,new Object[]{"P","Jenis","Kode","Nama","Jml"}){
+            @Override public boolean isCellEditable(int rowIndex, int colIndex){
+                return colIndex==0;
+            }
+            @Override public Class getColumnClass(int columnIndex) {
+                return columnIndex==0?java.lang.Boolean.class:java.lang.Object.class;
+            }
+        };
+        final widget.Table tbItem=new widget.Table();
+        tbItem.setModel(modelItem);
+        tbItem.setAutoResizeMode(JTable.AUTO_RESIZE_OFF);
+        int[] lebarItem={25,70,80,560,40};
+        for(int c=0;c<lebarItem.length;c++){
+            tbItem.getColumnModel().getColumn(c).setPreferredWidth(lebarItem[c]);
+        }
+        tbItem.setDefaultRenderer(Object.class,new WarnaTable());
+        widget.ScrollPane scrollItem=new widget.ScrollPane();
+        scrollItem.setViewportView(tbItem);
+
+        // isi tabel bawah mengikuti kunjungan yang dipilih: diagnosa tercentang, prosedur tidak
+        tbKunjungan.getSelectionModel().addListSelectionListener(new javax.swing.event.ListSelectionListener() {
+            @Override
+            public void valueChanged(javax.swing.event.ListSelectionEvent e) {
+                if(e.getValueIsAdjusting()){
+                    return;
+                }
+                modelItem.setRowCount(0);
+                int baris=tbKunjungan.getSelectedRow();
+                if(baris==-1){
+                    return;
+                }
+                String noRawatSumber=modelKunjungan.getValueAt(baris,1).toString();
+                java.util.List<String[]> dx=dxMap.get(noRawatSumber);
+                if(dx!=null){
+                    for(String[] d:dx){
+                        modelItem.addRow(new Object[]{Boolean.TRUE,"Diagnosa",d[1],d[2],""});
+                    }
+                }
+                java.util.List<String[]> pr=prosMap.get(noRawatSumber);
+                if(pr!=null){
+                    for(String[] p:pr){
+                        modelItem.addRow(new Object[]{Boolean.FALSE,"Prosedur",p[1],p[2],p[3]});
+                    }
+                }
+            }
+        });
+
+        javax.swing.JSplitPane belah=new javax.swing.JSplitPane(javax.swing.JSplitPane.VERTICAL_SPLIT,scrollKunjungan,scrollItem);
+        belah.setDividerLocation(190);
+        isi.add(belah,java.awt.BorderLayout.CENTER);
+
+        widget.Button btnSalin=new widget.Button();
+        btnSalin.setText("Salin yang Dicentang");
+        btnSalin.setPreferredSize(new Dimension(170,30));
+        btnSalin.addActionListener(new java.awt.event.ActionListener() {
+            @Override
+            public void actionPerformed(java.awt.event.ActionEvent evt) {
+                java.util.List<String> kodeDx=new java.util.ArrayList<String>();
+                java.util.List<String[]> prosedur=new java.util.ArrayList<String[]>();
+                for(int r=0;r<modelItem.getRowCount();r++){
+                    if(modelItem.getValueAt(r,0).toString().equals("true")){
+                        if(modelItem.getValueAt(r,1).toString().equals("Diagnosa")){
+                            kodeDx.add(modelItem.getValueAt(r,2).toString());
+                        }else{
+                            prosedur.add(new String[]{modelItem.getValueAt(r,2).toString(),modelItem.getValueAt(r,4).toString()});
+                        }
+                    }
+                }
+                if(kodeDx.isEmpty()&&prosedur.isEmpty()){
+                    JOptionPane.showMessageDialog(isi,"Silahkan centang dulu diagnosa/prosedur yang mau disalin..!!");
+                    return;
+                }
+                HasilSalin hasil=terapkanSalinan(noRawatBaru,kodeDx,prosedur);
+                StringBuilder pesan=new StringBuilder();
+                if(hasil.dx+hasil.pros>0){
+                    pesan.append(hasil.dx).append(" diagnosa");
+                    if(hasil.pros>0){
+                        pesan.append(" dan ").append(hasil.pros).append(" prosedur");
+                    }
+                    pesan.append(" disalin ke tab Input Data.\nBELUM tersimpan, silahkan periksa urutannya lalu klik Simpan.");
+                }else{
+                    pesan.append("Tidak ada data yang disalin.");
+                }
+                if(hasil.lewati.length()>0){
+                    pesan.append("\n\nDilewati :\n").append(hasil.lewati);
+                }
+                JOptionPane.showMessageDialog(isi,pesan.toString());
+                if(hasil.dx+hasil.pros>0&&dlg!=null){
+                    dlg.dispose();
+                }
+            }
+        });
+        widget.Button btnTutup=new widget.Button();
+        btnTutup.setText("Tutup");
+        btnTutup.setPreferredSize(new Dimension(100,30));
+        btnTutup.addActionListener(new java.awt.event.ActionListener() {
+            @Override
+            public void actionPerformed(java.awt.event.ActionEvent evt) {
+                if(dlg!=null){
+                    dlg.dispose();
+                }
+            }
+        });
+        javax.swing.JPanel bawah=new javax.swing.JPanel(new java.awt.FlowLayout(java.awt.FlowLayout.RIGHT,5,0));
+        bawah.add(btnSalin);
+        bawah.add(btnTutup);
+        isi.add(bawah,java.awt.BorderLayout.SOUTH);
+
+        if(modelKunjungan.getRowCount()>0){
+            tbKunjungan.setRowSelectionInterval(0,0);
+        }
+        return isi;
+    }
+
+    private Object[] ambilPenyakit(String kode){
+        try(PreparedStatement ps=koneksi.prepareStatement(
+                "select penyakit.kd_penyakit,penyakit.nm_penyakit,penyakit.ciri_ciri,penyakit.keterangan,kategori_penyakit.nm_kategori,"+
+                "kategori_penyakit.ciri_umum,penyakit.validcode,penyakit.accpdx,penyakit.asterisk,penyakit.im from kategori_penyakit "+
+                "inner join penyakit on penyakit.kd_ktg=kategori_penyakit.kd_ktg where penyakit.kd_penyakit=?")){
+            ps.setString(1,kode);
+            try(ResultSet r=ps.executeQuery()){
+                if(r.next()){
+                    return new Object[]{Boolean.TRUE,n(r.getString(1)),n(r.getString(2)),n(r.getString(3)),n(r.getString(4)),n(r.getString(5)),
+                        n(r.getString(6)),n(r.getString(7)),n(r.getString(8)),n(r.getString(9)),n(r.getString(10)),""};
+                }
+            }
+        }catch(Exception e){
+            System.out.println("Notifikasi : "+e);
+        }
+        return null;
+    }
+
+    private Object[] ambilProsedur(String kode,String jumlah){
+        try(PreparedStatement ps=koneksi.prepareStatement("select * from icd9 where kode=?")){
+            ps.setString(1,kode);
+            try(ResultSet r=ps.executeQuery()){
+                if(r.next()){
+                    return new Object[]{Boolean.TRUE,n(r.getString(1)),n(r.getString(2)),n(r.getString(3)),n(r.getString(4)),n(r.getString(5)),
+                        n(r.getString(6)),"",(jumlah==null||jumlah.trim().equals(""))?"1":jumlah.trim()};
+                }
+            }
+        }catch(Exception e){
+            System.out.println("Notifikasi : "+e);
+        }
+        return null;
+    }
+
+    // Memasukkan hasil pilihan ke tabel input (tbDiagnosa/tbProsedur) sebagai baris tercentang.
+    // Aturan sama dengan tbDiagnosaPropertyChange/tbProsedurPropertyChange: kode header (valid code 0) tidak boleh dicentang
+    // dan urutan 1 tidak boleh Accpdx N. Yang sudah dicentang sebelumnya dipertahankan; urutan = posisi baris tercentang.
+    private HasilSalin terapkanSalinan(String noRawatBaru,java.util.List<String> kodeDx,java.util.List<String[]> prosedur){
+        HasilSalin hasil=new HasilSalin();
+
+        // ---------- Diagnosa ----------
+        java.util.List<Object[]> terpilih=new java.util.ArrayList<Object[]>();
+        java.util.List<Object[]> sisa=new java.util.ArrayList<Object[]>();
+        java.util.Set<String> adaKode=new java.util.HashSet<String>();
+        for(int r=0;r<tabModeDiagnosa.getRowCount();r++){
+            Object[] baris=new Object[tabModeDiagnosa.getColumnCount()];
+            for(int c=0;c<baris.length;c++){
+                baris[c]=tabModeDiagnosa.getValueAt(r,c);
+            }
+            if(String.valueOf(baris[0]).equals("true")){
+                terpilih.add(baris);
+                adaKode.add(String.valueOf(baris[1]));
+            }else{
+                sisa.add(baris);
+            }
+        }
+        java.util.List<Object[]> baru=new java.util.ArrayList<Object[]>();
+        java.util.Set<String> kodeBaru=new java.util.HashSet<String>();
+        for(String kode:kodeDx){
+            if(adaKode.contains(kode)){
+                hasil.catatLewati(kode,"sudah dicentang di tabel input");
+            }else if(cariAngka("select count(*) from diagnosa_pasien where diagnosa_pasien.no_rawat=? and diagnosa_pasien.kd_penyakit=?",noRawatBaru,kode)>0){
+                hasil.catatLewati(kode,"sudah tersimpan di kunjungan ini");
+            }else{
+                Object[] p=ambilPenyakit(kode);
+                if(p==null){
+                    hasil.catatLewati(kode,"tidak ditemukan di data penyakit");
+                }else if(String.valueOf(p[7]).equals("0")){
+                    hasil.catatLewati(kode,"kode header (valid code 0)");
+                }else{
+                    baru.add(p);
+                    adaKode.add(kode);
+                    kodeBaru.add(kode);
+                }
+            }
+        }
+        while(terpilih.isEmpty()&&!baru.isEmpty()&&String.valueOf(baru.get(0)[8]).equals("N")){
+            hasil.catatLewati(String.valueOf(baru.get(0)[1]),"Accpdx N, tidak bisa menjadi diagnosa utama");
+            kodeBaru.remove(String.valueOf(baru.get(0)[1]));
+            baru.remove(0);
+        }
+        if(!baru.isEmpty()){
+            int urut=1;
+            tabModeDiagnosa.setRowCount(0);
+            for(Object[] b:terpilih){
+                b[0]=Boolean.TRUE;
+                b[11]=Integer.valueOf(urut++);
+                tabModeDiagnosa.addRow(b);
+            }
+            for(Object[] b:baru){
+                b[0]=Boolean.TRUE;
+                b[11]=Integer.valueOf(urut++);
+                tabModeDiagnosa.addRow(b);
+                hasil.dx++;
+            }
+            for(Object[] b:sisa){
+                if(!kodeBaru.contains(String.valueOf(b[1]))){
+                    tabModeDiagnosa.addRow(b);
+                }
+            }
+            tbDiagnosa.scrollRectToVisible(tbDiagnosa.getCellRect(0,0,true));
+        }
+
+        // ---------- Prosedur ----------
+        java.util.List<Object[]> terpilihPros=new java.util.ArrayList<Object[]>();
+        java.util.List<Object[]> sisaPros=new java.util.ArrayList<Object[]>();
+        java.util.Set<String> adaKodePros=new java.util.HashSet<String>();
+        for(int r=0;r<tabModeProsedur.getRowCount();r++){
+            Object[] baris=new Object[tabModeProsedur.getColumnCount()];
+            for(int c=0;c<baris.length;c++){
+                baris[c]=tabModeProsedur.getValueAt(r,c);
+            }
+            if(String.valueOf(baris[0]).equals("true")){
+                terpilihPros.add(baris);
+                adaKodePros.add(String.valueOf(baris[1]));
+            }else{
+                sisaPros.add(baris);
+            }
+        }
+        java.util.List<Object[]> baruPros=new java.util.ArrayList<Object[]>();
+        java.util.Set<String> kodeBaruPros=new java.util.HashSet<String>();
+        for(String[] pr:prosedur){
+            String kode=pr[0];
+            if(adaKodePros.contains(kode)){
+                hasil.catatLewati(kode,"sudah dicentang di tabel input");
+            }else if(cariAngka("select count(*) from prosedur_pasien where prosedur_pasien.no_rawat=? and prosedur_pasien.kode=?",noRawatBaru,kode)>0){
+                hasil.catatLewati(kode,"sudah tersimpan di kunjungan ini");
+            }else{
+                Object[] p=ambilProsedur(kode,pr[1]);
+                if(p==null){
+                    hasil.catatLewati(kode,"tidak ditemukan di data ICD 9");
+                }else if(String.valueOf(p[4]).equals("0")){
+                    hasil.catatLewati(kode,"kode header (valid code 0)");
+                }else{
+                    baruPros.add(p);
+                    adaKodePros.add(kode);
+                    kodeBaruPros.add(kode);
+                }
+            }
+        }
+        while(terpilihPros.isEmpty()&&!baruPros.isEmpty()&&String.valueOf(baruPros.get(0)[5]).equals("N")){
+            hasil.catatLewati(String.valueOf(baruPros.get(0)[1]),"Accpdx N, tidak bisa menjadi prosedur utama");
+            kodeBaruPros.remove(String.valueOf(baruPros.get(0)[1]));
+            baruPros.remove(0);
+        }
+        if(!baruPros.isEmpty()){
+            int urut=1;
+            tabModeProsedur.setRowCount(0);
+            for(Object[] b:terpilihPros){
+                b[0]=Boolean.TRUE;
+                b[7]=Integer.valueOf(urut++);
+                if(String.valueOf(b[8]).trim().equals("")){
+                    b[8]="1";
+                }
+                tabModeProsedur.addRow(b);
+            }
+            for(Object[] b:baruPros){
+                b[0]=Boolean.TRUE;
+                b[7]=Integer.valueOf(urut++);
+                tabModeProsedur.addRow(b);
+                hasil.pros++;
+            }
+            for(Object[] b:sisaPros){
+                if(!kodeBaruPros.contains(String.valueOf(b[1]))){
+                    tabModeProsedur.addRow(b);
+                }
+            }
+            tbProsedur.scrollRectToVisible(tbProsedur.getCellRect(0,0,true));
+        }
+        return hasil;
     }
 }

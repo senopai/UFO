@@ -179,11 +179,11 @@ public final class RMPengkajianRestrain extends javax.swing.JDialog {
         LoadHTML2.setEditorKit(kit);
         LoadHTML2.setDocument(doc);
         
-        try {
-            TANGGALMUNDUR=koneksiDB.TANGGALMUNDUR();
-        } catch (Exception e) {
-            TANGGALMUNDUR="yes";
-        }
+//        try {
+//            TANGGALMUNDUR=koneksiDB.TANGGALMUNDUR();
+//        } catch (Exception e) {
+//            TANGGALMUNDUR="yes";
+//        }
     }
     
     
