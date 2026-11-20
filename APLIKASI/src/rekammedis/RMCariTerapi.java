@@ -15,12 +15,17 @@ import fungsi.WarnaTable;
 import fungsi.batasInput;
 import fungsi.koneksiDB;
 import fungsi.validasi;
+import java.awt.Cursor;
 import java.awt.Dimension;
 import java.awt.event.KeyEvent;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.RejectedExecutionException;
 import javax.swing.JTable;
+import javax.swing.SwingUtilities;
 import javax.swing.event.DocumentEvent;
 import javax.swing.table.DefaultTableModel;
 import javax.swing.table.TableColumn;
@@ -37,6 +42,8 @@ public final class RMCariTerapi extends javax.swing.JDialog {
     private ResultSet rs;
     private String norawat="";
     private int z=0;
+    private final ExecutorService executor = Executors.newSingleThreadExecutor();
+    private volatile boolean ceksukses = false;
     /** Creates new form DlgPenyakit
      * @param parent
      * @param modal */
@@ -46,48 +53,41 @@ public final class RMCariTerapi extends javax.swing.JDialog {
         this.setLocation(10,2);
         setSize(656,250);
 
-        Object[] row={"Tanggal","Jam","Terapi/Tindakan"};
+        Object[] row={"P","Tanggal","Jam","Terapi/Tindakan"};
         tabMode=new DefaultTableModel(null,row){
-              @Override public boolean isCellEditable(int rowIndex, int colIndex){return false;}
+              @Override public boolean isCellEditable(int rowIndex, int colIndex){
+                boolean a = false;
+                if (colIndex==0) {
+                    a=true;
+                }
+                return a;
+             }
+             Class[] types = new Class[] {
+                java.lang.Boolean.class, java.lang.Object.class, java.lang.Object.class, java.lang.Object.class, java.lang.Object.class
+             };
+             @Override
+             public Class getColumnClass(int columnIndex) {
+                return types [columnIndex];
+             }
         };
         tbKamar.setModel(tabMode);
         //tbPenyakit.setDefaultRenderer(Object.class, new WarnaTable(panelJudul.getBackground(),tbPenyakit.getBackground()));
         tbKamar.setPreferredScrollableViewportSize(new Dimension(500,500));
         tbKamar.setAutoResizeMode(JTable.AUTO_RESIZE_OFF);
-        for (z= 0; z < 3; z++) {
+        for (z= 0; z < 4; z++) {
             TableColumn column = tbKamar.getColumnModel().getColumn(z);
             if(z==0){
-                column.setPreferredWidth(65);
+                column.setPreferredWidth(2);
             }else if(z==1){
-                column.setPreferredWidth(50);
+                column.setPreferredWidth(65);
             }else if(z==2){
-                column.setPreferredWidth(750);
+                column.setPreferredWidth(50);
+            }else if(z==3){
+                column.setPreferredWidth(1000);
             }
         }
         tbKamar.setDefaultRenderer(Object.class, new WarnaTable());
         TCari.setDocument(new batasInput((byte)100).getKata(TCari));
-        if(koneksiDB.CARICEPAT().equals("aktif")){
-            TCari.getDocument().addDocumentListener(new javax.swing.event.DocumentListener(){
-                @Override
-                public void insertUpdate(DocumentEvent e) {
-                    if(TCari.getText().length()>2){
-                        tampil();
-                    }
-                }
-                @Override
-                public void removeUpdate(DocumentEvent e) {
-                    if(TCari.getText().length()>2){
-                        tampil();
-                    }
-                }
-                @Override
-                public void changedUpdate(DocumentEvent e) {
-                    if(TCari.getText().length()>2){
-                        tampil();
-                    }
-                }
-            });
-        }
     }
     
 
@@ -243,7 +243,7 @@ public final class RMCariTerapi extends javax.swing.JDialog {
 }//GEN-LAST:event_TCariKeyPressed
 
     private void BtnCariActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_BtnCariActionPerformed
-        tampil();
+        runBackground(() ->tampil());
 }//GEN-LAST:event_BtnCariActionPerformed
 
     private void BtnCariKeyPressed(java.awt.event.KeyEvent evt) {//GEN-FIRST:event_BtnCariKeyPressed
@@ -256,7 +256,7 @@ public final class RMCariTerapi extends javax.swing.JDialog {
 
     private void BtnAllActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_BtnAllActionPerformed
         TCari.setText("");
-        tampil();
+        runBackground(() ->tampil());
 }//GEN-LAST:event_BtnAllActionPerformed
 
     private void BtnAllKeyPressed(java.awt.event.KeyEvent evt) {//GEN-FIRST:event_BtnAllKeyPressed
@@ -295,7 +295,28 @@ public final class RMCariTerapi extends javax.swing.JDialog {
     }//GEN-LAST:event_formWindowActivated
 
     private void formWindowOpened(java.awt.event.WindowEvent evt) {//GEN-FIRST:event_formWindowOpened
-        tampil();
+        if(koneksiDB.CARICEPAT().equals("aktif")){
+            TCari.getDocument().addDocumentListener(new javax.swing.event.DocumentListener(){
+                @Override
+                public void insertUpdate(DocumentEvent e) {
+                    if(TCari.getText().length()>3){
+                        runBackground(() ->tampil());
+                    }
+                }
+                @Override
+                public void removeUpdate(DocumentEvent e) {
+                    if(TCari.getText().length()>3){
+                        runBackground(() ->tampil());
+                    }
+                }
+                @Override
+                public void changedUpdate(DocumentEvent e) {
+                    if(TCari.getText().length()>3){
+                        runBackground(() ->tampil());
+                    }
+                }
+            });
+        }
     }//GEN-LAST:event_formWindowOpened
 
     /**
@@ -317,7 +338,7 @@ public final class RMCariTerapi extends javax.swing.JDialog {
     // Variables declaration - do not modify//GEN-BEGIN:variables
     private widget.Button BtnAll;
     private widget.Button BtnCari;
-    private widget.Button BtnKeluar;
+    public widget.Button BtnKeluar;
     private widget.Label LCount;
     private widget.ScrollPane Scroll;
     private widget.TextBox TCari;
@@ -327,44 +348,7 @@ public final class RMCariTerapi extends javax.swing.JDialog {
     private widget.panelisi panelisi3;
     private widget.Table tbKamar;
     // End of variables declaration//GEN-END:variables
-
-    /*
-    public void tampil() {
-        Valid.tabelKosong(tabMode);
-        try{
-            ps=koneksi.prepareStatement(
-                    "select rawat_jl_dr.tgl_perawatan, rawat_jl_dr.jam_rawat, jns_perawatan.nm_perawatan from rawat_jl_dr INNER JOIN jns_perawatan ON rawat_jl_dr.kd_jenis_prw = jns_perawatan.kd_jenis_prw where "+
-                    "rawat_jl_dr.no_rawat=? and rawat_jl_dr.tgl_perawatan like ? or "+
-                    "rawat_jl_dr.no_rawat=? and jns_perawatan.nm_perawatan like ? order by rawat_jl_dr.tgl_perawatan, rawat_jl_dr.jam_rawat");
-            try{
-                ps.setString(1,norawat);
-                ps.setString(2,"%"+TCari.getText().trim()+"%");
-                ps.setString(3,norawat);
-                ps.setString(4,"%"+TCari.getText().trim()+"%");
-                rs=ps.executeQuery();
-                while(rs.next()){
-                    tabMode.addRow(new String[] {
-                        rs.getString(1),rs.getString(2),rs.getString(3)
-                    });
-                }
-            }catch(Exception ex){
-                System.out.println(ex);
-            }finally{
-                if(rs!=null){
-                    rs.close();
-                }
-                if(ps!=null){
-                    ps.close();
-                }
-            }
-        }catch(Exception e){
-            System.out.println("Notifikasi : "+e);
-        }
-        LCount.setText(""+tabMode.getRowCount());
-    }
-    */
-    
-    public void tampil() {
+    private void tampil() {
         Valid.tabelKosong(tabMode);
         try{
             // Kueri ini menggabungkan 4 sumber data:
@@ -372,85 +356,41 @@ public final class RMCariTerapi extends javax.swing.JDialog {
             // 2. Tindakan oleh Petugas (rawat_jl_pr)
             // 3. Tindakan oleh Dokter & Petugas (rawat_jl_drpr)
             // 4. Plan/Tindak Lanjut dari SOAP (pemeriksaan_ralan)
-            String sql = "(SELECT " +
-                         "    rawat_jl_dr.tgl_perawatan, " +
-                         "    rawat_jl_dr.jam_rawat, " +
-                         "    jns_perawatan.nm_perawatan AS terapi_tindakan " +
-                         " FROM rawat_jl_dr " +
-                         " INNER JOIN jns_perawatan ON rawat_jl_dr.kd_jenis_prw = jns_perawatan.kd_jenis_prw " +
-                         " WHERE " +
-                         "    rawat_jl_dr.no_rawat = ? " +
-                         "    AND (rawat_jl_dr.tgl_perawatan LIKE ? OR jns_perawatan.nm_perawatan LIKE ?)) " +
-                         
-                         " UNION ALL " +
-                         
-                         " (SELECT " +
-                         "    rawat_jl_pr.tgl_perawatan, " +
-                         "    rawat_jl_pr.jam_rawat, " +
-                         "    jns_perawatan.nm_perawatan AS terapi_tindakan " +
-                         " FROM rawat_jl_pr " +
-                         " INNER JOIN jns_perawatan ON rawat_jl_pr.kd_jenis_prw = jns_perawatan.kd_jenis_prw " +
-                         " WHERE " +
-                         "    rawat_jl_pr.no_rawat = ? " +
-                         "    AND (rawat_jl_pr.tgl_perawatan LIKE ? OR jns_perawatan.nm_perawatan LIKE ?)) " +
-                         
-                         " UNION ALL " +
-                         
-                         " (SELECT " +
-                         "    rawat_jl_drpr.tgl_perawatan, " +
-                         "    rawat_jl_drpr.jam_rawat, " +
-                         "    jns_perawatan.nm_perawatan AS terapi_tindakan " +
-                         " FROM rawat_jl_drpr " +
-                         " INNER JOIN jns_perawatan ON rawat_jl_drpr.kd_jenis_prw = jns_perawatan.kd_jenis_prw " +
-                         " WHERE " +
-                         "    rawat_jl_drpr.no_rawat = ? " +
-                         "    AND (rawat_jl_drpr.tgl_perawatan LIKE ? OR jns_perawatan.nm_perawatan LIKE ?)) " +
-                         
-                         " UNION ALL " +
-                         
-                         " (SELECT " +
-                         "    pemeriksaan_ralan.tgl_perawatan, " +
-                         "    pemeriksaan_ralan.jam_rawat, " +
-                         "    CONCAT(pemeriksaan_ralan.rtl) AS terapi_tindakan " + // Ini adalah data 'TindakLanjut'
-                         " FROM pemeriksaan_ralan " +
-                         " WHERE " +
-                         "    pemeriksaan_ralan.no_rawat = ? " +
-                         "    AND (pemeriksaan_ralan.tgl_perawatan LIKE ? OR pemeriksaan_ralan.rtl LIKE ?) " +
-                         "    AND pemeriksaan_ralan.rtl <> '' AND pemeriksaan_ralan.rtl IS NOT NULL) " +
-                         
-                         " ORDER BY tgl_perawatan, jam_rawat";
-            
+            String sql = "(SELECT rawat_jl_dr.tgl_perawatan,rawat_jl_dr.jam_rawat,jns_perawatan.nm_perawatan AS terapi_tindakan " +
+                         " FROM rawat_jl_dr INNER JOIN jns_perawatan ON rawat_jl_dr.kd_jenis_prw = jns_perawatan.kd_jenis_prw " +
+                         " WHERE rawat_jl_dr.no_rawat = ? AND (rawat_jl_dr.tgl_perawatan LIKE ? OR jns_perawatan.nm_perawatan LIKE ?)) " +
+                         " UNION ALL (SELECT rawat_jl_pr.tgl_perawatan,rawat_jl_pr.jam_rawat, jns_perawatan.nm_perawatan AS terapi_tindakan " +
+                         " FROM rawat_jl_pr INNER JOIN jns_perawatan ON rawat_jl_pr.kd_jenis_prw = jns_perawatan.kd_jenis_prw " +
+                         " WHERE rawat_jl_pr.no_rawat = ? AND (rawat_jl_pr.tgl_perawatan LIKE ? OR jns_perawatan.nm_perawatan LIKE ?)) " +
+                         " UNION ALL (SELECT rawat_jl_drpr.tgl_perawatan, rawat_jl_drpr.jam_rawat, jns_perawatan.nm_perawatan AS terapi_tindakan " +
+                         " FROM rawat_jl_drpr INNER JOIN jns_perawatan ON rawat_jl_drpr.kd_jenis_prw = jns_perawatan.kd_jenis_prw " +
+                         " WHERE rawat_jl_drpr.no_rawat = ? AND (rawat_jl_drpr.tgl_perawatan LIKE ? OR jns_perawatan.nm_perawatan LIKE ?)) " +
+                         " UNION ALL (SELECT pemeriksaan_ralan.tgl_perawatan, pemeriksaan_ralan.jam_rawat,CONCAT(pemeriksaan_ralan.rtl) AS terapi_tindakan " + // Ini adalah data 'TindakLanjut'
+                         " FROM pemeriksaan_ralan WHERE pemeriksaan_ralan.no_rawat = ? AND (pemeriksaan_ralan.tgl_perawatan LIKE ? OR pemeriksaan_ralan.rtl LIKE ?) " +
+                         " AND pemeriksaan_ralan.rtl <> '' AND pemeriksaan_ralan.rtl IS NOT NULL) ORDER BY tgl_perawatan, jam_rawat";
             ps=koneksi.prepareStatement(sql);
-            
             try{
                 String cari = "%" + TCari.getText().trim() + "%";
-                
                 // Parameter untuk Query 1 (rawat_jl_dr)
                 ps.setString(1, norawat);
                 ps.setString(2, cari);
                 ps.setString(3, cari);
-                
                 // Parameter untuk Query 2 (rawat_jl_pr)
                 ps.setString(4, norawat);
                 ps.setString(5, cari);
                 ps.setString(6, cari);
-                
                 // Parameter untuk Query 3 (rawat_jl_drpr)
                 ps.setString(7, norawat);
                 ps.setString(8, cari);
                 ps.setString(9, cari);
-                
                 // Parameter untuk Query 4 (pemeriksaan_ralan)
                 ps.setString(10, norawat);
                 ps.setString(11, cari);
                 ps.setString(12, cari);
-                
                 rs=ps.executeQuery();
                 while(rs.next()){
-                    tabMode.addRow(new String[] {
-                        rs.getString(1), // tgl_perawatan
-                        rs.getString(2), // jam_rawat
-                        rs.getString(3)  // terapi_tindakan (bisa nm_perawatan atau rtl)
+                        tabMode.addRow(new Object[] {
+                        false,rs.getString(1),rs.getString(2),rs.getString(3)
                     });
                 }
             }catch(Exception ex){
@@ -475,10 +415,42 @@ public final class RMCariTerapi extends javax.swing.JDialog {
     
     public void setNoRawat(String norawat){
         this.norawat=norawat;
+        runBackground(() ->tampil());
     }
 
     public JTable getTable(){
         return tbKamar;
     }
     
+    private void runBackground(Runnable task) {
+        if (ceksukses) return;
+        if (executor.isShutdown() || executor.isTerminated()) return;
+        if (!isDisplayable()) return;
+
+        ceksukses = true;
+        setCursor(Cursor.getPredefinedCursor(Cursor.WAIT_CURSOR));
+
+        try {
+            executor.submit(() -> {
+                try {
+                    task.run();
+                } finally {
+                    ceksukses = false;
+                    SwingUtilities.invokeLater(() -> {
+                        if (isDisplayable()) {
+                            setCursor(Cursor.getDefaultCursor());
+                        }
+                    });
+                }
+            });
+        } catch (RejectedExecutionException ex) {
+            ceksukses = false;
+        }
+    }
+    
+    @Override
+    public void dispose() {
+        executor.shutdownNow();
+        super.dispose();
+    }
 }

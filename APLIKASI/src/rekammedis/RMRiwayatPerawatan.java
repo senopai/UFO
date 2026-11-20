@@ -665,7 +665,7 @@ public final class RMRiwayatPerawatan extends javax.swing.JDialog {
         WindowPhrase.getContentPane().add(internalFrame8, java.awt.BorderLayout.CENTER);
 
         Tanggal.setForeground(new java.awt.Color(50, 70, 50));
-        Tanggal.setModel(new javax.swing.DefaultComboBoxModel(new String[] { "27-10-2026 15:45:41" }));
+        Tanggal.setModel(new javax.swing.DefaultComboBoxModel(new String[] { "17-11-2026 12:40:20" }));
         Tanggal.setDisplayFormat("dd-MM-yyyy HH:mm:ss");
         Tanggal.setName("Tanggal"); // NOI18N
 
@@ -973,7 +973,7 @@ public final class RMRiwayatPerawatan extends javax.swing.JDialog {
         FormMenu.setBackground(new java.awt.Color(255, 255, 255));
         FormMenu.setBorder(null);
         FormMenu.setName("FormMenu"); // NOI18N
-        FormMenu.setPreferredSize(new java.awt.Dimension(255, 4515));
+        FormMenu.setPreferredSize(new java.awt.Dimension(255, 4766));
         FormMenu.setLayout(new java.awt.FlowLayout(java.awt.FlowLayout.CENTER, 1, 1));
 
         chkSemua.setSelected(true);
@@ -986,6 +986,11 @@ public final class RMRiwayatPerawatan extends javax.swing.JDialog {
                 chkSemuaItemStateChanged(evt);
             }
         });
+        chkSemua.addActionListener(new java.awt.event.ActionListener() {
+            public void actionPerformed(java.awt.event.ActionEvent evt) {
+                chkSemuaActionPerformed(evt);
+            }
+        });
         FormMenu.add(chkSemua);
 
         chkDiagnosaPenyakit.setSelected(true);
@@ -993,6 +998,11 @@ public final class RMRiwayatPerawatan extends javax.swing.JDialog {
         chkDiagnosaPenyakit.setHorizontalAlignment(javax.swing.SwingConstants.LEFT);
         chkDiagnosaPenyakit.setName("chkDiagnosaPenyakit"); // NOI18N
         chkDiagnosaPenyakit.setPreferredSize(new java.awt.Dimension(245, 22));
+        chkDiagnosaPenyakit.addActionListener(new java.awt.event.ActionListener() {
+            public void actionPerformed(java.awt.event.ActionEvent evt) {
+                chkDiagnosaPenyakitActionPerformed(evt);
+            }
+        });
         FormMenu.add(chkDiagnosaPenyakit);
 
         chkProsedurTindakan.setSelected(true);
@@ -1021,6 +1031,11 @@ public final class RMRiwayatPerawatan extends javax.swing.JDialog {
         chkAsuhanKeperawatanIGD.setHorizontalAlignment(javax.swing.SwingConstants.LEFT);
         chkAsuhanKeperawatanIGD.setName("chkAsuhanKeperawatanIGD"); // NOI18N
         chkAsuhanKeperawatanIGD.setPreferredSize(new java.awt.Dimension(245, 22));
+        chkAsuhanKeperawatanIGD.addActionListener(new java.awt.event.ActionListener() {
+            public void actionPerformed(java.awt.event.ActionEvent evt) {
+                chkAsuhanKeperawatanIGDActionPerformed(evt);
+            }
+        });
         FormMenu.add(chkAsuhanKeperawatanIGD);
 
         chkAsuhanKeperawatanRalan.setSelected(true);
@@ -1328,7 +1343,6 @@ public final class RMRiwayatPerawatan extends javax.swing.JDialog {
         chkCatatanDokter.setText("Catatan Dokter");
         chkCatatanDokter.setHorizontalAlignment(javax.swing.SwingConstants.LEFT);
         chkCatatanDokter.setName("chkCatatanDokter"); // NOI18N
-        chkCatatanDokter.setOpaque(false);
         chkCatatanDokter.setPreferredSize(new java.awt.Dimension(245, 22));
         FormMenu.add(chkCatatanDokter);
 
@@ -1497,7 +1511,6 @@ public final class RMRiwayatPerawatan extends javax.swing.JDialog {
         chkIntervensiNyeriFarmakologi.setText("Intervensi Nyeri Farmakologi");
         chkIntervensiNyeriFarmakologi.setHorizontalAlignment(javax.swing.SwingConstants.LEFT);
         chkIntervensiNyeriFarmakologi.setName("chkIntervensiNyeriFarmakologi"); // NOI18N
-        chkIntervensiNyeriFarmakologi.setOpaque(false);
         chkIntervensiNyeriFarmakologi.setPreferredSize(new java.awt.Dimension(245, 22));
         FormMenu.add(chkIntervensiNyeriFarmakologi);
 
@@ -1505,7 +1518,6 @@ public final class RMRiwayatPerawatan extends javax.swing.JDialog {
         chkIntervensiNyeriNonFarmakologi.setText("Intervensi Nyeri Non Farmakologi");
         chkIntervensiNyeriNonFarmakologi.setHorizontalAlignment(javax.swing.SwingConstants.LEFT);
         chkIntervensiNyeriNonFarmakologi.setName("chkIntervensiNyeriNonFarmakologi"); // NOI18N
-        chkIntervensiNyeriNonFarmakologi.setOpaque(false);
         chkIntervensiNyeriNonFarmakologi.setPreferredSize(new java.awt.Dimension(245, 22));
         FormMenu.add(chkIntervensiNyeriNonFarmakologi);
 
@@ -1597,7 +1609,6 @@ public final class RMRiwayatPerawatan extends javax.swing.JDialog {
         chkCatatanMonitoringIntraAnestesi.setText("Catatan Monitoring Intra Anestesi");
         chkCatatanMonitoringIntraAnestesi.setHorizontalAlignment(javax.swing.SwingConstants.LEFT);
         chkCatatanMonitoringIntraAnestesi.setName("chkCatatanMonitoringIntraAnestesi"); // NOI18N
-        chkCatatanMonitoringIntraAnestesi.setOpaque(false);
         chkCatatanMonitoringIntraAnestesi.setPreferredSize(new java.awt.Dimension(245, 22));
         FormMenu.add(chkCatatanMonitoringIntraAnestesi);
 
@@ -1605,7 +1616,6 @@ public final class RMRiwayatPerawatan extends javax.swing.JDialog {
         chkCatatanMonitoringPascaAnestesi.setText("Catatan Monitoring Pasca Anestesi");
         chkCatatanMonitoringPascaAnestesi.setHorizontalAlignment(javax.swing.SwingConstants.LEFT);
         chkCatatanMonitoringPascaAnestesi.setName("chkCatatanMonitoringPascaAnestesi"); // NOI18N
-        chkCatatanMonitoringPascaAnestesi.setOpaque(false);
         chkCatatanMonitoringPascaAnestesi.setPreferredSize(new java.awt.Dimension(245, 22));
         FormMenu.add(chkCatatanMonitoringPascaAnestesi);
 
@@ -1683,7 +1693,6 @@ public final class RMRiwayatPerawatan extends javax.swing.JDialog {
         chkCatatanObservasiRuangOperasi.setText("Catatan Observasi Ruang Operasi");
         chkCatatanObservasiRuangOperasi.setHorizontalAlignment(javax.swing.SwingConstants.LEFT);
         chkCatatanObservasiRuangOperasi.setName("chkCatatanObservasiRuangOperasi"); // NOI18N
-        chkCatatanObservasiRuangOperasi.setOpaque(false);
         chkCatatanObservasiRuangOperasi.setPreferredSize(new java.awt.Dimension(245, 22));
         FormMenu.add(chkCatatanObservasiRuangOperasi);
 
@@ -1747,7 +1756,6 @@ public final class RMRiwayatPerawatan extends javax.swing.JDialog {
         chkChecklistKriteriaMasukIsolasi.setText("Check List Kriteria Masuk Isolasi");
         chkChecklistKriteriaMasukIsolasi.setHorizontalAlignment(javax.swing.SwingConstants.LEFT);
         chkChecklistKriteriaMasukIsolasi.setName("chkChecklistKriteriaMasukIsolasi"); // NOI18N
-        chkChecklistKriteriaMasukIsolasi.setOpaque(false);
         chkChecklistKriteriaMasukIsolasi.setPreferredSize(new java.awt.Dimension(245, 22));
         FormMenu.add(chkChecklistKriteriaMasukIsolasi);
 
@@ -1846,7 +1854,6 @@ public final class RMRiwayatPerawatan extends javax.swing.JDialog {
         chkHasilPemeriksaanUSGAbdomen.setText("Hasil USG Abdomen");
         chkHasilPemeriksaanUSGAbdomen.setHorizontalAlignment(javax.swing.SwingConstants.LEFT);
         chkHasilPemeriksaanUSGAbdomen.setName("chkHasilPemeriksaanUSGAbdomen"); // NOI18N
-        chkHasilPemeriksaanUSGAbdomen.setOpaque(false);
         chkHasilPemeriksaanUSGAbdomen.setPreferredSize(new java.awt.Dimension(245, 22));
         FormMenu.add(chkHasilPemeriksaanUSGAbdomen);
 
@@ -3837,6 +3844,18 @@ private void BtnPasienKeyPressed(java.awt.event.KeyEvent evt) {//GEN-FIRST:event
             Phrase.setEchoChar('\u2022');
         }
     }//GEN-LAST:event_ChkTampilPhraseActionPerformed
+
+    private void chkAsuhanKeperawatanIGDActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_chkAsuhanKeperawatanIGDActionPerformed
+        // TODO add your handling code here:
+    }//GEN-LAST:event_chkAsuhanKeperawatanIGDActionPerformed
+
+    private void chkDiagnosaPenyakitActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_chkDiagnosaPenyakitActionPerformed
+        // TODO add your handling code here:
+    }//GEN-LAST:event_chkDiagnosaPenyakitActionPerformed
+
+    private void chkSemuaActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_chkSemuaActionPerformed
+        // TODO add your handling code here:
+    }//GEN-LAST:event_chkSemuaActionPerformed
 
     private void chkSEPBPJSActionPerformed(java.awt.event.ActionEvent evt) {                                           
         // TODO add your handling code here:

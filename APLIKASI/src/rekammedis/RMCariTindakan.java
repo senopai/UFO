@@ -398,20 +398,31 @@ public final class RMCariTindakan extends javax.swing.JDialog {
         }
         
         try{
+            // [FIX-LAPOPERASI] Sumber operasi diganti. Dulu: tabel operasi + paket_operasi (nama paket operasi).
+            // Sekarang: tabel laporan_operasi (kolom laporan_operasi/uraian), dirapikan jadi satu baris
+            // lewat ringkasTeksOperasi(). Kalau uraian kosong dipakai diagnosa_postop; kalau dua-duanya
+            // kosong baris dilewati. Tanggal & jam diambil dari laporan_operasi.tanggal.
             ps=koneksi.prepareStatement(
-                    "select DATE_FORMAT(operasi.tgl_operasi,'%Y-%m-%d') as tgl_operasi,DATE_FORMAT(operasi.tgl_operasi,'%H:%i:%s') as jamoperasi, "+
-                    "paket_operasi.nm_perawatan from operasi INNER JOIN paket_operasi ON operasi.kode_paket=paket_operasi.kode_paket "+
-                    "where operasi.no_rawat=? and (operasi.tgl_operasi like ? or paket_operasi.nm_perawatan like ?) "+
-                    "order by operasi.tgl_operasi");
+                    "select DATE_FORMAT(laporan_operasi.tanggal,'%Y-%m-%d') as tgl_operasi,DATE_FORMAT(laporan_operasi.tanggal,'%H:%i:%s') as jamoperasi, "+
+                    "laporan_operasi.laporan_operasi,laporan_operasi.diagnosa_postop from laporan_operasi "+
+                    "where laporan_operasi.no_rawat=? and (laporan_operasi.tanggal like ? or laporan_operasi.laporan_operasi like ? or laporan_operasi.diagnosa_postop like ?) "+
+                    "order by laporan_operasi.tanggal");
             try{
                 ps.setString(1,norawat);
                 ps.setString(2,"%"+TCari.getText().trim()+"%");
                 ps.setString(3,"%"+TCari.getText().trim()+"%");
+                ps.setString(4,"%"+TCari.getText().trim()+"%");
                 rs=ps.executeQuery();
                 while(rs.next()){
-                    tabMode.addRow(new String[] {
-                        rs.getString(1),rs.getString(2),rs.getString(3)
-                    });
+                    String teksoperasi=ringkasTeksOperasi(rs.getString(3));
+                    if(teksoperasi.equals("")){
+                        teksoperasi=ringkasTeksOperasi(rs.getString(4));
+                    }
+                    if(!teksoperasi.equals("")){
+                        tabMode.addRow(new String[] {
+                            rs.getString(1),rs.getString(2),teksoperasi
+                        });
+                    }
                 }
             }catch(Exception ex){
                 System.out.println(ex);
@@ -427,6 +438,28 @@ public final class RMCariTindakan extends javax.swing.JDialog {
             System.out.println("Notifikasi : "+e);
         }
         LCount.setText(""+tabMode.getRowCount());
+    }
+
+    // [FIX-LAPOPERASI] Batas panjang teks satu baris operasi di daftar ini. Field Tindakan/Operasi di
+    // resume dibatasi 2000 karakter total (batasInput), jadi satu baris tidak boleh terlalu panjang.
+    // Ubah angka ini kalau perlu lebih panjang/pendek.
+    private static final int BATAS_TEKS_OPERASI=500;
+
+    // [FIX-LAPOPERASI] Rapikan uraian laporan operasi jadi satu baris (enter/tab jadi spasi) dan
+    // potong di batas kata kalau lebih dari BATAS_TEKS_OPERASI, diakhiri "...".
+    private String ringkasTeksOperasi(String teks){
+        if(teks==null){
+            return "";
+        }
+        teks=teks.replaceAll("\\s+"," ").trim();
+        if(teks.length()>BATAS_TEKS_OPERASI){
+            int pos=teks.lastIndexOf(' ',BATAS_TEKS_OPERASI-3);
+            if(pos<BATAS_TEKS_OPERASI/2){
+                pos=BATAS_TEKS_OPERASI-3;
+            }
+            teks=teks.substring(0,pos).trim()+"...";
+        }
+        return teks;
     }
 
     public void emptTeks() {   

@@ -391,6 +391,7 @@ public final class ApotekBPJSCekReferensiDPHO extends javax.swing.JDialog {
             if(nameNode.path("code").asText().equals("200")){
                 Valid.tabelKosong(tabMode);
                 response = mapper.readTree(api.Decrypt(root.path("response").asText(),utc));
+                System.out.println("Data = "+response); // TAMBAHANNYA INI
                 if(response.path("list").isArray()){
                     for(JsonNode list:response.path("list")){
                         if(list.path("namaobat").asText().toLowerCase().contains(keyword.toLowerCase())||

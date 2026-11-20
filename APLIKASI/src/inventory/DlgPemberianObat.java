@@ -1062,10 +1062,8 @@ private void ChkInputActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRS
         if(TNoRw.getText().trim().equals("")||TPasien.getText().trim().equals("")){
             Valid.textKosong(TNoRw,"No.Rawat");
         }else {            
-            if(Sequel.cariRegistrasi(TNoRw.getText())>0){
-                JOptionPane.showMessageDialog(rootPane,"Data billing sudah terverifikasi, data tidak boleh dihapus.\nSilahkan hubungi bagian kasir/keuangan ..!!");
-                TCari.requestFocus();
-            }else{ 
+            final boolean billingTerverifikasi=(Sequel.cariRegistrasi(TNoRw.getText())>0); // [FIX-BACASAJA] billing sudah terverifikasi: DlgCariObat3 tetap dibuka, tapi hanya untuk melihat & mencetak (tidak bisa mengubah/menyimpan)
+            {
                 if (ObatUDD == null || !ObatUDD.isDisplayable()) {
                     ObatUDD=new DlgCariObat3(null,false);
                     ObatUDD.setDefaultCloseOperation(WindowConstants.DISPOSE_ON_CLOSE);
@@ -1082,6 +1080,7 @@ private void ChkInputActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRS
                 }
                 if (ObatUDD == null) return;
                 if (!ObatUDD.isVisible()) {  
+                    ObatUDD.setBacaSaja(billingTerverifikasi);   // [FIX-BACASAJA] harus sebelum setNoRm
                     ObatUDD.setNoRm(TNoRw.getText(),TNoRM.getText(),TPasien.getText(),DTPBeri.getDate());
                 }
 

@@ -10,6 +10,7 @@
  */
 
 package inventory;
+import bridging.ApotekBPJSKirimObat;
 import fungsi.WarnaTable;
 import fungsi.batasInput;
 import fungsi.koneksiDB;
@@ -70,6 +71,7 @@ public final class DlgResepObat extends javax.swing.JDialog {
     private String TANGGALMUNDUR="yes",norawat="";
     private final ExecutorService executor = Executors.newSingleThreadExecutor();
     private volatile boolean ceksukses = false;
+    private ApotekBPJSKirimObat dlgobtApotekBPJS=new ApotekBPJSKirimObat(null,false);
 
     /** Creates new form DlgResepObat 
      *@param parent
@@ -238,15 +240,16 @@ public final class DlgResepObat extends javax.swing.JDialog {
     private void initComponents() {
 
         Popup2 = new javax.swing.JPopupMenu();
-        ppResepObat = new widget.MenuItem();
-        ppResepObat1 = new widget.MenuItem();
-        ppResepObat2 = new widget.MenuItem();
-        ppLabelDataObat = new widget.MenuItem();
-        ppLembarObat = new widget.MenuItem();
-        ppLembarObat1 = new widget.MenuItem();
-        ppLembarObat2 = new widget.MenuItem();
-        ppUbahAturanPakai = new widget.MenuItem();
-        ppUbahAturanPakai1 = new widget.MenuItem();
+        ppResepObat = new javax.swing.JMenuItem();
+        ppResepObat1 = new javax.swing.JMenuItem();
+        ppResepObat2 = new javax.swing.JMenuItem();
+        ppLabelDataObat = new javax.swing.JMenuItem();
+        ppLembarObat = new javax.swing.JMenuItem();
+        ppLembarObat1 = new javax.swing.JMenuItem();
+        ppLembarObat2 = new javax.swing.JMenuItem();
+        ppUbahAturanPakai = new javax.swing.JMenuItem();
+        ppUbahAturanPakai1 = new javax.swing.JMenuItem();
+        BridgingApotekBPJS = new javax.swing.JMenuItem();
         WindowInput3 = new javax.swing.JDialog();
         internalFrame4 = new widget.InternalFrame();
         scrollPane1 = new widget.ScrollPane();
@@ -465,6 +468,22 @@ public final class DlgResepObat extends javax.swing.JDialog {
             }
         });
         Popup2.add(ppUbahAturanPakai1);
+
+        BridgingApotekBPJS.setBackground(new java.awt.Color(255, 255, 254));
+        BridgingApotekBPJS.setFont(new java.awt.Font("Tahoma", 0, 11)); // NOI18N
+        BridgingApotekBPJS.setForeground(new java.awt.Color(50, 50, 50));
+        BridgingApotekBPJS.setIcon(new javax.swing.ImageIcon(getClass().getResource("/picture/category.png"))); // NOI18N
+        BridgingApotekBPJS.setText("Bridging Apotek BPJS");
+        BridgingApotekBPJS.setHorizontalAlignment(javax.swing.SwingConstants.LEFT);
+        BridgingApotekBPJS.setHorizontalTextPosition(javax.swing.SwingConstants.RIGHT);
+        BridgingApotekBPJS.setName("BridgingApotekBPJS"); // NOI18N
+        BridgingApotekBPJS.setPreferredSize(new java.awt.Dimension(225, 25));
+        BridgingApotekBPJS.addActionListener(new java.awt.event.ActionListener() {
+            public void actionPerformed(java.awt.event.ActionEvent evt) {
+                BridgingApotekBPJSActionPerformed(evt);
+            }
+        });
+        Popup2.add(BridgingApotekBPJS);
 
         WindowInput3.setDefaultCloseOperation(javax.swing.WindowConstants.DISPOSE_ON_CLOSE);
         WindowInput3.setName("WindowInput3"); // NOI18N
@@ -811,10 +830,9 @@ public final class DlgResepObat extends javax.swing.JDialog {
         panelGlass9.add(jLabel19);
 
         DTPCari1.setForeground(new java.awt.Color(50, 70, 50));
-        DTPCari1.setModel(new javax.swing.DefaultComboBoxModel(new String[] { "02-02-2026 13:30:02" }));
+        DTPCari1.setModel(new javax.swing.DefaultComboBoxModel(new String[] { "11-07-2026 06:57:46" }));
         DTPCari1.setDisplayFormat("dd-MM-yyyy HH:mm:ss");
         DTPCari1.setName("DTPCari1"); // NOI18N
-        DTPCari1.setOpaque(false);
         DTPCari1.setPreferredSize(new java.awt.Dimension(132, 23));
         panelGlass9.add(DTPCari1);
 
@@ -825,10 +843,9 @@ public final class DlgResepObat extends javax.swing.JDialog {
         panelGlass9.add(jLabel21);
 
         DTPCari2.setForeground(new java.awt.Color(50, 70, 50));
-        DTPCari2.setModel(new javax.swing.DefaultComboBoxModel(new String[] { "02-02-2026 13:30:02" }));
+        DTPCari2.setModel(new javax.swing.DefaultComboBoxModel(new String[] { "11-07-2026 06:57:46" }));
         DTPCari2.setDisplayFormat("dd-MM-yyyy HH:mm:ss");
         DTPCari2.setName("DTPCari2"); // NOI18N
-        DTPCari2.setOpaque(false);
         DTPCari2.setPreferredSize(new java.awt.Dimension(132, 23));
         panelGlass9.add(DTPCari2);
 
@@ -955,10 +972,9 @@ public final class DlgResepObat extends javax.swing.JDialog {
         jLabel8.setBounds(0, 42, 95, 23);
 
         DTPBeri.setForeground(new java.awt.Color(50, 70, 50));
-        DTPBeri.setModel(new javax.swing.DefaultComboBoxModel(new String[] { "02-02-2026" }));
+        DTPBeri.setModel(new javax.swing.DefaultComboBoxModel(new String[] { "11-07-2026" }));
         DTPBeri.setDisplayFormat("dd-MM-yyyy");
         DTPBeri.setName("DTPBeri"); // NOI18N
-        DTPBeri.setOpaque(false);
         DTPBeri.setPreferredSize(new java.awt.Dimension(100, 23));
         DTPBeri.addItemListener(new java.awt.event.ItemListener() {
             public void itemStateChanged(java.awt.event.ItemEvent evt) {
@@ -1076,7 +1092,6 @@ public final class DlgResepObat extends javax.swing.JDialog {
         PanelAccor.add(ChkAccor, java.awt.BorderLayout.WEST);
 
         TabData.setBackground(new java.awt.Color(254, 255, 254));
-        TabData.setForeground(new java.awt.Color(50, 50, 50));
         TabData.setFont(new java.awt.Font("Tahoma", 0, 11)); // NOI18N
         TabData.setName("TabData"); // NOI18N
         TabData.addMouseListener(new java.awt.event.MouseAdapter() {
@@ -1135,7 +1150,7 @@ public final class DlgResepObat extends javax.swing.JDialog {
 
         FormTelaah.add(Scroll5, java.awt.BorderLayout.CENTER);
 
-        TabData.addTab("Pengkajian Resep & Obat", FormTelaah);
+        TabData.addTab("Telaah Resep & Obat", FormTelaah);
 
         FormPhoto.setBackground(new java.awt.Color(255, 255, 255));
         FormPhoto.setBorder(null);
@@ -2281,6 +2296,25 @@ private void ChkInputActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRS
         } 
     }//GEN-LAST:event_formWindowOpened
 
+    private void BridgingApotekBPJSActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_BridgingApotekBPJSActionPerformed
+        if(tabMode.getRowCount()==0){
+            JOptionPane.showMessageDialog(null,"Maaf, data sudah habis...!!!!");
+            TNoRw.requestFocus();
+        }else if(TPasien.getText().trim().equals("")){
+            JOptionPane.showMessageDialog(null,"Maaf, Klik No Resep untuk Bridging Apotek BPJS...!!!!");
+        }else if(!(TPasien.getText().trim().equals(""))){
+            this.setCursor(Cursor.getPredefinedCursor(Cursor.WAIT_CURSOR));
+
+            dlgobtApotekBPJS.setNoRm(TNoRw.getText(),TNoRm.getText(),TPasien.getText(),Valid.SetTgl(DTPBeri.getSelectedItem()+""),cmbJam.getSelectedItem()+":"+cmbMnt.getSelectedItem()+":"+cmbDtk.getSelectedItem(),NoResep.getText().substring(7, 12));
+            dlgobtApotekBPJS.tampilobat2(NoResep.getText());
+            dlgobtApotekBPJS.setSize(internalFrame1.getWidth()-20,internalFrame1.getHeight()-20);
+            dlgobtApotekBPJS.setLocationRelativeTo(internalFrame1);
+            dlgobtApotekBPJS.setVisible(true);
+
+            this.setCursor(Cursor.getDefaultCursor());
+        }
+    }//GEN-LAST:event_BridgingApotekBPJSActionPerformed
+
     /**
     * @param args the command line arguments
     */
@@ -2298,6 +2332,7 @@ private void ChkInputActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRS
     }
 
     // Variables declaration - do not modify//GEN-BEGIN:variables
+    private javax.swing.JMenuItem BridgingApotekBPJS;
     private widget.Button BtnAll;
     private widget.Button BtnBatal;
     private widget.Button BtnCari;
@@ -2366,15 +2401,15 @@ private void ChkInputActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRS
     private widget.panelisi panelGlass9;
     private widget.panelisi panelisi1;
     private widget.panelisi panelisi2;
-    private widget.MenuItem ppLabelDataObat;
-    private widget.MenuItem ppLembarObat;
-    private widget.MenuItem ppLembarObat1;
-    private widget.MenuItem ppLembarObat2;
-    private widget.MenuItem ppResepObat;
-    private widget.MenuItem ppResepObat1;
-    private widget.MenuItem ppResepObat2;
-    private widget.MenuItem ppUbahAturanPakai;
-    private widget.MenuItem ppUbahAturanPakai1;
+    private javax.swing.JMenuItem ppLabelDataObat;
+    private javax.swing.JMenuItem ppLembarObat;
+    private javax.swing.JMenuItem ppLembarObat1;
+    private javax.swing.JMenuItem ppLembarObat2;
+    private javax.swing.JMenuItem ppResepObat;
+    private javax.swing.JMenuItem ppResepObat1;
+    private javax.swing.JMenuItem ppResepObat2;
+    private javax.swing.JMenuItem ppUbahAturanPakai;
+    private javax.swing.JMenuItem ppUbahAturanPakai1;
     private widget.ScrollPane scrollPane1;
     private widget.ScrollPane scrollPane2;
     private widget.Table tbResep;

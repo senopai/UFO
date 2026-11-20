@@ -6821,7 +6821,17 @@ private void BtnEditKeyPressed(java.awt.event.KeyEvent evt) {//GEN-FIRST:event_B
             TCari.requestFocus();
         }else{            
             if(Sequel.cariRegistrasi(TNoRw.getText())>0){
-                JOptionPane.showMessageDialog(rootPane,"Data billing sudah terverifikasi ..!!");
+                // [FIX-BACASAJA] billing sudah terverifikasi: pemberian obat per jam tetap bisa dilihat & dicetak (tidak bisa diubah/disimpan)
+                if(Sequel.cariInteger("select count(stok_obat_pasien.no_rawat) from stok_obat_pasien where stok_obat_pasien.no_rawat=? ",TNoRw.getText())>0){
+                    DlgCariObat3 dlgobt=new DlgCariObat3(null,false);
+                    dlgobt.setBacaSaja(true);
+                    dlgobt.setNoRm(TNoRw.getText(),TNoRM.getText(),TPasien.getText(),DTPTgl.getDate());
+                    dlgobt.setSize(internalFrame1.getWidth(),internalFrame1.getHeight());
+                    dlgobt.setLocationRelativeTo(internalFrame1);
+                    dlgobt.setVisible(true);
+                }else{
+                    JOptionPane.showMessageDialog(rootPane,"Data billing sudah terverifikasi ..!!");
+                }
             }else{
                 if(Sequel.cariInteger("select count(stok_obat_pasien.no_rawat) from stok_obat_pasien where stok_obat_pasien.no_rawat=? ",TNoRw.getText())>0){
                     DlgCariObat3 dlgobt=new DlgCariObat3(null,false);
@@ -6976,6 +6986,16 @@ private void BtnEditKeyPressed(java.awt.event.KeyEvent evt) {//GEN-FIRST:event_B
             TCari.requestFocus();
         }else{            
             DlgDiagnosaPenyakit resep=new DlgDiagnosaPenyakit(null,false);
+            // [FIX-DIAGNOSA] begin - pas dialog diagnosa ditutup, salin diagnosa_pasien ke kamar_inap.diagnosa_akhir            
+            // (sama persis dengan yang dilakukan DlgKamarInap, supaya kolom "Diagnosa Akhir" di DlgKamarInap ikut keisi)            
+            final String noRawatDiagnosa=TNoRw.getText();            
+            resep.addWindowListener(new java.awt.event.WindowAdapter() {                
+                @Override                
+                public void windowClosed(WindowEvent e) {                    
+                    updateDiagnosaAkhirKamarInap(noRawatDiagnosa);                
+                }            
+            });            
+            // [FIX-DIAGNOSA] end
             resep.setSize(internalFrame1.getWidth(),internalFrame1.getHeight());
             resep.setLocationRelativeTo(internalFrame1);
             resep.isCek();
@@ -6983,6 +7003,74 @@ private void BtnEditKeyPressed(java.awt.event.KeyEvent evt) {//GEN-FIRST:event_B
             resep.setVisible(true);
         }
     }//GEN-LAST:event_BtnDiagnosaActionPerformed
+    
+    // [FIX-DIAGNOSA] begin - method baru
+    // Ambil semua kode penyakit dari diagnosa_pasien (urutan & format sama dengan DlgKamarInap: "kode, kode, ")
+    // lalu simpan ke kamar_inap.diagnosa_akhir pada baris kamar inap terbaru milik no_rawat tsb.
+    private void updateDiagnosaAkhirKamarInap(String noRawat){
+        if(noRawat==null||noRawat.trim().equals("")){
+            return;
+        }
+        String diagnosaAkhir="";
+        PreparedStatement psDx=null,psKmr=null,psUpd=null;
+        ResultSet rsDx=null,rsKmr=null;
+        try{
+            psDx=koneksi.prepareStatement("select diagnosa_pasien.kd_penyakit from diagnosa_pasien where diagnosa_pasien.no_rawat=? order by diagnosa_pasien.prioritas asc");
+            psDx.setString(1,noRawat);
+            rsDx=psDx.executeQuery();
+            while(rsDx.next()){
+                String gabung=rsDx.getString(1)+", "+diagnosaAkhir;
+                // kolom kamar_inap.diagnosa_akhir = varchar(100): kalau kebanyakan, kode ber-prioritas paling rendah
+                // dibuang (diagnosa utama selalu aman) supaya tidak error "Data too long"
+                if(gabung.length()>100){
+                    break;
+                }
+                diagnosaAkhir=gabung;
+            }
+
+            // belum ada diagnosa sama sekali -> jangan timpa isi diagnosa_akhir (mis. "Diagnosa Akhir Sementara" yang diketik manual)
+            if(diagnosaAkhir.equals("")){
+                return;
+            }
+
+            // baris kamar inap terbaru (kalau pasien pernah pindah kamar, yang diupdate kamar yang terakhir)
+            psKmr=koneksi.prepareStatement("select kamar_inap.kd_kamar,kamar_inap.tgl_masuk,kamar_inap.jam_masuk from kamar_inap where kamar_inap.no_rawat=? order by kamar_inap.tgl_masuk desc,kamar_inap.jam_masuk desc limit 1");
+            psKmr.setString(1,noRawat);
+            rsKmr=psKmr.executeQuery();
+            if(rsKmr.next()){
+                psUpd=koneksi.prepareStatement("update kamar_inap set diagnosa_akhir=? where no_rawat=? and kd_kamar=? and tgl_masuk=? and jam_masuk=?");
+                psUpd.setString(1,diagnosaAkhir);
+                psUpd.setString(2,noRawat);
+                psUpd.setString(3,rsKmr.getString(1));
+                psUpd.setString(4,rsKmr.getString(2));
+                psUpd.setString(5,rsKmr.getString(3));
+                psUpd.executeUpdate();
+            }
+        }catch(Exception e){
+            System.out.println("Notifikasi : "+e);
+        }finally{
+            try{
+                if(rsDx!=null){
+                    rsDx.close();
+                }
+                if(rsKmr!=null){
+                    rsKmr.close();
+                }
+                if(psDx!=null){
+                    psDx.close();
+                }
+                if(psKmr!=null){
+                    psKmr.close();
+                }
+                if(psUpd!=null){
+                    psUpd.close();
+                }
+            }catch(Exception ex){
+                System.out.println("Notifikasi : "+ex);
+            }
+        }
+    }
+    // [FIX-DIAGNOSA] end
 
     private void BtnRiwayatActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_BtnRiwayatActionPerformed
         if(TNoRw.getText().trim().equals("")){

@@ -6182,8 +6182,9 @@ public class DlgKamarInap extends javax.swing.JDialog {
                                     rs2=psanak.executeQuery();
                                     if(rs2.next()){
                                         if(Sequel.cariRegistrasi(tbKamIn.getValueAt(tbKamIn.getSelectedRow()-1,0).toString())>0){
-                                            JOptionPane.showMessageDialog(rootPane,"Data billing sudah terverifikasi.\nSilahkan hubungi bagian kasir/keuangan ..!!");
-                                            TCari.requestFocus();
+//                                            JOptionPane.showMessageDialog(rootPane,"Data billing sudah terverifikasi.\nSilahkan hubungi bagian kasir/keuangan ..!!");
+//                                            TCari.requestFocus();
+                                              panggilobatBacaSaja(rs2.getString("no_rawat2")); // [FIX-BACASAJA] billing sudah terverifikasi: tetap boleh melihat & mencetak, tidak boleh mengubah
                                         }else{
                                             akses.setform("DlgKamarInap");
                                             bangsal=Sequel.cariIsi("select set_depo_ranap.kd_depo from set_depo_ranap where set_depo_ranap.kd_bangsal=?",Sequel.cariIsi("select kamar.kd_bangsal from kamar where kamar.kd_kamar=?",kdkamar.getText()));
@@ -6220,8 +6221,9 @@ public class DlgKamarInap extends javax.swing.JDialog {
                             } 
                         }else{    
                             if(Sequel.cariRegistrasi(norawat.getText())>0){
-                                JOptionPane.showMessageDialog(rootPane,"Data billing sudah terverifikasi.\nSilahkan hubungi bagian kasir/keuangan ..!!");
-                                TCari.requestFocus();
+//                                JOptionPane.showMessageDialog(rootPane,"Data billing sudah terverifikasi.\nSilahkan hubungi bagian kasir/keuangan ..!!");
+//                                TCari.requestFocus();
+                                panggilobatBacaSaja(norawat.getText()); // [FIX-BACASAJA] billing sudah terverifikasi: tetap boleh melihat & mencetak, tidak boleh mengubah
                             }else{
                                 akses.setform("DlgKamarInap");
                                 bangsal=Sequel.cariIsi("select set_depo_ranap.kd_depo from set_depo_ranap where set_depo_ranap.kd_bangsal=?",Sequel.cariIsi("select kamar.kd_bangsal from kamar where kamar.kd_kamar=?",kdkamar.getText()));
@@ -6303,8 +6305,9 @@ public class DlgKamarInap extends javax.swing.JDialog {
                                         }
                                         
                                         if(Sequel.cariRegistrasi(tbKamIn.getValueAt(tbKamIn.getSelectedRow()-1,0).toString())>0){
-                                            JOptionPane.showMessageDialog(rootPane,"Data billing sudah terverifikasi.\nSilahkan hubungi bagian kasir/keuangan ..!!");
-                                            TCari.requestFocus();
+//                                            JOptionPane.showMessageDialog(rootPane,"Data billing sudah terverifikasi.\nSilahkan hubungi bagian kasir/keuangan ..!!");
+//                                            TCari.requestFocus();
+                                            panggilobatBacaSaja(rs2.getString("no_rawat2")); // [FIX-BACASAJA] billing sudah terverifikasi: tetap boleh melihat & mencetak, tidak boleh mengubah
                                         }else{
                                             panggilobat(rs2.getString("no_rawat2")); 
                                         }                                      
@@ -6342,8 +6345,9 @@ public class DlgKamarInap extends javax.swing.JDialog {
                             }
                             
                             if(Sequel.cariRegistrasi(norawat.getText())>0){
-                                JOptionPane.showMessageDialog(rootPane,"Data billing sudah terverifikasi.\nSilahkan hubungi bagian kasir/keuangan ..!!");
-                                TCari.requestFocus();
+//                                JOptionPane.showMessageDialog(rootPane,"Data billing sudah terverifikasi.\nSilahkan hubungi bagian kasir/keuangan ..!!");
+//                                TCari.requestFocus();
+                                panggilobatBacaSaja(norawat.getText()); // [FIX-BACASAJA] billing sudah terverifikasi: tetap boleh melihat & mencetak, tidak boleh mengubah
                             }else{
                                 panggilobat(norawat.getText());
                             }
@@ -20765,6 +20769,23 @@ public class DlgKamarInap extends javax.swing.JDialog {
             }
         }
         tampil();
+    }
+    
+    // [FIX-BACASAJA] Billing sudah terverifikasi: pemberian obat tidak boleh diubah, tapi petugas tetap perlu melihat dan mencetak riwayat pemberian    
+    // obat selama perawatan. Bila pasien memakai form per jam (ada data stok_obat_pasien) DlgCariObat3 dibuka dalam mode lihat & cetak saja;    
+    // selain itu pesan lama tetap ditampilkan.    
+    private void panggilobatBacaSaja(String norawat) {        
+        if(Sequel.cariInteger("select count(stok_obat_pasien.no_rawat) from stok_obat_pasien where stok_obat_pasien.no_rawat=? ",norawat)>0){            
+            DlgCariObat3 dlgobt2=new DlgCariObat3(null,false);            
+            dlgobt2.setBacaSaja(true);            
+            dlgobt2.setNoRm(norawat,TNoRMCari.getText(),TPasienCari.getText(),DTPCari1.getDate());            
+            dlgobt2.setSize(internalFrame1.getWidth()-20,internalFrame1.getHeight()-20);            
+            dlgobt2.setLocationRelativeTo(internalFrame1);            
+            dlgobt2.setVisible(true);        
+        }else{            
+            JOptionPane.showMessageDialog(rootPane,"Data billing sudah terverifikasi.\nSilahkan hubungi bagian kasir/keuangan ..!!");            
+            TCari.requestFocus();        
+        }    
     }
 
     public void setCariKosong() {

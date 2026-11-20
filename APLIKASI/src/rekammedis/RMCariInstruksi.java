@@ -15,12 +15,17 @@ import fungsi.WarnaTable;
 import fungsi.batasInput;
 import fungsi.koneksiDB;
 import fungsi.validasi;
+import java.awt.Cursor;
 import java.awt.Dimension;
 import java.awt.event.KeyEvent;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.RejectedExecutionException;
 import javax.swing.JTable;
+import javax.swing.SwingUtilities;
 import javax.swing.event.DocumentEvent;
 import javax.swing.table.DefaultTableModel;
 import javax.swing.table.TableColumn;
@@ -37,6 +42,8 @@ public final class RMCariInstruksi extends javax.swing.JDialog {
     private ResultSet rs;
     private String norawat="";
     private int z=0;
+    private final ExecutorService executor = Executors.newSingleThreadExecutor();
+    private volatile boolean ceksukses = false;
     /** Creates new form DlgPenyakit
      * @param parent
      * @param modal */
@@ -46,48 +53,41 @@ public final class RMCariInstruksi extends javax.swing.JDialog {
         this.setLocation(10,2);
         setSize(656,250);
 
-        Object[] row={"Tanggal","Jam","Plan"};
+        Object[] row={"P","Tanggal","Jam","Plan"};
         tabMode=new DefaultTableModel(null,row){
-              @Override public boolean isCellEditable(int rowIndex, int colIndex){return false;}
+              @Override public boolean isCellEditable(int rowIndex, int colIndex){
+                boolean a = false;
+                if (colIndex==0) {
+                    a=true;
+                }
+                return a;
+             }
+             Class[] types = new Class[] {
+                java.lang.Boolean.class, java.lang.Object.class, java.lang.Object.class, java.lang.Object.class, java.lang.Object.class
+             };
+             @Override
+             public Class getColumnClass(int columnIndex) {
+                return types [columnIndex];
+             }
         };
         tbKamar.setModel(tabMode);
         //tbPenyakit.setDefaultRenderer(Object.class, new WarnaTable(panelJudul.getBackground(),tbPenyakit.getBackground()));
         tbKamar.setPreferredScrollableViewportSize(new Dimension(500,500));
         tbKamar.setAutoResizeMode(JTable.AUTO_RESIZE_OFF);
-        for (z= 0; z < 3; z++) {
+        for (z= 0; z < 4; z++) {
             TableColumn column = tbKamar.getColumnModel().getColumn(z);
             if(z==0){
-                column.setPreferredWidth(65);
+                column.setPreferredWidth(2);
             }else if(z==1){
-                column.setPreferredWidth(50);
+                column.setPreferredWidth(65);
             }else if(z==2){
-                column.setPreferredWidth(750);
+                column.setPreferredWidth(50);
+            }else if(z==3){
+                column.setPreferredWidth(1000);
             }
         }
         tbKamar.setDefaultRenderer(Object.class, new WarnaTable());
         TCari.setDocument(new batasInput((byte)100).getKata(TCari));
-        if(koneksiDB.CARICEPAT().equals("aktif")){
-            TCari.getDocument().addDocumentListener(new javax.swing.event.DocumentListener(){
-                @Override
-                public void insertUpdate(DocumentEvent e) {
-                    if(TCari.getText().length()>2){
-                        tampil();
-                    }
-                }
-                @Override
-                public void removeUpdate(DocumentEvent e) {
-                    if(TCari.getText().length()>2){
-                        tampil();
-                    }
-                }
-                @Override
-                public void changedUpdate(DocumentEvent e) {
-                    if(TCari.getText().length()>2){
-                        tampil();
-                    }
-                }
-            });
-        }
     }
     
 
@@ -243,7 +243,7 @@ public final class RMCariInstruksi extends javax.swing.JDialog {
 }//GEN-LAST:event_TCariKeyPressed
 
     private void BtnCariActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_BtnCariActionPerformed
-        tampil();
+        runBackground(() ->tampil());
 }//GEN-LAST:event_BtnCariActionPerformed
 
     private void BtnCariKeyPressed(java.awt.event.KeyEvent evt) {//GEN-FIRST:event_BtnCariKeyPressed
@@ -256,7 +256,7 @@ public final class RMCariInstruksi extends javax.swing.JDialog {
 
     private void BtnAllActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_BtnAllActionPerformed
         TCari.setText("");
-        tampil();
+        runBackground(() ->tampil());
 }//GEN-LAST:event_BtnAllActionPerformed
 
     private void BtnAllKeyPressed(java.awt.event.KeyEvent evt) {//GEN-FIRST:event_BtnAllKeyPressed
@@ -295,7 +295,28 @@ public final class RMCariInstruksi extends javax.swing.JDialog {
     }//GEN-LAST:event_formWindowActivated
 
     private void formWindowOpened(java.awt.event.WindowEvent evt) {//GEN-FIRST:event_formWindowOpened
-        tampil();
+        if(koneksiDB.CARICEPAT().equals("aktif")){
+            TCari.getDocument().addDocumentListener(new javax.swing.event.DocumentListener(){
+                @Override
+                public void insertUpdate(DocumentEvent e) {
+                    if(TCari.getText().length()>3){
+                        runBackground(() ->tampil());
+                    }
+                }
+                @Override
+                public void removeUpdate(DocumentEvent e) {
+                    if(TCari.getText().length()>3){
+                        runBackground(() ->tampil());
+                    }
+                }
+                @Override
+                public void changedUpdate(DocumentEvent e) {
+                    if(TCari.getText().length()>3){
+                        runBackground(() ->tampil());
+                    }
+                }
+            });
+        }
     }//GEN-LAST:event_formWindowOpened
 
     /**
@@ -328,74 +349,117 @@ public final class RMCariInstruksi extends javax.swing.JDialog {
     private widget.Table tbKamar;
     // End of variables declaration//GEN-END:variables
 
-    public void tampil() {
-        Valid.tabelKosong(tabMode);
-        // Blok 1: Mengambil Pemeriksaan Fisik dari pemeriksaan_ralan
-        try{
-            ps=koneksi.prepareStatement(
-                    "select pemeriksaan_ralan.tgl_perawatan,pemeriksaan_ralan.jam_rawat,pemeriksaan_ralan.rtl "+
-                    "from pemeriksaan_ralan where pemeriksaan_ralan.no_rawat=? and "+
-                    "(pemeriksaan_ralan.tgl_perawatan like ? or pemeriksaan_ralan.rtl like ?) "+
-                    "and pemeriksaan_ralan.rtl <> '' and pemeriksaan_ralan.rtl is not null "+
-                    "order by pemeriksaan_ralan.tgl_perawatan,pemeriksaan_ralan.jam_rawat");
-            try{
-                ps.setString(1,norawat);
-                ps.setString(2,"%"+TCari.getText().trim()+"%");
-                ps.setString(3,"%"+TCari.getText().trim()+"%");
-                rs=ps.executeQuery();
-                while(rs.next()){
-                    tabMode.addRow(new String[] {
-                        rs.getString(1),rs.getString(2),rs.getString(3)
-                    });
-                }
-            }catch(Exception ex){
-                System.out.println(ex);
-            }finally{
-                if(rs!=null){
-                    rs.close();
-                }
-                if(ps!=null){
-                    ps.close();
-                }
-            }
-        }catch(Exception e){
-            System.out.println("Notifikasi : "+e);
-        }
+    private void tampil() {
         
-        // Blok 2: Mengambil Pemeriksaan Fisik dari pemeriksaan_ranap
-        try{
-            ps=koneksi.prepareStatement(
-                    "select pemeriksaan_ranap.tgl_perawatan,pemeriksaan_ranap.jam_rawat,pemeriksaan_ranap.rtl "+
-                    "from pemeriksaan_ranap where pemeriksaan_ranap.no_rawat=? and "+
-                    "(pemeriksaan_ranap.tgl_perawatan like ? or pemeriksaan_ranap.rtl like ?) "+
-                    "and pemeriksaan_ranap.rtl <> '' and pemeriksaan_ranap.rtl is not null "+
-                    "order by pemeriksaan_ranap.tgl_perawatan,pemeriksaan_ranap.jam_rawat");
-            try{
-                ps.setString(1,norawat);
-                ps.setString(2,"%"+TCari.getText().trim()+"%");
-                ps.setString(3,"%"+TCari.getText().trim()+"%");
-                rs=ps.executeQuery();
-                while(rs.next()){
-                    tabMode.addRow(new String[] {
-                        rs.getString(1),rs.getString(2),rs.getString(3)
-                    });
-                }
-            }catch(Exception ex){
-                System.out.println(ex);
-            }finally{
-                if(rs!=null){
-                    rs.close();
-                }
-                if(ps!=null){
-                    ps.close();
-                }
-            }
-        }catch(Exception e){
-            System.out.println("Notifikasi : "+e);
-        }
-        // <--- AKHIR BLOK TAMBAHAN --->
+        // [FIX-INSTRUKSI] Plan (rtl) dan Instruksi dari pemeriksaan ralan & ranap. Kolom 3 = teks, kolom 4 = asal data.
+        tampilDari("pemeriksaan_ralan","rtl","Plan Ralan");
+        tampilDari("pemeriksaan_ranap","rtl","Plan Ranap");
+        tampilDari("pemeriksaan_ralan","instruksi","Instruksi Ralan");
+        tampilDari("pemeriksaan_ranap","instruksi","Instruksi Ranap");
         LCount.setText(""+tabMode.getRowCount());
     }
+
+    // [FIX-INSTRUKSI] Ambil satu kolom teks (rtl / instruksi) dari satu tabel pemeriksaan untuk no. rawat ini. Baris kosong dilewati.
+    // Nama tabel & kolom hanya dari konstanta di tampil(), bukan input user. Kalau satu sumber gagal (mis. kolom belum ada), sumber lain tetap tampil.
+    private void tampilDari(String tabel,String kolom,String sumber) {
+        try{
+            ps=koneksi.prepareStatement(
+                    "select "+tabel+".tgl_perawatan,"+tabel+".jam_rawat,"+tabel+"."+kolom+" "+
+                    "from "+tabel+" where "+tabel+".no_rawat=? and "+
+                    "("+tabel+".tgl_perawatan like ? or "+tabel+"."+kolom+" like ?) "+
+                    "and "+tabel+"."+kolom+" <> '' and "+tabel+"."+kolom+" is not null "+
+                    "order by "+tabel+".tgl_perawatan,"+tabel+".jam_rawat");
+            try{
+                ps.setString(1,norawat);
+                ps.setString(2,"%"+TCari.getText().trim()+"%");
+                ps.setString(3,"%"+TCari.getText().trim()+"%");
+                rs=ps.executeQuery();
+                while(rs.next()){
+                    tabMode.addRow(new Object[] {
+                        false,rs.getString(1),rs.getString(2),rs.getString(3),sumber
+                    });
+                }
+            }catch(Exception ex){
+                System.out.println(ex);
+            }finally{
+                if(rs!=null){
+                    rs.close();
+                }
+                if(ps!=null){
+                    ps.close();
+                }
+            }
+        }catch(Exception e){
+            System.out.println("Notifikasi : "+e);
+        }
+    }
+//        Valid.tabelKosong(tabMode);
+//        // Blok 1: Mengambil Pemeriksaan Fisik dari pemeriksaan_ralan
+//        try{
+//            ps=koneksi.prepareStatement(
+//                    "select pemeriksaan_ralan.tgl_perawatan,pemeriksaan_ralan.jam_rawat,pemeriksaan_ralan.rtl "+
+//                    "from pemeriksaan_ralan where pemeriksaan_ralan.no_rawat=? and "+
+//                    "(pemeriksaan_ralan.tgl_perawatan like ? or pemeriksaan_ralan.rtl like ?) "+
+//                    "and pemeriksaan_ralan.rtl <> '' and pemeriksaan_ralan.rtl is not null "+
+//                    "order by pemeriksaan_ralan.tgl_perawatan,pemeriksaan_ralan.jam_rawat");
+//            try{
+//                ps.setString(1,norawat);
+//                ps.setString(2,"%"+TCari.getText().trim()+"%");
+//                ps.setString(3,"%"+TCari.getText().trim()+"%");
+//                rs=ps.executeQuery();
+//                while(rs.next()){
+//                    tabMode.addRow(new Object[] {
+//                        false,rs.getString(1),rs.getString(2),rs.getString(3)
+//                    });
+//                }
+//            }catch(Exception ex){
+//                System.out.println(ex);
+//            }finally{
+//                if(rs!=null){
+//                    rs.close();
+//                }
+//                if(ps!=null){
+//                    ps.close();
+//                }
+//            }
+//        }catch(Exception e){
+//            System.out.println("Notifikasi : "+e);
+//        }
+//        
+//        // Blok 2: Mengambil Pemeriksaan Fisik dari pemeriksaan_ranap
+//        try{
+//            ps=koneksi.prepareStatement(
+//                    "select pemeriksaan_ranap.tgl_perawatan,pemeriksaan_ranap.jam_rawat,pemeriksaan_ranap.rtl "+
+//                    "from pemeriksaan_ranap where pemeriksaan_ranap.no_rawat=? and "+
+//                    "(pemeriksaan_ranap.tgl_perawatan like ? or pemeriksaan_ranap.rtl like ?) "+
+//                    "and pemeriksaan_ranap.rtl <> '' and pemeriksaan_ranap.rtl is not null "+
+//                    "order by pemeriksaan_ranap.tgl_perawatan,pemeriksaan_ranap.jam_rawat");
+//            try{
+//                ps.setString(1,norawat);
+//                ps.setString(2,"%"+TCari.getText().trim()+"%");
+//                ps.setString(3,"%"+TCari.getText().trim()+"%");
+//                rs=ps.executeQuery();
+//                while(rs.next()){
+//                    tabMode.addRow(new Object[] {
+//                        false,rs.getString(1),rs.getString(2),rs.getString(3)
+//                    });
+//                }
+//            }catch(Exception ex){
+//                System.out.println(ex);
+//            }finally{
+//                if(rs!=null){
+//                    rs.close();
+//                }
+//                if(ps!=null){
+//                    ps.close();
+//                }
+//            }
+//        }catch(Exception e){
+//            System.out.println("Notifikasi : "+e);
+//        }
+//        // <--- AKHIR BLOK TAMBAHAN --->
+//        LCount.setText(""+tabMode.getRowCount());
+//    }
 
     public void emptTeks() {   
         TCari.requestFocus();
@@ -403,10 +467,42 @@ public final class RMCariInstruksi extends javax.swing.JDialog {
     
     public void setNoRawat(String norawat){
         this.norawat=norawat;
+        runBackground(() ->tampil());
     }
 
     public JTable getTable(){
         return tbKamar;
     }
     
+    private void runBackground(Runnable task) {
+        if (ceksukses) return;
+        if (executor.isShutdown() || executor.isTerminated()) return;
+        if (!isDisplayable()) return;
+
+        ceksukses = true;
+        setCursor(Cursor.getPredefinedCursor(Cursor.WAIT_CURSOR));
+
+        try {
+            executor.submit(() -> {
+                try {
+                    task.run();
+                } finally {
+                    ceksukses = false;
+                    SwingUtilities.invokeLater(() -> {
+                        if (isDisplayable()) {
+                            setCursor(Cursor.getDefaultCursor());
+                        }
+                    });
+                }
+            });
+        } catch (RejectedExecutionException ex) {
+            ceksukses = false;
+        }
+    }
+    
+    @Override
+    public void dispose() {
+        executor.shutdownNow();
+        super.dispose();
+    }
 }

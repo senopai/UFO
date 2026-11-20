@@ -99,14 +99,13 @@ inner join databarang on stok_obat_pasien.kode_brng=databarang.kode_brng]]>
 		<property name="com.jaspersoft.studio.field.tree.path" value="stok_obat_pasien"/>
 		<fieldDescription><![CDATA[]]></fieldDescription>
 	</field>
-	<variable name="no" class="java.lang.Integer" calculation="Count">
+	<variable name="no" class="java.lang.Integer" resetType="Group" resetGroup="grpJam" calculation="Count">
 		<variableExpression><![CDATA[$F{kode_brng}]]></variableExpression>
 	</variable>
-	<background>
-		<band splitType="Stretch"/>
-	</background>
-	<title>
-		<band height="48" splitType="Stretch">
+	<group name="grpJam" isStartNewPage="true" isReprintHeaderOnEachPage="true">
+		<groupExpression><![CDATA[($P{waktu}!=null&&!$P{waktu}.trim().equals(""))?$P{waktu}:($F{kd_bangsal}==null?"":$F{kd_bangsal})]]></groupExpression>
+		<groupHeader>
+			<band height="58" splitType="Stretch">
 			<textField>
 				<reportElement x="2" y="0" width="170" height="8" uuid="28d963ac-41d2-4004-960f-333e1194179b">
 					<property name="com.jaspersoft.studio.unit.height" value="px"/>
@@ -228,17 +227,11 @@ inner join databarang on stok_obat_pasien.kode_brng=databarang.kode_brng]]>
 					<font fontName="Tahoma" size="6"/>
 					<paragraph lineSpacing="Single"/>
 				</textElement>
-				<textFieldExpression><![CDATA[$P{waktu}]]></textFieldExpression>
+				<textFieldExpression><![CDATA[($P{waktu}!=null&&!$P{waktu}.trim().equals(""))?$P{waktu}:(($F{kd_bangsal}!=null&&$F{kd_bangsal}.startsWith("JAM"))?$F{kd_bangsal}:"")]]></textFieldExpression>
 			</textField>
-		</band>
-	</title>
-	<pageHeader>
-		<band splitType="Stretch"/>
-	</pageHeader>
-	<columnHeader>
-		<band height="10">
+		
 			<staticText>
-				<reportElement mode="Transparent" x="2" y="2" width="12" height="8" uuid="d457fe67-926a-4199-a603-0a27dc57614f"/>
+				<reportElement mode="Transparent" x="2" y="50" width="12" height="8" uuid="d457fe67-926a-4199-a603-0a27dc57614f"/>
 				<textElement markup="none">
 					<font fontName="Tahoma" size="6"/>
 					<paragraph lineSpacing="Single"/>
@@ -246,7 +239,7 @@ inner join databarang on stok_obat_pasien.kode_brng=databarang.kode_brng]]>
 				<text><![CDATA[No.]]></text>
 			</staticText>
 			<staticText>
-				<reportElement mode="Transparent" x="14" y="2" width="86" height="8" uuid="722641a5-6729-43e5-9273-eccd4d1921e0"/>
+				<reportElement mode="Transparent" x="14" y="50" width="86" height="8" uuid="722641a5-6729-43e5-9273-eccd4d1921e0"/>
 				<textElement markup="none">
 					<font fontName="Tahoma" size="6"/>
 					<paragraph lineSpacing="Single"/>
@@ -254,7 +247,7 @@ inner join databarang on stok_obat_pasien.kode_brng=databarang.kode_brng]]>
 				<text><![CDATA[Nama Obat]]></text>
 			</staticText>
 			<staticText>
-				<reportElement mode="Transparent" x="100" y="2" width="50" height="8" uuid="f6cd5cf4-d6a1-471c-b685-db59fdac91dc"/>
+				<reportElement mode="Transparent" x="100" y="50" width="50" height="8" uuid="f6cd5cf4-d6a1-471c-b685-db59fdac91dc"/>
 				<textElement textAlignment="Center" markup="none">
 					<font fontName="Tahoma" size="6"/>
 					<paragraph lineSpacing="Single"/>
@@ -262,7 +255,7 @@ inner join databarang on stok_obat_pasien.kode_brng=databarang.kode_brng]]>
 				<text><![CDATA[Signa]]></text>
 			</staticText>
 			<staticText>
-				<reportElement mode="Transparent" x="150" y="2" width="22" height="8" uuid="413067ae-da53-4019-acd1-5dec3fbf8ea2"/>
+				<reportElement mode="Transparent" x="150" y="50" width="22" height="8" uuid="413067ae-da53-4019-acd1-5dec3fbf8ea2"/>
 				<textElement textAlignment="Center" markup="none">
 					<font fontName="Tahoma" size="6"/>
 					<paragraph lineSpacing="Single"/>
@@ -270,6 +263,22 @@ inner join databarang on stok_obat_pasien.kode_brng=databarang.kode_brng]]>
 				<text><![CDATA[Qty]]></text>
 			</staticText>
 		</band>
+		</groupHeader>
+		<groupFooter>
+			<band splitType="Stretch"/>
+		</groupFooter>
+	</group>
+	<background>
+		<band splitType="Stretch"/>
+	</background>
+	<title>
+		<band splitType="Stretch"/>
+	</title>
+	<pageHeader>
+		<band splitType="Stretch"/>
+	</pageHeader>
+	<columnHeader>
+		<band splitType="Stretch"/>
 	</columnHeader>
 	<detail>
 		<band height="8" splitType="Stretch">
@@ -283,7 +292,7 @@ inner join databarang on stok_obat_pasien.kode_brng=databarang.kode_brng]]>
 				</textElement>
 				<textFieldExpression><![CDATA[$F{nama_brng}]]></textFieldExpression>
 			</textField>
-			<textField isStretchWithOverflow="true">
+			<textField isStretchWithOverflow="true" pattern="#,##0.##">
 				<reportElement positionType="Float" mode="Transparent" x="150" y="0" width="22" height="8" uuid="0340c674-3115-4146-bb94-6394210422c5">
 					<property name="com.jaspersoft.studio.unit.height" value="px"/>
 				</reportElement>

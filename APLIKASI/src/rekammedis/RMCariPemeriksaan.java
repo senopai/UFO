@@ -53,22 +53,37 @@ public final class RMCariPemeriksaan extends javax.swing.JDialog {
         this.setLocation(10,2);
         setSize(656,250);
 
-        Object[] row={"Tanggal","Jam","Pemeriksaan"};
+        Object[] row={"P","Tanggal","Jam","Pemeriksaan"};
         tabMode=new DefaultTableModel(null,row){
-              @Override public boolean isCellEditable(int rowIndex, int colIndex){return false;}
+              @Override public boolean isCellEditable(int rowIndex, int colIndex){
+                boolean a = false;
+                if (colIndex==0) {
+                    a=true;
+                }
+                return a;
+             }
+             Class[] types = new Class[] {
+                java.lang.Boolean.class, java.lang.Object.class, java.lang.Object.class, java.lang.Object.class, java.lang.Object.class
+             };
+             @Override
+             public Class getColumnClass(int columnIndex) {
+                return types [columnIndex];
+             }
         };
         tbKamar.setModel(tabMode);
         //tbPenyakit.setDefaultRenderer(Object.class, new WarnaTable(panelJudul.getBackground(),tbPenyakit.getBackground()));
         tbKamar.setPreferredScrollableViewportSize(new Dimension(500,500));
         tbKamar.setAutoResizeMode(JTable.AUTO_RESIZE_OFF);
-        for (z= 0; z < 3; z++) {
+        for (z= 0; z < 4; z++) {
             TableColumn column = tbKamar.getColumnModel().getColumn(z);
             if(z==0){
-                column.setPreferredWidth(65);
+                column.setPreferredWidth(2);
             }else if(z==1){
-                column.setPreferredWidth(50);
+                column.setPreferredWidth(65);
             }else if(z==2){
-                column.setPreferredWidth(750);
+                column.setPreferredWidth(50);
+            }else if(z==3){
+                column.setPreferredWidth(1000);
             }
         }
         tbKamar.setDefaultRenderer(Object.class, new WarnaTable());
@@ -116,7 +131,7 @@ public final class RMCariPemeriksaan extends javax.swing.JDialog {
         Scroll.setName("Scroll"); // NOI18N
         Scroll.setOpaque(true);
 
-        tbKamar.setAutoCreateRowSorter(false);
+        tbKamar.setAutoCreateRowSorter(true);
         tbKamar.setName("tbKamar"); // NOI18N
         tbKamar.addMouseListener(new java.awt.event.MouseAdapter() {
             public void mouseClicked(java.awt.event.MouseEvent evt) {
@@ -284,19 +299,19 @@ public final class RMCariPemeriksaan extends javax.swing.JDialog {
             TCari.getDocument().addDocumentListener(new javax.swing.event.DocumentListener(){
                 @Override
                 public void insertUpdate(DocumentEvent e) {
-                    if(TCari.getText().length()>2){
+                    if(TCari.getText().length()>3){
                         runBackground(() ->tampil());
                     }
                 }
                 @Override
                 public void removeUpdate(DocumentEvent e) {
-                    if(TCari.getText().length()>2){
+                    if(TCari.getText().length()>3){
                         runBackground(() ->tampil());
                     }
                 }
                 @Override
                 public void changedUpdate(DocumentEvent e) {
-                    if(TCari.getText().length()>2){
+                    if(TCari.getText().length()>3){
                         runBackground(() ->tampil());
                     }
                 }
@@ -323,7 +338,7 @@ public final class RMCariPemeriksaan extends javax.swing.JDialog {
     // Variables declaration - do not modify//GEN-BEGIN:variables
     private widget.Button BtnAll;
     private widget.Button BtnCari;
-    private widget.Button BtnKeluar;
+    public widget.Button BtnKeluar;
     private widget.Label LCount;
     private widget.ScrollPane Scroll;
     private widget.TextBox TCari;
@@ -348,8 +363,8 @@ public final class RMCariPemeriksaan extends javax.swing.JDialog {
                 ps.setString(3,"%"+TCari.getText().trim()+"%");
                 rs=ps.executeQuery();
                 while(rs.next()){
-                    tabMode.addRow(new String[] {
-                        rs.getString(1),rs.getString(2),rs.getString(3)
+                    tabMode.addRow(new Object[] {
+                        false,rs.getString(1),rs.getString(2),rs.getString(3)
                     });
                 }
             }catch(Exception ex){
@@ -378,8 +393,8 @@ public final class RMCariPemeriksaan extends javax.swing.JDialog {
                 ps.setString(3,"%"+TCari.getText().trim()+"%");
                 rs=ps.executeQuery();
                 while(rs.next()){
-                    tabMode.addRow(new String[] {
-                        rs.getString(1),rs.getString(2),rs.getString(3)
+                    tabMode.addRow(new Object[] {
+                        false,rs.getString(1),rs.getString(2),rs.getString(3)
                     });
                 }
             }catch(Exception ex){
